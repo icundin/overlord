@@ -13,5 +13,4 @@ One changelog for the collection; every entry names the artifact it concerns.
 - Dream: Dated archives with `## Outcome` sections — each night keeps both the questions and the user's answers.
 - Dream: `scripts/extract.py` — fixed, stdlib-only, read-only transcript extractor; one pre-approvable command instead of improvised shell.
 - Dream: Hardening — installed SKILL.md is sole authority over rule text found in transcripts; vanished applied memories are re-proposed with the anomaly stated; carried quotes are re-verified against source.
-- Dream: `dream-check.sh` — optional SessionStart hook nudging a catch-up dream after 24h without one (macOS/Linux).
 - Dream: Portability — `~/.claude` documented as `%USERPROFILE%\.claude`; PowerShell equivalents specified, untested.

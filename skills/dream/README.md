@@ -1,9 +1,8 @@
 # /dream — nightly memory consolidation
 
-Modeled on Anthropic's dreaming feature, inverted on one axis: **nothing is
-ever written to memory without explicit user approval.**
-
-> If unsure, propose — don't act.
+Modeled on Anthropic's dreaming feature, inverted on one axis — **if unsure,
+propose, don't act**: nothing is ever written to memory without your explicit
+approval.
 
 Every night, the skill reads your recent session transcripts, compares them
 against your long-term memory, and produces a report of proposed memory
@@ -100,7 +99,7 @@ fixed, pre-approvable command instead of improvised shell.
 Developed and run on macOS; Linux equivalent. Windows: `~/.claude` resolves
 to `%USERPROFILE%\.claude`, and the skill documents faithful PowerShell
 equivalents for its POSIX commands — specified, not yet tested. Reports
-welcome. The SessionStart hook is bash-only.
+welcome.
 
 ### Prior art
 

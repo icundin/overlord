@@ -3,7 +3,7 @@
 ## What this repository is
 
 Source of truth for a personal `~/.claude`: Claude Code skills today, with
-room for agents, hooks, and other extensions — each type in a top-level
+room for agents and other extensions — each type in a top-level
 folder mirroring its place under `~/.claude`. This is **source, not the
 installation**: the running
 copies live in `~/.claude/skills/` on the user's machine — editing here

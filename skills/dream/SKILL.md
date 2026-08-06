@@ -190,9 +190,6 @@ Archive: copy the `.md` and `.html` to
 needed). One pair per date; a same-day rerun replaces that date's pair;
 earlier dates are never touched.
 
-## After every run
-`touch ~/.claude/memory/.last-dream` (keeps the SessionStart hook quiet).
-
 ## Portability
 `~/.claude` means the user's Claude home on any OS (Windows:
 `%USERPROFILE%\.claude`) — resolve it, don't take `~` literally. The exact
@@ -209,7 +206,6 @@ Not complete until all exist — verify with `ls`, fix anything missing:
    the apply/ignore instruction line.
 2. `dream-report.html`
 3. `archive/dream-<date>.md` + `.html`
-4. `.last-dream` touched
-5. Report opened in the browser (`open` on macOS, `xdg-open` on Linux; skip
+4. Report opened in the browser (`open` on macOS, `xdg-open` on Linux; skip
    silently if neither works). Non-interactive only — never open a browser in
    interactive mode.
