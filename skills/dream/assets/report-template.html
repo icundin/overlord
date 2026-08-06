@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dream report</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --primary:#0075de; --primary-active:#005bab; --on-primary:#ffffff; --night:#213183;
+    --canvas:#f6f5f4; --surface:#ffffff; --soft:#f6f5f4;
+    --ink:#000000; --ink2:#31302e; --muted:#615d59; --faint:#a39e98; --hairline:#e6e6e6;
+    --sky:#62aef0; --purple:#d6b6f6; --pink:#ff64c8; --orange:#dd5b00; --teal:#2a9d99; --green:#1aae39;
+    --sans:'Inter',-apple-system,system-ui,'Segoe UI',Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+    --lift:0 .175px 1px rgba(0,0,0,.01),0 .8px 3px rgba(0,0,0,.02),0 2px 8px rgba(0,0,0,.027),0 4px 18px rgba(0,0,0,.04);
+    --lift2:0 2px 6px rgba(0,0,0,.04),0 8px 20px rgba(0,0,0,.06),0 23px 52px rgba(0,0,0,.05);
+  }
+  [data-theme="dark"]{
+    --canvas:#191919; --surface:#202020; --soft:#252525;
+    --ink:#eae9e7; --ink2:#cfcdca; --muted:#9b9894; --faint:#6e6b67; --hairline:#333333;
+    --primary:#4da3e2; --primary-active:#3a8ac6; --on-primary:#0e1a26;
+    --lift:0 2px 8px rgba(0,0,0,.4); --lift2:0 8px 30px rgba(0,0,0,.55);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  body{background:var(--canvas);color:rgba(0,0,0,.95);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.5;padding-bottom:130px;transition:background .2s}
+  .wrap{max-width:1000px;margin:0 auto;padding:0 24px}
+
+  /* Night hero — the single dark island */
+  .hero{position:relative;overflow:hidden;background:var(--night);color:#fff;padding:64px 0 56px}
+  .hero .wrap{position:relative;display:flex;align-items:flex-start;gap:24px}
+  .hero .txt{flex:1}
+  .star{position:absolute;font-size:14px;opacity:.9;animation:tw 3.4s ease-in-out infinite}
+  @keyframes tw{0%,100%{opacity:.35}50%{opacity:.95}}
+  .eyebrow{font-size:12px;font-weight:600;letter-spacing:.125px;color:#b9c3f2;margin-bottom:14px;text-transform:uppercase}
+  h1{font-size:54px;font-weight:700;line-height:1.04;letter-spacing:-1.875px;margin-bottom:14px}
+  .meta{font-size:15px;line-height:1.33;color:#c6cdf0}
+  .meta b{font-weight:600;color:#fff}
+  .ring{flex:none;width:88px;height:88px;position:relative}
+  .ring svg{width:100%;height:100%}
+  .ring .lbl{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .ring .lbl .n{font-size:17px;font-weight:700;color:#fff}
+  .ring .lbl .t{font-size:11px;color:#b9c3f2}
+
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:32px 0 8px}
+  .stat{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--hairline);border-radius:12px;padding:12px 16px;box-shadow:var(--lift)}
+  .stat .n{font-size:22px;font-weight:700;line-height:1;letter-spacing:-.5px;min-width:26px;text-align:center}
+  .stat .sep{width:1px;align-self:stretch;background:var(--hairline)}
+  .stat .l{font-size:13px;line-height:1.35;color:var(--muted)}
+
+  .sechead{font-size:22px;font-weight:700;line-height:1.27;letter-spacing:-.25px;margin:44px 0 16px}
+  .autoband{background:var(--surface);border:1px solid var(--hairline);border-radius:12px;padding:20px 24px;font-size:15px;line-height:1.5;color:var(--ink2)}
+  .autoband li{list-style:none;padding:3px 0}
+  .autoband li::before{content:"✓  ";color:var(--green);font-weight:600}
+
+  @keyframes cardin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .card{animation:cardin .35s ease backwards}
+  .card{position:relative;background:var(--surface);border:1px solid var(--hairline);border-radius:12px;padding:24px 24px 24px 28px;margin-bottom:16px;transition:opacity .15s,box-shadow .15s}
+  .card.focused{box-shadow:var(--lift2)}
+  .card.approved::before,.card.ignored::before,.card.snoozed::before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:3px;border-radius:9999px}
+  .card.approved::before{background:var(--primary)}
+  .card.ignored::before{background:#d44c47}
+  .card.snoozed::before{background:#e2a43c}
+  [data-theme="dark"] .card.ignored::before{background:#eb7b76}
+  [data-theme="dark"] .card.snoozed::before{background:#e8c26a}
+  .card.approved{background:var(--soft)}
+  .card.ignored{opacity:.7}
+  .card-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-bottom:14px;border-bottom:1px solid var(--hairline);margin-bottom:14px}
+  .tile{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;flex:none}
+  .tile.ADD{background:#d5f0dc;color:#116b2c}
+  .tile.UPDATE{background:#ffd9b8;color:#793400}
+  .tile.DELETE,.tile.MERGE{background:#ffd3ec;color:#8a1f61}
+  [data-theme="dark"] .tile.ADD{background:#1e3a27;color:#7fe09a}
+  [data-theme="dark"] .tile.UPDATE{background:#3f2d1a;color:#ffb877}
+  [data-theme="dark"] .tile.DELETE,[data-theme="dark"] .tile.MERGE{background:#47203a;color:#ff9ad6}
+  .idx{font-size:30px;font-weight:700;line-height:1;letter-spacing:-.5px;color:var(--faint)}
+  .cmeta{display:flex;flex-direction:column;gap:3px;min-width:0}
+  .cmeta .row{display:flex;gap:6px;font-size:12.5px;line-height:1.3;min-width:0}
+  .cmeta .k{color:var(--faint);flex:none}
+  .cmeta .v{font-family:var(--mono);color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .state.c2{color:#8a6414} .state.c3{color:#8a1f61}
+  [data-theme="dark"] .state.c2{color:#e8c26a}
+  [data-theme="dark"] .state.c3{color:#ff9ad6}
+  .file{font-family:var(--mono);font-size:13px;color:var(--muted)}
+  .hright{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+  .hrow{display:flex;align-items:center;gap:12px}
+  .catchip{font-size:10px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);background:var(--soft);border:1px solid var(--hairline);border-radius:9999px;padding:3px 10px}
+  .conf{display:flex;align-items:center;gap:8px}
+  .conf-track{width:72px;height:6px;border-radius:9999px;background:var(--soft);overflow:hidden}
+  .conf-fill{height:100%;border-radius:9999px;background:var(--purple)}
+  [data-theme="dark"] .conf-fill{background:#a06be0}
+  .conf-n{font-size:12px;font-weight:600;color:var(--faint);min-width:30px}
+  .verdict{font-size:13px;font-weight:600}
+  .verdict.applied{color:var(--green)} .verdict.ignored{color:#d44c47} .verdict.snoozed{color:#8a6414}
+  [data-theme="dark"] .verdict.ignored{color:#eb7b76} [data-theme="dark"] .verdict.snoozed{color:#e8c26a}
+  .carry{font-size:13px;font-weight:600;align-self:center;margin-left:auto}
+  .carry.n2{color:#8a6414} [data-theme="dark"] .carry.n2{color:#e8c26a}
+  .carry.n3{color:#8a1f61} [data-theme="dark"] .carry.n3{color:#ff9ad6}
+  .lbl-eyebrow{font-size:11px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--faint);margin:2px 0 4px}
+  .lbl-eyebrow.ev{margin-top:18px}
+  .summary{font-family:var(--mono);font-size:17px;font-weight:600;line-height:1.45;letter-spacing:-.2px;margin-bottom:4px}
+  .detail{font-family:var(--mono);font-size:13px;line-height:1.6;color:var(--muted);white-space:pre-wrap}
+  .evidence{background:var(--soft);border:1px solid var(--hairline);border-radius:8px;padding:12px 18px;margin-bottom:16px}
+  .card.approved .evidence{background:var(--surface)}
+  .evidence .q{font-size:15px;line-height:1.5;color:var(--ink2)}
+  .btns{display:flex;gap:12px;flex-wrap:wrap}
+  button{cursor:pointer;font-family:var(--sans)}
+  button:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+  .pill{font-size:14px;font-weight:500;line-height:1.4;border-radius:8px;padding:8px 14px;border:1px solid transparent;transition:background .12s,color .12s}
+  .pill:active{transform:scale(.97)}
+  .b-approve{background:var(--surface);color:var(--ink);border-color:var(--hairline);box-shadow:var(--lift)}
+  .b-approve.on{background:var(--primary);color:var(--on-primary);border-color:var(--primary)}
+  .b-approve.on:active{background:var(--primary-active)}
+  .b-ignore{background:var(--surface);color:var(--ink);border-color:var(--hairline);box-shadow:var(--lift)}
+  .b-ignore.on{background:#d44c47;color:#fff;border-color:#d44c47}
+  [data-theme="dark"] .b-ignore.on{background:#b73e39;border-color:#b73e39;color:#fff}
+  .b-snooze{background:var(--surface);color:var(--ink);border-color:var(--hairline);box-shadow:var(--lift)}
+  .b-snooze.on{background:#fdf1d8;color:#8a6414;border-color:#f3e2b3}
+  [data-theme="dark"] .b-snooze.on{background:#3a2f14;color:#e8c26a;border-color:#4d3f1c}
+  .b-undo{background:transparent;color:var(--muted);border-color:transparent;display:none;align-items:center;gap:6px}
+  .b-undo:hover{border-color:var(--hairline)}
+  .card.approved .b-undo,.card.ignored .b-undo,.card.snoozed .b-undo{display:flex}
+  body.resolved .btns,body.resolved .cmdbar,body.resolved .kbd-hint{display:none}
+  body.resolved{padding-bottom:20px}
+  .state.applied-c{color:var(--green)}
+  .empty-state{color:var(--muted);padding:40px;text-align:center;border:1px dashed var(--hairline);border-radius:12px;font-size:15px}
+  .kbd-hint{font-size:13px;color:var(--faint);margin:10px 0 0}
+  .kbd-hint kbd{font-family:var(--mono);font-size:12px;background:var(--surface);border:1px solid var(--hairline);border-bottom-width:2px;border-radius:4px;padding:1px 5px}
+
+  .stickybar{position:fixed;top:0;left:0;right:0;z-index:40;background:var(--surface);border-bottom:1px solid var(--hairline);box-shadow:var(--lift);transform:translateY(-110%);transition:transform .22s ease}
+  .stickybar.show{transform:none}
+  .stickybar .inner{max-width:1000px;margin:0 auto;padding:8px 24px 6px;display:flex;align-items:center;gap:14px}
+  .stickybar .statsrow{max-width:1000px;margin:0 auto;padding:0 24px 8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+  .stickybar .statsrow b{font-weight:700;font-size:13px}
+  .stickybar .statsrow .sd{width:1px;height:12px;background:var(--hairline)}
+  .stickybar .t{font-size:14px;font-weight:600;white-space:nowrap}
+  .stickybar .track{flex:1;height:6px;border-radius:9999px;background:var(--soft);overflow:hidden}
+  .stickybar .fillbar{height:100%;width:0;border-radius:9999px;background:var(--primary);transition:width .3s ease}
+  .stickybar .pct{font-size:13px;font-weight:600;color:var(--muted);min-width:88px;text-align:right;white-space:nowrap}
+  /* Command bar — floating white toast, full width for buttons */
+  .cmdbar{position:fixed;left:50%;transform:translateX(-50%);bottom:20px;width:min(952px,calc(100% - 48px));background:var(--surface);border:1px solid var(--hairline);border-radius:16px;box-shadow:var(--lift2);padding:12px 16px;display:flex;align-items:center;gap:12px}
+  .cmd{flex:1;font-family:var(--mono);font-size:13px;line-height:1.5;background:var(--soft);border-radius:8px;padding:10px 14px;overflow-x:auto;white-space:nowrap;color:var(--ink2);user-select:none;-webkit-user-select:none;cursor:default}
+  .cmd .p{color:var(--faint)}
+  .cmd.empty{color:var(--faint)}
+  .cmdbar .util{font-size:14px;font-weight:500;background:var(--surface);color:var(--ink);border:1px solid var(--hairline);border-radius:8px;padding:8px 14px}
+  .cmdbar .b-copy{font-size:14px;font-weight:500;background:var(--primary);color:var(--on-primary);border:1px solid var(--primary);border-radius:8px;padding:8px 14px;transition:background .12s,opacity .12s}
+  .cmdbar .b-copy:active:not(:disabled){background:var(--primary-active)}
+  .cmdbar button:disabled{opacity:.45;cursor:not-allowed}
+  .cmdbar .b-copy:disabled{background:var(--faint);border-color:var(--faint)}
+  @media(max-width:840px){
+    .stats{grid-template-columns:repeat(2,1fr)}
+  }
+  @media(max-width:600px){
+    h1{font-size:36px;letter-spacing:-1px}
+    .hero .wrap{flex-wrap:wrap}
+    .stats{grid-template-columns:1fr}
+    .cmdbar{flex-wrap:wrap;width:calc(100% - 24px)}
+    .cmdbar .b-copy{flex:1;text-align:center}
+    body{padding-bottom:210px}
+  }
+</style>
+</head>
+<body>
+
+<div class="stickybar" id="stickybar">
+  <div class="inner">
+    <span class="t">Proposed changes</span>
+    <div class="track"><div class="fillbar" id="stickyfill"></div></div>
+    <span class="pct" id="stickypct">0% reviewed</span>
+  </div>
+  <div class="statsrow" id="stickystats"></div>
+</div>
+
+<div class="hero" id="hero">
+  <div class="wrap">
+    <div class="txt">
+      <div class="eyebrow">Nightly memory consolidation</div>
+      <h1>While you slept</h1>
+      <div class="meta" id="meta"></div>
+    </div>
+    <div class="ring" aria-label="review progress">
+      <svg viewBox="0 0 88 88">
+        <circle cx="44" cy="44" r="38" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="5"/>
+        <circle id="ringfill" cx="44" cy="44" r="38" fill="none" stroke="#62aef0" stroke-width="5"
+          stroke-linecap="round" stroke-dasharray="238.8" stroke-dashoffset="238.8"
+          transform="rotate(-90 44 44)" style="transition:stroke-dashoffset .35s ease"/>
+      </svg>
+      <div class="lbl"><span class="n" id="ringn">0</span><span class="t">reviewed</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="stats" id="stats"></div>
+
+  <div class="sechead">Applied automatically</div>
+  <div class="autoband" id="autobox"></div>
+
+  <div class="sechead">Proposed changes — your call</div>
+  <div id="cards"></div>
+  <div class="kbd-hint">Keyboard: <kbd>↑</kbd><kbd>↓</kbd> move · <kbd>A</kbd> approve · <kbd>I</kbd> ignore · <kbd>S</kbd> snooze · <kbd>U</kbd> undo &nbsp;—&nbsp; Ignore = never asked again.</div>
+</div>
+
+<div class="cmdbar">
+  <div class="cmd empty" id="cmd" aria-live="polite"><span class="p">$</span> approve or reject items to build your command</div>
+  <button class="util" id="approveAll">Approve all</button>
+  <button class="util" id="reset">Reset</button>
+  <button class="b-copy" id="copy">Copy command</button>
+</div>
+
+<script>
+const META = __META_JSON__;
+const PROPOSALS = __PROPOSALS_JSON__;
+const state = {}; /* id -> 'approved' | 'ignored' | 'snoozed' | undefined; in-memory only */
+let focusIdx = -1;
+const RESOLVED = !!META.resolved; /* outcome recorded: read-only record mode */
+if(RESOLVED){
+  document.body.classList.add('resolved');
+  for(const p of PROPOSALS){
+    if(p.decision==='applied') state[p.id]='approved';
+    else if(p.decision==='ignored') state[p.id]='ignored';
+    else if(p.decision==='snoozed') state[p.id]='snoozed';
+  }
+}
+
+/* Sticker constellation in the hero — decoration only */
+(function(){
+  const cols=['#62aef0','#d6b6f6','#ff64c8','#dd5b00','#2a9d99','#1aae39'];
+  const hero=document.getElementById('hero');
+  for(let i=0;i<14;i++){
+    const s=document.createElement('span');s.className='star';s.textContent=Math.random()>.5?'✦':'✧';
+    s.style.color=cols[i%cols.length];
+    s.style.left=(3+Math.random()*94)+'%';s.style.top=(6+Math.random()*80)+'%';
+    s.style.fontSize=(9+Math.random()*9)+'px';s.style.animationDelay=(Math.random()*3)+'s';
+    hero.appendChild(s);
+  }
+})();
+
+/* Theme follows the OS preference silently, updating live if it changes */
+const mq=matchMedia('(prefers-color-scheme: dark)');
+const applyTheme=()=>{document.documentElement.dataset.theme=mq.matches?'dark':''};
+applyTheme();mq.addEventListener('change',applyTheme);
+
+document.getElementById('meta').innerHTML =
+  `${META.date} · dreamed at <b>${META.dreamed_at}</b> · <b>${META.sessions}</b> sessions read · ${META.projects}`+
+  (RESOLVED?` · <b>resolved ${esc(META.outcome_at||'')}</b>`:'');
+
+function esc(s){const d=document.createElement('div');d.textContent=s??'';return d.innerHTML}
+const GLYPH={ADD:'＋',UPDATE:'↻',DELETE:'－',MERGE:'⇄'};
+
+function renderStats(){
+  const decided=Object.values(state).filter(Boolean).length;
+  document.getElementById('stats').innerHTML=`
+    <div class="stat"><div class="n" style="color:var(--sky)">${META.sessions}</div><div class="sep"></div><div class="l">Sessions read</div></div>
+    <div class="stat"><div class="n" style="color:#a06be0">${PROPOSALS.length}</div><div class="sep"></div><div class="l">Proposed changes</div></div>
+    <div class="stat"><div class="n" style="color:var(--green)">${(META.auto_applied||[]).length}</div><div class="sep"></div><div class="l">Applied automatically</div></div>
+    <div class="stat"><div class="n" style="color:var(--pink)">${PROPOSALS.length-decided}</div><div class="sep"></div><div class="l">Awaiting review</div></div>`;
+  document.getElementById('ringn').textContent=decided+'/'+PROPOSALS.length;
+  document.getElementById('ringfill').style.strokeDashoffset=238.8*(PROPOSALS.length?1-decided/PROPOSALS.length:0);
+  const frac=PROPOSALS.length?decided/PROPOSALS.length:1;
+  document.getElementById('stickyfill').style.width=(frac*100)+'%';
+  const remaining=PROPOSALS.length-decided;
+  document.title=RESOLVED?'🌙 Dream report · resolved':(remaining?`(${remaining}) `:'')+'🌙 Dream report';
+  const pctEl=document.getElementById('stickypct');
+  if(RESOLVED){pctEl.textContent='Resolved ✓';pctEl.style.color='var(--green)';document.getElementById('stickyfill').style.width='100%';document.getElementById('stickyfill').style.background='var(--green)'}
+  else if(PROPOSALS.length&&decided===PROPOSALS.length){pctEl.textContent='All reviewed ✓';pctEl.style.color='var(--green)';document.getElementById('stickyfill').style.background='var(--green)'}
+  else{pctEl.textContent=Math.round(frac*100)+'% reviewed';pctEl.style.color='';document.getElementById('stickyfill').style.background=''}
+  document.getElementById('stickystats').innerHTML=
+    `<span><b style="color:var(--sky)">${META.sessions}</b> sessions read</span><span class="sd"></span>`+
+    `<span><b style="color:#a06be0">${PROPOSALS.length}</b> proposed</span><span class="sd"></span>`+
+    `<span><b style="color:var(--green)">${(META.auto_applied||[]).length}</b> auto-applied</span><span class="sd"></span>`+
+    `<span><b style="color:var(--pink)">${PROPOSALS.length-decided}</b> awaiting</span>`;
+}
+
+function renderAuto(){
+  const a=META.auto_applied||[];
+  document.getElementById('autobox').innerHTML=
+    a.length?'<ul>'+a.map(x=>`<li>${esc(x)}</li>`).join('')+'</ul>'
+            :'Nothing was applied automatically — every finding below is a judgment call.';
+}
+
+const CATS={language:'Language',verification:'Verification',collaboration:'How to work with you',method:'Method',philosophy:'Philosophy',projects:'Projects & stack',other:'Other'};
+
+function renderCards(){
+  const rootEl=document.getElementById('cards');
+  if(!PROPOSALS.length){rootEl.innerHTML='<div class="empty-state">A quiet night. Your memory is already up to date. ✦</div>';return}
+  rootEl.innerHTML=PROPOSALS.map((p,i)=>{
+    return `
+    <div class="card" id="card-${p.id}" style="animation-delay:${Math.min(i*60,420)}ms">
+      <div class="card-top">
+        <span class="idx">${String(p.id).padStart(2,'0')}</span>
+        <div class="tile ${esc(p.action)}" role="img" aria-label="${esc(p.action)}" title="${esc(p.action)}">${GLYPH[p.action]||'•'}</div>
+        <div class="cmeta">
+          <div class="row"><span class="k">location:</span><span class="v">${esc(p.file)}</span></div>
+          <div class="row"><span class="k">project:</span><span class="v">${esc((p.source||'').replace(/^projects?:\s*/i,''))}</span></div>
+        </div>
+        <div class="hright">
+          ${p.category?`<span class="catchip">${CATS[p.category]||CATS.other}</span>`:''}
+          <div class="hrow">
+            ${RESOLVED?`<span class="verdict ${esc(p.decision||'snoozed')}">${p.decision==='applied'?'Applied ✓':p.decision==='ignored'?'Ignored':'Snoozed'}</span>`:''}
+            ${typeof p.confidence==='number'?`<div class="conf" title="Model's guess that this becomes shared memory — display only"><div class="conf-track"><div class="conf-fill" style="width:${Math.max(0,Math.min(100,p.confidence))}%"></div></div><span class="conf-n">${Math.max(0,Math.min(100,p.confidence))}%</span></div>`:''}
+          </div>
+        </div>
+      </div>
+      <div class="lbl-eyebrow">Proposed memory</div>
+      <div class="summary">${esc(p.summary)}</div>
+      ${p.detail?`<div class="detail">${esc(p.detail)}</div>`:''}
+      <div class="lbl-eyebrow ev">Evidence · your words</div>
+      <div class="evidence"><div class="q">“${esc(p.evidence)}”</div></div>
+      <div class="btns">
+        <button class="pill b-approve" data-id="${p.id}" data-act="approved">Approve</button>
+        <button class="pill b-ignore" data-id="${p.id}" data-act="ignored">Ignore</button>
+        <button class="pill b-snooze" data-id="${p.id}" data-act="snoozed">Snooze</button>
+        <button class="pill b-undo" data-id="${p.id}" data-act="undo" aria-label="Undo decision" title="Undo">↺ Undo</button>
+        ${p.carried?`<span class="carry n${Math.min(p.carried,3)}">${p.carried>=3?'Last night':'Night '+esc(String(p.carried))+'/3'}</span>`:''}
+      </div>
+    </div>`}).join('');
+  if(!RESOLVED) rootEl.addEventListener('click',e=>{
+    const b=e.target.closest('button[data-id]');if(!b)return;
+    const id=b.dataset.id,act=b.dataset.act;
+    if(act==='undo') state[id]=undefined;
+    else state[id]=(state[id]===act)?undefined:act; /* click again also undoes */
+    focusIdx=PROPOSALS.findIndex(p=>String(p.id)===id);
+    sync();
+  });
+}
+
+function sync(){
+  PROPOSALS.forEach((p,i)=>{
+    const st=state[p.id],card=document.getElementById('card-'+p.id);
+    card.className='card'+(st?' '+st:'')+(i===focusIdx?' focused':'');
+    card.querySelector('.b-approve').classList.toggle('on',st==='approved');
+    card.querySelector('.b-ignore').classList.toggle('on',st==='ignored');
+    card.querySelector('.b-snooze').classList.toggle('on',st==='snoozed');
+  });
+  const ok=PROPOSALS.filter(p=>state[p.id]==='approved').map(p=>p.id);
+  const no=PROPOSALS.filter(p=>state[p.id]==='ignored').map(p=>p.id);
+  const cmd=document.getElementById('cmd');
+  let t='';
+  if(ok.length===PROPOSALS.length) t='/dream apply all';
+  else if(ok.length) t='/dream apply '+ok.join(',');
+  if(no.length) t=(t?t+' ':'/dream ')+'ignore '+no.join(',');
+  if(t){cmd.className='cmd';cmd.innerHTML='<span class="p">$</span> '+t;cmd.dataset.copy=t}
+  else{cmd.className='cmd empty';cmd.innerHTML='<span class="p">$</span> approve or reject items to build your command';delete cmd.dataset.copy}
+  const undecided=PROPOSALS.filter(p=>!state[p.id]).length;
+  if(undecided){cmd.className='cmd empty';cmd.innerHTML='<span class="p">$</span> decide all cards to unlock the command — '+undecided+' remaining';delete cmd.dataset.copy;}
+  document.getElementById('copy').disabled=!!undecided||!t;
+  document.getElementById('reset').disabled=!Object.values(state).some(Boolean);
+  document.getElementById('approveAll').disabled=!PROPOSALS.length;
+  renderStats();
+}
+
+/* Keyboard triage */
+document.addEventListener('keydown',e=>{
+  if(RESOLVED)return;
+  if(!PROPOSALS.length||/input|textarea/i.test(e.target.tagName))return;
+  const k=e.key.toLowerCase();
+  if(k==='arrowdown'||k==='j'){focusIdx=Math.min(focusIdx+1,PROPOSALS.length-1)}
+  else if(k==='arrowup'||k==='k'){focusIdx=Math.max(focusIdx-1,0)}
+  else if(k==='a'&&focusIdx>=0){state[PROPOSALS[focusIdx].id]='approved'}
+  else if((k==='i'||k==='r')&&focusIdx>=0){state[PROPOSALS[focusIdx].id]='ignored'}
+  else if(k==='s'&&focusIdx>=0){state[PROPOSALS[focusIdx].id]='snoozed'}
+  else if(k==='u'&&focusIdx>=0){state[PROPOSALS[focusIdx].id]=undefined}
+  else return;
+  e.preventDefault();sync();
+  if(focusIdx>=0)document.getElementById('card-'+PROPOSALS[focusIdx].id).scrollIntoView({block:'center',behavior:'smooth'});
+});
+
+document.getElementById('approveAll').onclick=()=>{PROPOSALS.forEach(p=>state[p.id]='approved');sync()};
+document.getElementById('reset').onclick=()=>{PROPOSALS.forEach(p=>state[p.id]=undefined);sync()};
+document.getElementById('copy').onclick=async()=>{
+  const t=document.getElementById('cmd').dataset.copy;if(!t)return;
+  const b=document.getElementById('copy');
+  try{await navigator.clipboard.writeText(t)}
+  catch(e){const ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove()}
+  b.textContent='Copied ✓';setTimeout(()=>{b.textContent='Copy command'},1600);
+
+};
+
+
+/* Sticky progress header appears once the hero scrolls away */
+const heroEl=document.getElementById('hero');
+new IntersectionObserver(([e])=>{
+  document.getElementById('stickybar').classList.toggle('show',!e.isIntersecting);
+},{threshold:0}).observe(heroEl);
+
+renderAuto();renderCards();sync();
+</script>
+</body>
+</html>
