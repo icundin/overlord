@@ -2,6 +2,10 @@
 
 One changelog for the collection; every entry names the artifact it concerns.
 
+# 1.2.0 — 2026-08-12
+
+- Dream: The report's "Applied automatically" block now appears only when the run actually auto-applied a safe fix, styled as a warning (orange, ⚠ per item, matching stat colors) — unattended repairs are an anomaly worth attention, not a nightly card saying "nothing happened". The zero in the stats row remains as the quiet-night attestation, so no information is lost. Archived reports are never rewritten: each stays a snapshot of the skill's behavior the night it ran.
+
 # 1.1.0 — 2026-08-12
 
 - Dream: Memory page — every run now ends by regenerating `~/.claude/memory/memory.html` with the new `scripts/build_memory_page.py` + `assets/memory-template.html`: a standalone index of active facts grouped by category, the ignored list, and a night-by-night chronology rebuilt from the dated archives, with a confidence-calibration line. The archives held the history but nothing showed the current state of memory in one view.
