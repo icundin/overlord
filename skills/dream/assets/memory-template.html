@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shared memory</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --primary:#0075de; --primary-active:#005bab; --on-primary:#ffffff; --night:#213183;
+    --canvas:#f6f5f4; --surface:#ffffff; --soft:#f6f5f4;
+    --ink:#000000; --ink2:#31302e; --muted:#615d59; --faint:#a39e98; --hairline:#e6e6e6;
+    --sky:#62aef0; --purple:#d6b6f6; --pink:#ff64c8; --orange:#dd5b00; --teal:#2a9d99; --green:#1aae39;
+    --sans:'Inter',-apple-system,system-ui,'Segoe UI',Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+    --lift:0 .175px 1px rgba(0,0,0,.01),0 .8px 3px rgba(0,0,0,.02),0 2px 8px rgba(0,0,0,.027),0 4px 18px rgba(0,0,0,.04);
+  }
+  [data-theme="dark"]{
+    --canvas:#191919; --surface:#202020; --soft:#252525;
+    --ink:#eae9e7; --ink2:#cfcdca; --muted:#9b9894; --faint:#6e6b67; --hairline:#333333;
+    --primary:#4da3e2; --primary-active:#3a8ac6; --on-primary:#0e1a26;
+    --lift:0 2px 8px rgba(0,0,0,.4);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  body{background:var(--canvas);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.5;padding-bottom:60px;transition:background .2s}
+  .wrap{max-width:1000px;margin:0 auto;padding:0 24px}
+
+  /* Night hero — the single dark island */
+  .hero{position:relative;overflow:hidden;background:var(--night);color:#fff;padding:64px 0 56px}
+  .hero .wrap{position:relative}
+  .star{position:absolute;font-size:14px;opacity:.9;animation:tw 3.4s ease-in-out infinite}
+  @keyframes tw{0%,100%{opacity:.35}50%{opacity:.95}}
+  .eyebrow{font-size:12px;font-weight:600;letter-spacing:.125px;color:#b9c3f2;margin-bottom:14px;text-transform:uppercase}
+  h1{font-size:54px;font-weight:700;line-height:1.04;letter-spacing:-1.875px;margin-bottom:14px}
+  .meta{font-size:15px;line-height:1.33;color:#c6cdf0}
+  .meta b{font-weight:600;color:#fff}
+
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:32px 0 8px}
+  .stat{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--hairline);border-radius:12px;padding:12px 16px;box-shadow:var(--lift)}
+  .stat .n{font-size:22px;font-weight:700;line-height:1;letter-spacing:-.5px;min-width:26px;text-align:center}
+  .stat .sep{width:1px;align-self:stretch;background:var(--hairline)}
+  .stat .l{font-size:13px;line-height:1.35;color:var(--muted)}
+
+  /* Stats panels: calibration + categories */
+  .panels{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0 8px}
+  .panel{background:var(--surface);border:1px solid var(--hairline);border-radius:12px;padding:20px 24px;box-shadow:var(--lift);display:flex;flex-direction:column}
+  .ptitle{font-size:14px;font-weight:600;margin-bottom:2px}
+  .psub{font-size:12.5px;color:var(--faint);margin-bottom:16px}
+  .calib{display:flex;align-items:flex-end;gap:8px;flex:1;min-height:110px}
+  .cbar{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:flex-end}
+  .cbar .track{width:100%;max-width:34px;flex:1;background:var(--soft);border-radius:6px;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden}
+  .cbar .fill{background:var(--primary);border-radius:6px 6px 0 0;min-height:2px}
+  .cbar.empty .track{opacity:.45}
+  .cbar .pc{font-size:11px;font-weight:600;color:var(--muted)}
+  .cbar .lb{font-size:11px;color:var(--faint)}
+  .pfoot{font-size:13px;color:var(--muted);margin-top:14px;line-height:1.5}
+  .pfoot b{color:var(--ink2)}
+  .catrow{display:flex;align-items:center;gap:10px;padding:5px 0;font-size:13.5px}
+  .catrow .dot{width:9px;height:9px;border-radius:9999px;flex:none}
+  .catrow .nm{min-width:150px;color:var(--ink2)}
+  .catrow .track{flex:1;height:8px;border-radius:9999px;background:var(--soft);overflow:hidden}
+  .catrow .fill{height:100%;border-radius:9999px}
+  .catrow .ct{font-size:12px;font-weight:600;color:var(--faint);min-width:22px;text-align:right}
+
+  /* Tabs */
+  .tabs{display:flex;gap:8px;margin:36px 0 4px;border-bottom:1px solid var(--hairline);padding-bottom:0}
+  .tab{cursor:pointer;font-family:var(--sans);font-size:15px;font-weight:500;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;padding:10px 14px;margin-bottom:-1px}
+  .tab:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+  .tab.on{color:var(--ink);font-weight:600;border-bottom-color:var(--primary)}
+
+  .sechead{font-size:22px;font-weight:700;line-height:1.27;letter-spacing:-.25px;margin:36px 0 16px;display:flex;align-items:center;gap:10px}
+  .sechead small{font-size:13px;font-weight:400;letter-spacing:0;color:var(--faint)}
+
+  /* Collapsibles: native details/summary, custom chevron on the right */
+  summary{list-style:none;cursor:pointer;user-select:none;-webkit-user-select:none}
+  summary::-webkit-details-marker{display:none}
+  summary:focus-visible{outline:2px solid var(--primary);outline-offset:2px;border-radius:6px}
+  .chev{margin-left:auto;flex:none;color:var(--faint);font-size:13px;transition:transform .15s ease;transform:rotate(0)}
+  details[open] > summary .chev{transform:rotate(90deg)}
+  .util{cursor:pointer;font-family:var(--sans);font-size:13px;font-weight:500;background:var(--surface);color:var(--ink);border:1px solid var(--hairline);border-radius:8px;padding:5px 12px;box-shadow:var(--lift)}
+  .util:active{transform:scale(.97)}
+
+  /* Fact rows — summary always on its own line, metadata below */
+  .group{margin-bottom:10px}
+  .ghead{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);margin:22px 0 8px;padding:4px 2px}
+  .ghead .dot{width:8px;height:8px;border-radius:9999px;flex:none}
+  .frow{background:var(--surface);border:1px solid var(--hairline);border-radius:10px;padding:12px 16px;margin-bottom:8px}
+  .frow .s{display:block;font-size:14.5px;font-weight:500;line-height:1.45;margin-bottom:7px}
+  .frow .m{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .frow .f{font-family:var(--mono);font-size:11.5px;color:var(--faint)}
+  .frow .d{font-size:12px;color:var(--faint);margin-left:auto;white-space:nowrap}
+  .irow{position:relative;background:var(--surface);border:1px solid var(--hairline);border-radius:10px;padding:10px 16px 10px 20px;margin-bottom:8px;display:flex;align-items:baseline;gap:12px;opacity:.75}
+  .irow::before{content:"";position:absolute;left:0;top:9px;bottom:9px;width:3px;border-radius:9999px;background:#d44c47}
+  [data-theme="dark"] .irow::before{background:#eb7b76}
+  .irow .s{font-size:14px;flex:1;min-width:240px;color:var(--ink2)}
+  .irow .d{font-size:12px;color:var(--faint);white-space:nowrap}
+
+  /* Chronology */
+  .night{background:var(--surface);border:1px solid var(--hairline);border-radius:12px;padding:16px 24px;margin-bottom:16px;box-shadow:var(--lift)}
+  .nhead{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:4px 0}
+  .nhead .dt{font-size:17px;font-weight:700;letter-spacing:-.2px}
+  .nhead .right{margin-left:auto;display:flex;align-items:center;gap:12px}
+  .nhead .cnt{font-size:12.5px;color:var(--faint)}
+  .badge{font-size:10px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;border-radius:9999px;padding:2px 9px;white-space:nowrap}
+  .badge.deep{color:#8a6414;background:#fdf1d8}
+  [data-theme="dark"] .badge.deep{color:#e8c26a;background:#3a2f14}
+  .badge.wait{color:#8a6414;background:#fdf1d8}
+  [data-theme="dark"] .badge.wait{color:#e8c26a;background:#3a2f14}
+  .nmeta{display:flex;flex-wrap:wrap;gap:14px 32px;padding:12px 0 14px;border-bottom:1px solid var(--hairline);margin-bottom:6px}
+  .nmeta .mi{display:flex;flex-direction:column;gap:4px;min-width:0}
+  .nmeta .k{font-size:10px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--faint)}
+  .nmeta .v{font-size:13px;color:var(--ink2)}
+  .pchips{display:flex;flex-wrap:wrap;gap:6px}
+  .pchip{font-size:11px;color:var(--muted);background:var(--soft);border:1px solid var(--hairline);border-radius:9999px;padding:2px 9px;white-space:nowrap}
+  .prow{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--hairline);font-size:14px}
+  .prow:last-child{border-bottom:none}
+  /* Decision icon: color encodes the verdict, action lives in the tooltip */
+  .dicon{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex:none}
+  .dicon.applied{background:#d5f0dc;color:#116b2c}
+  .dicon.ignored{background:#fde3e2;color:#b73e39}
+  .dicon.snoozed{background:#fdf1d8;color:#8a6414}
+  .dicon.pending{background:var(--soft);color:var(--faint)}
+  [data-theme="dark"] .dicon.applied{background:#1e3a27;color:#7fe09a}
+  [data-theme="dark"] .dicon.ignored{background:#47201e;color:#eb7b76}
+  [data-theme="dark"] .dicon.snoozed{background:#3a2f14;color:#e8c26a}
+  .prow .s{flex:1;min-width:220px}
+  .prow .cf{font-size:12px;font-weight:600;color:var(--faint);min-width:34px;text-align:right}
+  .prow .aux{font-size:11px;font-weight:600;color:var(--faint);white-space:nowrap}
+  .prow .carry{font-size:11px;font-weight:600;color:#8a6414;white-space:nowrap}
+  [data-theme="dark"] .prow .carry{color:#e8c26a}
+
+  .empty-state{color:var(--muted);padding:40px;text-align:center;border:1px dashed var(--hairline);border-radius:12px;font-size:15px}
+  .gen{font-size:12.5px;color:var(--faint);margin-top:40px;text-align:center}
+  .notes{font-size:12.5px;color:#8a6414;margin-top:8px;text-align:center}
+  [data-theme="dark"] .notes{color:#e8c26a}
+  @media(max-width:840px){.panels{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:600px){h1{font-size:36px;letter-spacing:-1px}.stats{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="hero" id="hero">
+  <div class="wrap">
+    <div class="eyebrow">Shared memory · living record</div>
+    <h1>What Claude knows</h1>
+    <div class="meta" id="meta"></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="stats" id="stats"></div>
+  <div class="panels">
+    <div class="panel">
+      <div class="ptitle">Confidence calibration</div>
+      <div class="psub">Of resolved proposals at each confidence level, how many you applied</div>
+      <div class="calib" id="calib"></div>
+      <div class="pfoot" id="calibfoot"></div>
+    </div>
+    <div class="panel">
+      <div class="ptitle">Memory by category</div>
+      <div class="psub">Live facts, grouped by the closed category list</div>
+      <div id="catbars"></div>
+    </div>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab on" data-tab="current" role="tab">Current memory</button>
+    <button class="tab" data-tab="history" role="tab">Chronology</button>
+  </div>
+
+  <div id="view-current">
+    <div class="sechead">Live facts <small id="factcount"></small></div>
+    <div id="facts"></div>
+    <details id="ignored-sec">
+      <summary class="sechead">Ignored <small id="igncount"></small><span class="chev">▶</span></summary>
+      <div id="ignored"></div>
+    </details>
+  </div>
+
+  <div id="view-history" hidden>
+    <div class="sechead">Night by night <small id="nightcount"></small>
+      <button class="util" id="toggleNights" style="margin-left:auto">Expand all</button>
+    </div>
+    <div id="nights"></div>
+  </div>
+
+  <div class="notes" id="notes"></div>
+  <div class="gen" id="gennote"></div>
+</div>
+
+<script>
+const DATA = __DATA_JSON__;
+
+/* Theme follows the OS preference silently, updating live if it changes */
+const mq=matchMedia('(prefers-color-scheme: dark)');
+const applyTheme=()=>{document.documentElement.dataset.theme=mq.matches?'dark':''};
+applyTheme();mq.addEventListener('change',applyTheme);
+
+/* Sticker constellation in the hero — decoration only */
+(function(){
+  const cols=['#62aef0','#d6b6f6','#ff64c8','#dd5b00','#2a9d99','#1aae39'];
+  const hero=document.getElementById('hero');
+  for(let i=0;i<14;i++){
+    const s=document.createElement('span');s.className='star';s.textContent=Math.random()>.5?'✦':'✧';
+    s.style.color=cols[i%cols.length];
+    s.style.left=(3+Math.random()*94)+'%';s.style.top=(6+Math.random()*80)+'%';
+    s.style.fontSize=(9+Math.random()*9)+'px';s.style.animationDelay=(Math.random()*3)+'s';
+    hero.appendChild(s);
+  }
+})();
+
+function esc(s){const d=document.createElement('div');d.textContent=s??'';return d.innerHTML}
+const DICON={applied:'✓',ignored:'✕',snoozed:'☾',pending:'·'};
+const CATS={language:'Language',verification:'Verification',collaboration:'How to work with you',method:'Method',philosophy:'Philosophy',projects:'Projects & stack',other:'Other'};
+const CATCOL={language:'var(--sky)',verification:'var(--teal)',collaboration:'#a06be0',method:'var(--orange)',philosophy:'var(--pink)',projects:'var(--green)',other:'var(--faint)'};
+
+const allProposals=DATA.nights.flatMap(n=>n.proposals);
+const resolved=allProposals.filter(p=>p.decision==='applied'||p.decision==='ignored');
+
+document.getElementById('meta').innerHTML=
+  `<b>${DATA.facts.length}</b> live facts · <b>${DATA.ignored.length}</b> ignored · `+
+  `<b>${DATA.nights.length}</b> nights dreamed · <b>${allProposals.length}</b> proposals reviewed`;
+
+document.getElementById('stats').innerHTML=`
+  <div class="stat"><div class="n" style="color:var(--green)">${DATA.facts.length}</div><div class="sep"></div><div class="l">Live facts</div></div>
+  <div class="stat"><div class="n" style="color:#d44c47">${DATA.ignored.length}</div><div class="sep"></div><div class="l">Ignored, final</div></div>
+  <div class="stat"><div class="n" style="color:var(--sky)">${DATA.nights.length}</div><div class="sep"></div><div class="l">Nights dreamed</div></div>
+  <div class="stat"><div class="n" style="color:#a06be0">${allProposals.length}</div><div class="sep"></div><div class="l">Proposals reviewed</div></div>`;
+
+/* Calibration: applied rate per confidence decade, resolved proposals only */
+(function(){
+  const box=document.getElementById('calib');
+  const buckets={};
+  for(const p of resolved){
+    if(typeof p.confidence!=='number')continue;
+    const b=Math.max(10,Math.min(90,Math.round(p.confidence/10)*10));
+    (buckets[b]=buckets[b]||{a:0,t:0}).t++;
+    if(p.decision==='applied')buckets[b].a++;
+  }
+  box.innerHTML=[10,20,30,40,50,60,70,80,90].map(b=>{
+    const d=buckets[b];
+    const pct=d?Math.round(100*d.a/d.t):0;
+    return `<div class="cbar${d?'':' empty'}" title="${d?`${d.a}/${d.t} applied`:'no data'}">
+      <span class="pc">${d?pct+'%':'·'}</span>
+      <div class="track"><div class="fill" style="height:${d?Math.max(pct,3):0}%"></div></div>
+      <span class="lb">${b}</span></div>`;
+  }).join('');
+  const hi=resolved.filter(p=>typeof p.confidence==='number'&&p.confidence>=50);
+  const lo=resolved.filter(p=>typeof p.confidence==='number'&&p.confidence<50);
+  const rate=g=>g.length?Math.round(100*g.filter(p=>p.decision==='applied').length/g.length)+'%':'—';
+  document.getElementById('calibfoot').innerHTML=
+    `Confidence ≥50 became memory <b>${rate(hi)}</b> of the time (${hi.filter(p=>p.decision==='applied').length}/${hi.length}) · `+
+    `below 50, <b>${rate(lo)}</b> (${lo.filter(p=>p.decision==='applied').length}/${lo.length})`;
+})();
+
+/* Category distribution of live facts */
+(function(){
+  const counts={};
+  for(const f of DATA.facts)counts[f.category||'other']=(counts[f.category||'other']||0)+1;
+  const max=Math.max(1,...Object.values(counts));
+  document.getElementById('catbars').innerHTML=Object.entries(counts)
+    .sort((a,b)=>b[1]-a[1])
+    .map(([c,n])=>`<div class="catrow"><span class="dot" style="background:${CATCOL[c]||CATCOL.other}"></span>
+      <span class="nm">${CATS[c]||CATS.other}</span>
+      <div class="track"><div class="fill" style="width:${100*n/max}%;background:${CATCOL[c]||CATCOL.other}"></div></div>
+      <span class="ct">${n}</span></div>`).join('');
+})();
+
+/* Current memory tab — collapsible category groups, summary on its own line */
+(function(){
+  const order=Object.keys(CATS);
+  const groups=order.map(c=>[c,DATA.facts.filter(f=>(f.category||'other')===c)])
+    .filter(([,fs])=>fs.length).sort((a,b)=>b[1].length-a[1].length);
+  document.getElementById('factcount').textContent=DATA.facts.length+' files in facts/';
+  document.getElementById('facts').innerHTML=groups.length?groups.map(([c,fs])=>`
+    <details class="group" open>
+      <summary class="ghead"><span class="dot" style="background:${CATCOL[c]}"></span>${CATS[c]} · ${fs.length}<span class="chev">▶</span></summary>
+      ${fs.slice().sort((a,b)=>(b.applied||'').localeCompare(a.applied||'')||a.file.localeCompare(b.file)).map(f=>`<div class="frow">
+        <span class="s">${esc(f.summary)}</span>
+        <div class="m">
+          <span class="f">${esc(f.file)}</span>
+          ${f.applied?`<span class="d">${esc(f.applied)}</span>`:''}
+        </div>
+      </div>`).join('')}
+    </details>`).join('')
+    :'<div class="empty-state">No facts on disk yet. ✦</div>';
+  document.getElementById('igncount').textContent=DATA.ignored.length+' · final — never proposed again';
+  document.getElementById('ignored').innerHTML=DATA.ignored.length?
+    DATA.ignored.map(r=>`<div class="irow">
+      <span class="s">${esc(r.summary)}</span><span class="d">${esc(r.date)}</span>
+    </div>`).join('')
+    :'<div class="empty-state">Nothing ignored yet.</div>';
+})();
+
+/* Chronology tab — one collapsible card per night, latest open by default */
+(function(){
+  document.getElementById('nightcount').textContent=DATA.nights.length+' dream reports archived';
+  document.getElementById('nights').innerHTML=DATA.nights.length?DATA.nights.map((n,i)=>{
+    const m=n.meta||{};
+    return `<details class="night"${i===0?' open':''}>
+      <summary class="nhead">
+        <span class="dt">${esc(m.date||n.date)}</span>
+        <span class="right">
+          ${m.title?`<span class="badge deep">${esc(m.title)}</span>`:''}
+          <span class="cnt">${n.proposals.length} proposal${n.proposals.length===1?'':'s'}</span>
+          ${m.resolved?'':'<span class="badge wait">awaiting review</span>'}
+          <span class="chev">▶</span>
+        </span>
+      </summary>
+      <div class="nmeta">
+        <div class="mi"><span class="k">Sessions read</span><span class="v">${m.sessions??'?'}</span></div>
+        <div class="mi"><span class="k">Dreamed at</span><span class="v">${esc(m.dreamed_at||'—')}</span></div>
+        ${m.resolved?`<div class="mi"><span class="k">Resolved</span><span class="v">${esc(m.outcome_at||'—')}</span></div>`:''}
+        <div class="mi"><span class="k">Projects</span><div class="pchips">${(m.projects||'').split(',').map(p=>p.trim()).filter(Boolean).map(p=>`<span class="pchip">${esc(p)}</span>`).join('')||'<span class="v">—</span>'}</div></div>
+      </div>
+      ${(m.auto_applied||[]).map(a=>`<div class="prow"><span class="dicon applied" title="auto-applied safe fix">✓</span><span class="s">${esc(a)}</span><span class="aux">auto</span></div>`).join('')}
+      ${n.proposals.map(p=>{const d=p.decision||'pending';return `<div class="prow">
+        <span class="dicon ${esc(d)}" title="${esc(p.action)} · ${esc(d)}">${DICON[d]||'·'}</span>
+        <span class="s">${esc(p.summary)}</span>
+        ${p.carried?`<span class="carry">night ${esc(String(p.carried))}/3</span>`:''}
+        <span class="cf">${typeof p.confidence==='number'?p.confidence+'%':''}</span>
+      </div>`}).join('')||'<div class="prow"><span class="s" style="color:var(--faint)">A quiet night — no proposals.</span></div>'}
+    </details>`}).join('')
+    :'<div class="empty-state">No archived dream reports yet.</div>';
+
+  const btn=document.getElementById('toggleNights');
+  const sync=()=>{
+    const d=[...document.querySelectorAll('details.night')];
+    btn.textContent=d.some(x=>!x.open)?'Expand all':'Collapse all';
+    btn.hidden=!d.length;
+  };
+  btn.onclick=()=>{
+    const d=[...document.querySelectorAll('details.night')];
+    const anyClosed=d.some(x=>!x.open);
+    d.forEach(x=>x.open=anyClosed);
+    sync();
+  };
+  document.getElementById('nights').addEventListener('toggle',sync,true);
+  sync();
+})();
+
+/* Tabs */
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===t));
+  document.getElementById('view-current').hidden=t.dataset.tab!=='current';
+  document.getElementById('view-history').hidden=t.dataset.tab!=='history';
+});
+
+if(DATA.notes.length)document.getElementById('notes').textContent=DATA.notes.join(' · ');
+document.getElementById('gennote').textContent='Regenerated from disk on '+DATA.generated_at+' — facts/, ignored.md and archive/ are the source of truth.';
+document.title='🧠 Shared memory · '+DATA.facts.length+' facts';
+</script>
+</body>
+</html>

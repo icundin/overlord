@@ -2,6 +2,13 @@
 
 One changelog for the collection; every entry names the artifact it concerns.
 
+# 1.1.0 — 2026-08-12
+
+- Dream: Memory page — every run now ends by regenerating `~/.claude/memory/memory.html` with the new `scripts/build_memory_page.py` + `assets/memory-template.html`: a standalone index of active facts grouped by category, the ignored list, and a night-by-night chronology rebuilt from the dated archives, with a confidence-calibration line. The archives held the history but nothing showed the current state of memory in one view.
+- Dream: The page is built by a deterministic, stdlib-only script from what's on disk — the model is forbidden from hand-building or editing `memory.html`, so the page can never disagree with the memory store.
+- Dream: Completion checklist (non-interactive) extended — a fresh `memory.html` is now a verified output of every run.
+- Dream: Ignore format in SKILL.md now spells out the real `ignored.md` line shape (`- <date>: <file-slug> — <summary>`), matching what the memory-page script parses — the older wording omitted the slug, and slug-less lines would vanish from the page's ignored list.
+
 # 1.0.0 — 2026-08-06
 
 - **NEW:** Skill: `/dream` — Nightly memory consolidation with mandatory user approval: reads recent session transcripts, compares against `~/.claude/memory`, and proposes one-fact memory changes with verbatim user quotes as evidence; auto-applies only index repairs and self-typo fixes.

@@ -31,6 +31,13 @@ opinion. You review, it remembers.
 - **Dated archives**: every night's questions and your answers are kept in
   `~/.claude/memory/archive/`, a browsable diary of what the machine learned
   about you and what you let it keep.
+- **Living memory page**: every run ends by regenerating
+  `~/.claude/memory/memory.html` — one standalone page indexing what Claude
+  currently knows: active facts grouped by category, the ignored list, and a
+  night-by-night chronology rebuilt from the dated archives, including how
+  well the model's confidence predicted your verdicts. Built by a
+  deterministic script from what's on disk — never written by the model by
+  hand.
 - **Two modes**: daily (24h window) and deep dream (7-day window, wider
   extraction budget) — the mode is chosen by the invoking prompt, never by
   the skill's own calendar. Scheduling belongs to your routines.
@@ -89,10 +96,12 @@ The prompt may override the window ("deep dream, 14 days").
 
 ### Security
 
-The one executable, `scripts/extract.py`, is read-only by
-construction: stdlib only, no network, no subprocess, never writes — ~50
-lines, auditable in one sitting. It exists so transcript extraction is one
-fixed, pre-approvable command instead of improvised shell.
+Both executables are stdlib-only, no network, no subprocess — auditable in
+one sitting. `scripts/extract.py` is read-only by construction (~50 lines);
+it exists so transcript extraction is one fixed, pre-approvable command
+instead of improvised shell. `scripts/build_memory_page.py` writes exactly
+one file, `~/.claude/memory/memory.html`, rendered deterministically from
+what is already on disk — no model judgment involved.
 
 ### Portability
 
