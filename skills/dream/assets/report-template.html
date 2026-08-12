@@ -53,6 +53,10 @@
   .autoband{background:var(--surface);border:1px solid var(--hairline);border-radius:12px;padding:20px 24px;font-size:15px;line-height:1.5;color:var(--ink2)}
   .autoband li{list-style:none;padding:3px 0}
   .autoband li::before{content:"✓  ";color:var(--green);font-weight:600}
+  .autoband.warn{border-color:var(--orange);background:#fdf0e5}
+  .autoband.warn li::before{content:"⚠  ";color:var(--orange)}
+  [data-theme="dark"] .autoband.warn{background:#342112;border-color:#8a4a10}
+  #autohead{color:var(--orange)}
 
   @keyframes cardin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
   .card{animation:cardin .35s ease backwards}
@@ -194,7 +198,7 @@
 <div class="wrap">
   <div class="stats" id="stats"></div>
 
-  <div class="sechead">Applied automatically</div>
+  <div class="sechead" id="autohead">⚠ Applied automatically — unattended repairs</div>
   <div class="autoband" id="autobox"></div>
 
   <div class="sechead">Proposed changes — your call</div>
@@ -254,7 +258,7 @@ function renderStats(){
   document.getElementById('stats').innerHTML=`
     <div class="stat"><div class="n" style="color:var(--sky)">${META.sessions}</div><div class="sep"></div><div class="l">Sessions read</div></div>
     <div class="stat"><div class="n" style="color:#a06be0">${PROPOSALS.length}</div><div class="sep"></div><div class="l">Proposed changes</div></div>
-    <div class="stat"><div class="n" style="color:var(--green)">${(META.auto_applied||[]).length}</div><div class="sep"></div><div class="l">Applied automatically</div></div>
+    <div class="stat"><div class="n" style="color:${(META.auto_applied||[]).length?'var(--orange)':'var(--green)'}">${(META.auto_applied||[]).length}</div><div class="sep"></div><div class="l">Applied automatically</div></div>
     <div class="stat"><div class="n" style="color:var(--pink)">${PROPOSALS.length-decided}</div><div class="sep"></div><div class="l">Awaiting review</div></div>`;
   document.getElementById('ringn').textContent=decided+'/'+PROPOSALS.length;
   document.getElementById('ringfill').style.strokeDashoffset=238.8*(PROPOSALS.length?1-decided/PROPOSALS.length:0);
@@ -269,15 +273,17 @@ function renderStats(){
   document.getElementById('stickystats').innerHTML=
     `<span><b style="color:var(--sky)">${META.sessions}</b> sessions read</span><span class="sd"></span>`+
     `<span><b style="color:#a06be0">${PROPOSALS.length}</b> proposed</span><span class="sd"></span>`+
-    `<span><b style="color:var(--green)">${(META.auto_applied||[]).length}</b> auto-applied</span><span class="sd"></span>`+
+    `<span><b style="color:${(META.auto_applied||[]).length?'var(--orange)':'var(--green)'}">${(META.auto_applied||[]).length}</b> auto-applied</span><span class="sd"></span>`+
     `<span><b style="color:var(--pink)">${PROPOSALS.length-decided}</b> awaiting</span>`;
 }
 
 function renderAuto(){
+  /* Unattended repairs are the anomaly: absent when none, warning when any */
   const a=META.auto_applied||[];
-  document.getElementById('autobox').innerHTML=
-    a.length?'<ul>'+a.map(x=>`<li>${esc(x)}</li>`).join('')+'</ul>'
-            :'Nothing was applied automatically — every finding below is a judgment call.';
+  const head=document.getElementById('autohead'),box=document.getElementById('autobox');
+  if(!a.length){head.remove();box.remove();return}
+  box.classList.add('warn');
+  box.innerHTML='<ul>'+a.map(x=>`<li>${esc(x)}</li>`).join('')+'</ul>';
 }
 
 const CATS={language:'Language',verification:'Verification',collaboration:'How to work with you',method:'Method',philosophy:'Philosophy',projects:'Projects & stack',other:'Other'};

@@ -42,7 +42,11 @@ opinion. You review, it remembers.
   extraction budget) — the mode is chosen by the invoking prompt, never by
   the skill's own calendar. Scheduling belongs to your routines.
 - **Safe fixes only**: the single autonomous power is index repair and typo
-  fixes in text the model itself wrote. Everything else waits for you.
+  fixes in text the model itself wrote. Everything else waits for you. In
+  the report these repairs surface as an anomaly: a warning-orange block
+  that exists only on nights something was actually repaired — quiet nights
+  show nothing but the zero in the stats row, which remains the nightly
+  attestation that memory wasn't touched.
 
 ### Install
 
