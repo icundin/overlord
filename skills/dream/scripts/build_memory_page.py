@@ -116,7 +116,7 @@ def main():
     data = {
         "generated_at": datetime.now().astimezone().strftime("%A %-d %B %Y · %H:%M"),
         "facts": facts,
-        "ignored": ignored,
+        "ignored": sorted(ignored, key=lambda r: r["date"], reverse=True),
         "nights": sorted(nights, key=lambda n: n["date"], reverse=True),
         "notes": notes,
     }
