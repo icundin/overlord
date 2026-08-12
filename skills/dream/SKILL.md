@@ -1,6 +1,6 @@
 ---
 name: dream
-description: Nightly memory consolidation ("dreaming") routine. Use whenever the user types /dream, mentions dreaming, consolidating memory, reviewing sessions, or applying dream proposals (e.g. "/dream apply 1,3" or "/dream ignore 2"). Reads the last 24h of session transcripts, compares them against stored memory, and proposes memory updates as a numbered list. Also use when invoked non-interactively (headless/cron) with instructions to write a dream report.
+description: Nightly memory consolidation ("dreaming") routine. Use whenever the user types /dream, mentions dreaming, consolidating memory, reviewing sessions, applying dream proposals (e.g. "/dream apply 1,3" or "/dream ignore 2"), or revoking an applied memory ("/dream forget <slug>"). Reads the last 24h of session transcripts, compares them against stored memory, and proposes memory updates as a numbered list. Also use when invoked non-interactively (headless/cron) with instructions to write a dream report.
 model: sonnet
 allowed-tools: Read, Grep, Glob, Bash, Write, Edit
 ---
@@ -16,6 +16,7 @@ changes with the user's approval, except the safe fixes below.
   "non-interactive"). Apply nothing beyond safe fixes; write the outputs
   listed under "Completion checklist".
 - **Apply / Ignore**: the user sent `/dream apply ...` and/or `... ignore ...`.
+- **Forget**: the user sent `/dream forget <slug>` — revoke applied facts.
 
 ## Step 1 — Memory
 The store is `~/.claude/memory/`: one small markdown file per fact, living in
@@ -64,6 +65,8 @@ emphatically; (3) new durable facts (not one-off task details); (4) stored
 memories now contradicted; (5) duplicates (already in memory → don't propose).
 If a previously APPLIED memory is missing from disk, never silently recreate
 it — re-propose it stating the anomaly, so the user learns a memory vanished.
+Exception: if its slug is recorded in `ignored.md`, the user forgot it on
+purpose — not an anomaly, never re-proposed.
 
 The dream writes and proposes ONLY within `~/.claude/memory`, never in
 project folders. But it detects candidates from every project and never
@@ -160,7 +163,9 @@ if unsure, propose.
 Ignore is FINAL: append `- <date>: <file-slug> — <one-line summary>` (e.g.
 `- 2026-08-05: wants-red-test-before-every-fix — every fix ships with a test
 seen failing first.`) to `~/.claude/memory/ignored.md`, never propose it
-again, never store it as memory.
+again, never store it as memory. The veto binds that fact, not its topic:
+a materially different claim on the same theme is a fresh candidate — when
+in doubt, propose it, citing the ignored neighbor in `detail:`.
 
 ## Apply (`/dream apply 1,3` / `all`)
 1. Use the most recent proposal list (this conversation or dream-report.md).
@@ -176,6 +181,17 @@ again, never store it as memory.
    per-proposal `"decision":"applied"|"ignored"|"snoozed"` and META
    `"resolved":true,"outcome_at":"..."` — the template then renders a
    read-only record (no buttons, no command bar).
+
+## Forget (`/dream forget <slug>[,<slug>]`)
+The ONLY path that deletes a fact, and it runs solely on the user's explicit
+command — never proposed, never self-initiated. The slug is the fact's file
+name without `.md`. For each slug, in order: read the fact's summary, delete
+`facts/<slug>.md`, remove its MEMORY.md index line, and append
+`- <date>: <slug> — <summary> (forgotten; was applied <applied-date>)` to
+`ignored.md` — final, never re-proposed. Unknown slug → report it, touch
+nothing for that slug. Then regenerate the memory page ("After every run").
+Archives are never edited: the chronology keeps the fact's full life —
+proposed, applied, forgotten.
 
 ## HTML report (always alongside dream-report.md)
 Fill `~/.claude/skills/dream/assets/report-template.html`: replace

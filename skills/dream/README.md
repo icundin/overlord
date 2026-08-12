@@ -38,6 +38,14 @@ opinion. You review, it remembers.
   well the model's confidence predicted your verdicts. Built by a
   deterministic script from what's on disk — never written by the model by
   hand.
+- **Forgetting is a first-class verb**: `/dream forget <slug>` revokes a
+  fact that time proved a bad call — deletes the file, removes its index
+  line, and records the revocation in `ignored.md` so it is never proposed
+  again. Every fact card on memory.html carries a button that copies the
+  ready-made command to the clipboard — a toast reminds you the page only
+  updates once the command runs; the page itself still cannot touch memory.
+  Archives stay untouched, so the chronology keeps the fact's full life
+  visible: proposed, applied, forgotten.
 - **Two modes**: daily (24h window) and deep dream (7-day window, wider
   extraction budget) — the mode is chosen by the invoking prompt, never by
   the skill's own calendar. Scheduling belongs to your routines.
@@ -93,6 +101,7 @@ opinion. You review, it remembers.
 /dream                          review last 24h, propose changes
 /dream apply 1,3 ignore 2       apply / permanently dismiss by id
 /dream apply all
+/dream forget <slug>            revoke an applied fact (memory.html copies this for you)
 ```
 
 Deep dream, any time: *"Run the dream skill as a DEEP DREAM (7-day window)."*
