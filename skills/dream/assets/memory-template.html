@@ -287,7 +287,7 @@ document.getElementById('stats').innerHTML=`
     :'<div class="empty-state">No facts on disk yet. ✦</div>';
   document.getElementById('igncount').textContent=DATA.ignored.length+' · final — never proposed again';
   document.getElementById('ignored').innerHTML=DATA.ignored.length?
-    DATA.ignored.slice().reverse().map(r=>`<div class="irow">
+    DATA.ignored.map(r=>`<div class="irow">
       <span class="s">${esc(r.summary)}</span><span class="d">${esc(r.date)}</span>
     </div>`).join('')
     :'<div class="empty-state">Nothing ignored yet.</div>';
