@@ -2,6 +2,13 @@
 
 One changelog for the collection; every entry names the artifact it concerns.
 
+# 1.3.0 — 2026-08-12
+
+- Dream: New verb — `/dream forget <slug>` revokes an applied memory on the user's explicit command: deletes the fact file, removes its index line, and records the revocation in `ignored.md` (final, never re-proposed). Until now nothing could remove a fact that time proved a bad call; the approval gate exists to filter the model's judgment, not the user's, so a user-initiated revocation needs no proposal loop.
+- Dream: memory.html — each fact card gets a `forget` button on its header line that copies the ready-made command (native title as the only pre-click hint; a toast confirms the copy and reminds that the page only reflects it once the command runs and the page regenerates). The page remains review-only and cannot touch memory.
+- Dream: Ignore scope clarified in SKILL.md — the veto binds that exact fact, not its topic: a materially different claim on the same theme is a fresh candidate, proposed citing the ignored neighbor; prevents silent over-generalization of old vetoes.
+- Dream: The vanished-memory anomaly rule now excepts slugs recorded in `ignored.md` — missing from disk plus present there means a deliberate forget, not an anomaly to re-propose.
+
 # 1.2.0 — 2026-08-12
 
 - Dream: The report's "Applied automatically" block now appears only when the run actually auto-applied a safe fix, styled as a warning (orange, ⚠ per item, matching stat colors) — unattended repairs are an anomaly worth attention, not a nightly card saying "nothing happened". The zero in the stats row remains as the quiet-night attestation, so no information is lost. Archived reports are never rewritten: each stays a snapshot of the skill's behavior the night it ran.
