@@ -124,6 +124,10 @@ Meta: `{"date":"tuesday 4 august 2026","dreamed_at":"HH:MM","sessions":N,"window
 deep-dream default, whatever the prompt asked for). The pages derive the deep
 badge from it — anything wider than a day is a deep dream — so never label the
 run's depth by hand: record the window and let it follow.
+Fixed shapes, so no two nights disagree: `dreamed_at` is `HH:MM` (24h);
+`outcome_at` is `YYYY-MM-DD HH:MM`; `projects` is a comma-separated list of
+project names, or a short sentence when there were none; `sessions` and
+`window_days` are numbers, never strings.
 
 Rules for every proposal:
 - ONE proposal = ONE fact. Never fuse facts into a profile or summary card;

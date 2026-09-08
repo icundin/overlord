@@ -9,7 +9,7 @@ import argparse
 import json
 import re
 import sys
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 
 TEMPLATE = Path(__file__).resolve().parent.parent / "assets" / "memory-template.html"
@@ -60,6 +60,53 @@ def parse_ignored(path):
     return rows
 
 
+WEEKDAYS = ("monday", "tuesday", "wednesday", "thursday", "friday",
+            "saturday", "sunday")
+MONTHS = ("january", "february", "march", "april", "may", "june", "july",
+          "august", "september", "october", "november", "december")
+TIME_RE = re.compile(r"\b(\d{1,2}):(\d{2})\b")
+ISO_RE = re.compile(r"\b(\d{4})-(\d{2})-(\d{2})\b")
+PROSE_DATE_RE = re.compile(r"\b(\d{1,2})\s+([a-z]+)\s+(\d{4})\b", re.I)
+
+
+def human_date(iso):
+    """2026-08-05 -> 'wednesday 5 august 2026' (fixed table: never locale-dependent)."""
+    d = date.fromisoformat(iso)
+    return f"{WEEKDAYS[d.weekday()]} {d.day} {MONTHS[d.month - 1]} {d.year}"
+
+
+def norm_time(value):
+    m = TIME_RE.search(value or "")
+    return f"{int(m.group(1)):02d}:{m.group(2)}" if m else None
+
+
+def norm_stamp(value, fallback_iso):
+    """Any shape a past run wrote -> 'YYYY-MM-DD HH:MM'; unparseable stays as it is."""
+    if not value:
+        return value
+    iso = None
+    m = ISO_RE.search(value)
+    if m:
+        iso = m.group(0)
+    else:
+        m = PROSE_DATE_RE.search(value)
+        if m and m.group(2).lower() in MONTHS:
+            iso = f"{m.group(3)}-{MONTHS.index(m.group(2).lower()) + 1:02d}-{int(m.group(1)):02d}"
+    iso = iso or fallback_iso
+    hhmm = norm_time(value)
+    return f"{iso} {hhmm}" if hhmm else iso
+
+
+def norm_projects(value):
+    """A comma list becomes chips; a sentence stays a sentence."""
+    value = (value or "").strip()
+    if not value:
+        return [], ""
+    if "," not in value and len(value.split()) > 3:
+        return [], value
+    return [p.strip() for p in value.split(",") if p.strip()], ""
+
+
 WINDOW_PATTERNS = (
     r"\*{0,2}Window:?\*{0,2}\s*(\d+)\s*(h(?:ours?)?|days?)",
     r"last[-\s]*(\d+)\s*(h(?:ours?)?|days?)",
@@ -94,6 +141,12 @@ def parse_archives(archive_dir, notes):
         except json.JSONDecodeError as e:
             notes.append(f"{f.name}: unreadable JSON ({e.msg}) — skipped")
             continue
+        night_iso = dm.group(1)
+        meta["date"] = human_date(night_iso)
+        meta["dreamed_at"] = norm_time(meta.get("dreamed_at")) or "—"
+        if meta.get("outcome_at"):
+            meta["outcome_at"] = norm_stamp(meta["outcome_at"], night_iso)
+        meta["projects"], meta["projects_note"] = norm_projects(meta.get("projects"))
         if not meta.get("window_days"):
             days = window_days(f.with_suffix(".md"))
             if days:

@@ -351,7 +351,9 @@ document.getElementById('facts').addEventListener('click',e=>{
         <div class="mi"><span class="k">Dreamed at</span><span class="v">${esc(m.dreamed_at||'—')}</span></div>
         <div class="mi"><span class="k">Window</span><span class="v">${m.window_days?(m.window_days===1?'24 hours':m.window_days+' days'):'—'}</span></div>
         ${m.resolved?`<div class="mi"><span class="k">Resolved</span><span class="v">${esc(m.outcome_at||'—')}</span></div>`:''}
-        <div class="mi wide"><span class="k">Projects</span><div class="pchips">${(m.projects||'').split(',').map(p=>p.trim()).filter(Boolean).map(p=>`<span class="pchip">${esc(p)}</span>`).join('')||'<span class="v">—</span>'}</div></div>
+        <div class="mi wide"><span class="k">Projects</span>${(m.projects||[]).length
+          ?`<div class="pchips">${m.projects.map(p=>`<span class="pchip">${esc(p)}</span>`).join('')}</div>`
+          :`<span class="v">${esc(m.projects_note||'—')}</span>`}</div>
       </div>
       ${(m.auto_applied||[]).map(a=>`<div class="prow"><span class="dicon applied" title="auto-applied safe fix">✓</span><span class="s">${esc(a)}</span><span class="aux">auto</span></div>`).join('')}
       ${n.proposals.map(p=>{const d=p.decision||'pending';return `<div class="prow">
