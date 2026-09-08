@@ -197,8 +197,13 @@ proposed, applied, forgotten.
 Fill `~/.claude/skills/dream/assets/report-template.html`: replace
 `__META_JSON__` and `__PROPOSALS_JSON__` with the Step 4 data (valid JSON,
 escape quotes/newlines; ids MUST match the markdown). Write to
-`~/.claude/memory/dream-report.html` and mention it in your summary. If the
-template is missing, say so at the top of dream-report.md — never skip
+`~/.claude/memory/dream-report.html` and mention it in your summary.
+A night with zero proposals is closed on arrival — both pages render it as a
+quiet night, never as awaiting review; `resolved` records the user's decision
+on proposals and stays absent. Only the newest night can await review: apply
+reads the most recent list, so an older undecided night is `missed` — its
+proposals already carried forward or expired.
+If the template is missing, say so at the top of dream-report.md — never skip
 silently. The page is review-only: clicks build a `/dream apply ... ignore ...`
 command; it cannot modify memory.
 

@@ -2,6 +2,12 @@
 
 One changelog for the collection; every entry names the artifact it concerns.
 
+# 1.4.0 — 2026-09-08
+
+- Dream: A night with no proposals no longer asks to be reviewed — `memory.html` marks it `quiet night` and `dream-report.html` hides the apply/ignore bar and its shortcuts. A routine that woke up and found nothing has nothing to decide, but both pages read as if a decision were still owed.
+- Dream: Only the newest night can be `awaiting review`; an older undecided night is marked `missed`. Apply reads the most recent proposal list (`SKILL.md`), and anything left undecided is carried forward into the next report or expires — so an old night's badge was promising an action that no longer exists.
+- Dream: `SKILL.md` states both rules as invariants of the two pages, so the templates and the skill can't drift apart.
+
 # 1.3.0 — 2026-08-12
 
 - Dream: New verb — `/dream forget <slug>` revokes an applied memory on the user's explicit command: deletes the fact file, removes its index line, and records the revocation in `ignored.md` (final, never re-proposed). Until now nothing could remove a fact that time proved a bad call; the approval gate exists to filter the model's judgment, not the user's, so a user-initiated revocation needs no proposal loop.
