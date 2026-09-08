@@ -120,8 +120,9 @@
   .badge.quiet{color:var(--muted);background:var(--soft)}
   .badge.missed{color:#a5504c;background:#fbeceb}
   [data-theme="dark"] .badge.missed{color:#eb7b76;background:#3a2020}
-  .nmeta{display:flex;flex-wrap:wrap;gap:14px 32px;padding:12px 0 14px;border-bottom:1px solid var(--hairline);margin-bottom:6px}
+  .nmeta{display:grid;grid-template-columns:repeat(3,minmax(0,140px)) 1fr;gap:14px 32px;padding:12px 0 14px;border-bottom:1px solid var(--hairline);margin-bottom:6px}
   .nmeta .mi{display:flex;flex-direction:column;gap:4px;min-width:0}
+  .nmeta .mi.wide{grid-column:1/-1}
   .nmeta .k{font-size:10px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--faint)}
   .nmeta .v{font-size:13px;color:var(--ink2)}
   .pchips{display:flex;flex-wrap:wrap;gap:6px}
@@ -148,7 +149,7 @@
   .notes{font-size:12.5px;color:#8a6414;margin-top:8px;text-align:center}
   [data-theme="dark"] .notes{color:#e8c26a}
   @media(max-width:840px){.panels{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}}
-  @media(max-width:600px){h1{font-size:36px;letter-spacing:-1px}.stats{grid-template-columns:1fr}}
+  @media(max-width:600px){h1{font-size:36px;letter-spacing:-1px}.stats{grid-template-columns:1fr}.nmeta{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 </head>
 <body>
@@ -350,7 +351,7 @@ document.getElementById('facts').addEventListener('click',e=>{
         <div class="mi"><span class="k">Dreamed at</span><span class="v">${esc(m.dreamed_at||'—')}</span></div>
         <div class="mi"><span class="k">Window</span><span class="v">${m.window_days?(m.window_days===1?'24 hours':m.window_days+' days'):'—'}</span></div>
         ${m.resolved?`<div class="mi"><span class="k">Resolved</span><span class="v">${esc(m.outcome_at||'—')}</span></div>`:''}
-        <div class="mi"><span class="k">Projects</span><div class="pchips">${(m.projects||'').split(',').map(p=>p.trim()).filter(Boolean).map(p=>`<span class="pchip">${esc(p)}</span>`).join('')||'<span class="v">—</span>'}</div></div>
+        <div class="mi wide"><span class="k">Projects</span><div class="pchips">${(m.projects||'').split(',').map(p=>p.trim()).filter(Boolean).map(p=>`<span class="pchip">${esc(p)}</span>`).join('')||'<span class="v">—</span>'}</div></div>
       </div>
       ${(m.auto_applied||[]).map(a=>`<div class="prow"><span class="dicon applied" title="auto-applied safe fix">✓</span><span class="s">${esc(a)}</span><span class="aux">auto</span></div>`).join('')}
       ${n.proposals.map(p=>{const d=p.decision||'pending';return `<div class="prow">
