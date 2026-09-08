@@ -125,9 +125,13 @@ deep-dream default, whatever the prompt asked for). The pages derive the deep
 badge from it — anything wider than a day is a deep dream — so never label the
 run's depth by hand: record the window and let it follow.
 Fixed shapes, so no two nights disagree: `dreamed_at` is `HH:MM` (24h);
-`outcome_at` is `YYYY-MM-DD HH:MM`; `projects` is a comma-separated list of
-project names, or a short sentence when there were none; `sessions` and
-`window_days` are numbers, never strings.
+`outcome_at` is `YYYY-MM-DD HH:MM`; `sessions` and `window_days` are numbers,
+never strings. This skill's own dream runs are never work: they are never
+counted in `sessions` and never listed in `projects` — a night when the user
+didn't work reads `0`, whatever the skill itself left in the window.
+`projects` is a comma-separated list of the project names whose transcripts
+were read — bare names, no annotations; leave it empty when there are none and
+let the page write the note, so no two nights word the empty case differently.
 
 Rules for every proposal:
 - ONE proposal = ONE fact. Never fuse facts into a profile or summary card;

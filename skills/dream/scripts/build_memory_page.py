@@ -97,14 +97,15 @@ def norm_stamp(value, fallback_iso):
     return f"{iso} {hhmm}" if hhmm else iso
 
 
+NO_PROJECTS = "no work sessions in the window"
+
+
 def norm_projects(value):
-    """A comma list becomes chips; a sentence stays a sentence."""
+    """A comma list becomes chips; anything else becomes the one fixed note."""
     value = (value or "").strip()
-    if not value:
-        return [], ""
-    if "," not in value and len(value.split()) > 3:
-        return [], value
-    return [p.strip() for p in value.split(",") if p.strip()], ""
+    if value and not ("," not in value and len(value.split()) > 3):
+        return [p.strip() for p in value.split(",") if p.strip()], ""
+    return [], NO_PROJECTS
 
 
 WINDOW_PATTERNS = (
