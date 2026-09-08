@@ -9,7 +9,7 @@ import argparse
 import json
 import re
 import sys
-from datetime import date, datetime
+from datetime import datetime
 from pathlib import Path
 
 TEMPLATE = Path(__file__).resolve().parent.parent / "assets" / "memory-template.html"
@@ -63,19 +63,6 @@ def parse_ignored(path):
 # Every shape a past run wrote its timestamps in; strptime does the parsing.
 STAMP_FORMATS = ("%Y-%m-%d %H:%M", "%d %B %Y %H:%M", "%d %B %Y, %H:%M",
                  "%A %d %B %Y %H:%M")
-
-
-def human_date(iso):
-    """2026-08-05 -> 'wednesday 5 august 2026' (no %-d: it is not portable)."""
-    d = date.fromisoformat(iso)
-    return f"{d.strftime('%A')} {d.day} {d.strftime('%B')} {d.year}".lower()
-
-
-def norm_time(value):
-    try:
-        return datetime.strptime((value or "").strip(), "%H:%M").strftime("%H:%M")
-    except ValueError:
-        return None
 
 
 def norm_stamp(value):
@@ -133,9 +120,6 @@ def parse_archives(archive_dir, notes):
         except json.JSONDecodeError as e:
             notes.append(f"{f.name}: unreadable JSON ({e.msg}) — skipped")
             continue
-        night_iso = dm.group(1)
-        meta["date"] = human_date(night_iso)
-        meta["dreamed_at"] = norm_time(meta.get("dreamed_at")) or "—"
         if meta.get("outcome_at"):
             meta["outcome_at"] = norm_stamp(meta["outcome_at"])
         meta["projects"], meta["projects_note"] = norm_projects(meta.get("projects"))
