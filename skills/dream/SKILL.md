@@ -119,7 +119,11 @@ a bad fit. `confidence` is the model's rough guess (steps of ten, 10–90) that 
 will make this a shared memory. It is display-only: it NEVER filters, orders,
 or drops a candidate — a viable candidate at 10 is proposed exactly like one
 at 90, and the census is unaffected by it.
-Meta: `{"date":"tuesday 4 august 2026","dreamed_at":"HH:MM","sessions":N,"projects":"a, b","auto_applied":[...],"resolved":bool?,"outcome_at":"..."?}`
+Meta: `{"date":"tuesday 4 august 2026","dreamed_at":"HH:MM","sessions":N,"window_days":N,"projects":"a, b","auto_applied":[...],"resolved":bool?,"outcome_at":"..."?}`
+`window_days` is the window this run actually read (1 for daily, 7 for the
+deep-dream default, whatever the prompt asked for). The pages derive the deep
+badge from it — anything wider than a day is a deep dream — so never label the
+run's depth by hand: record the window and let it follow.
 
 Rules for every proposal:
 - ONE proposal = ONE fact. Never fuse facts into a profile or summary card;

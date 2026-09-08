@@ -336,7 +336,7 @@ document.getElementById('facts').addEventListener('click',e=>{
       <summary class="nhead">
         <span class="dt">${esc(m.date||n.date)}</span>
         <span class="right">
-          ${m.title?`<span class="badge deep">${esc(m.title)}</span>`:''}
+          ${m.window_days>1?'<span class="badge deep">deep dream</span>':''}
           ${!n.proposals.length?'<span class="badge quiet">quiet night</span>'
             :m.resolved?''
             :i===0?'<span class="badge wait">awaiting review</span>'
@@ -348,6 +348,7 @@ document.getElementById('facts').addEventListener('click',e=>{
       <div class="nmeta">
         <div class="mi"><span class="k">Sessions read</span><span class="v">${m.sessions??'?'}</span></div>
         <div class="mi"><span class="k">Dreamed at</span><span class="v">${esc(m.dreamed_at||'—')}</span></div>
+        <div class="mi"><span class="k">Window</span><span class="v">${m.window_days?(m.window_days===1?'24 hours':m.window_days+' days'):'—'}</span></div>
         ${m.resolved?`<div class="mi"><span class="k">Resolved</span><span class="v">${esc(m.outcome_at||'—')}</span></div>`:''}
         <div class="mi"><span class="k">Projects</span><div class="pchips">${(m.projects||'').split(',').map(p=>p.trim()).filter(Boolean).map(p=>`<span class="pchip">${esc(p)}</span>`).join('')||'<span class="v">—</span>'}</div></div>
       </div>

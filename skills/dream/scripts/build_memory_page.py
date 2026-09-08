@@ -60,6 +60,25 @@ def parse_ignored(path):
     return rows
 
 
+WINDOW_PATTERNS = (
+    r"\*{0,2}Window:?\*{0,2}\s*(\d+)\s*(h(?:ours?)?|days?)",
+    r"last[-\s]*(\d+)\s*(h(?:ours?)?|days?)",
+)
+
+
+def window_days(md_path):
+    """Recover the run's window from its markdown report (pre-window_days archives)."""
+    if not md_path.exists():
+        return None
+    text = md_path.read_text(encoding="utf-8")
+    for pattern in WINDOW_PATTERNS:
+        m = re.search(pattern, text, re.I)
+        if m:
+            n, unit = int(m.group(1)), m.group(2).lower()
+            return max(1, round(n / 24)) if unit.startswith("h") else n
+    return None
+
+
 def parse_archives(archive_dir, notes):
     nights = []
     for f in sorted(archive_dir.glob("dream-*.html")):
@@ -75,6 +94,12 @@ def parse_archives(archive_dir, notes):
         except json.JSONDecodeError as e:
             notes.append(f"{f.name}: unreadable JSON ({e.msg}) — skipped")
             continue
+        if not meta.get("window_days"):
+            days = window_days(f.with_suffix(".md"))
+            if days:
+                meta["window_days"] = days
+            else:
+                notes.append(f"{f.name}: window not recorded and not stated in the report")
         nights.append({"date": dm.group(1), "meta": meta, "proposals": proposals})
     return nights
 

@@ -38,7 +38,8 @@ opinion. You review, it remembers.
   well the model's confidence predicted your verdicts. Each night carries an
   honest badge: only the newest one can be `awaiting review`, a night with no
   proposals is a `quiet night`, and an older undecided night is `missed` —
-  its proposals were carried into the next report or expired. Built by a
+  its proposals were carried into the next report or expired; a run that read
+  more than a day is marked `deep dream`, with its window on the card. Built by a
   deterministic script from what's on disk — never written by the model by
   hand.
 - **Forgetting is a first-class verb**: `/dream forget <slug>` revokes a
