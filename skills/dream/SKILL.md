@@ -119,7 +119,19 @@ a bad fit. `confidence` is the model's rough guess (steps of ten, 10–90) that 
 will make this a shared memory. It is display-only: it NEVER filters, orders,
 or drops a candidate — a viable candidate at 10 is proposed exactly like one
 at 90, and the census is unaffected by it.
-Meta: `{"date":"tuesday 4 august 2026","dreamed_at":"HH:MM","sessions":N,"projects":"a, b","auto_applied":[...],"resolved":bool?,"outcome_at":"..."?}`
+Meta: `{"date":"tuesday 4 august 2026","dreamed_at":"HH:MM","sessions":N,"window_days":N,"projects":"a, b","auto_applied":[...],"resolved":bool?,"outcome_at":"..."?}`
+`window_days` is the window this run actually read (1 for daily, 7 for the
+deep-dream default, whatever the prompt asked for). The pages derive the deep
+badge from it — anything wider than a day is a deep dream — so never label the
+run's depth by hand: record the window and let it follow.
+Fixed shapes, so no two nights disagree: `dreamed_at` is `HH:MM` (24h);
+`outcome_at` is `YYYY-MM-DD HH:MM`; `sessions` and `window_days` are numbers,
+never strings. This skill's own dream runs are never work: they are never
+counted in `sessions` and never listed in `projects` — a night when the user
+didn't work reads `0`, whatever the skill itself left in the window.
+`projects` is a comma-separated list of the project names whose transcripts
+were read — bare names, no annotations; leave it empty when there are none and
+let the page write the note, so no two nights word the empty case differently.
 
 Rules for every proposal:
 - ONE proposal = ONE fact. Never fuse facts into a profile or summary card;
@@ -197,8 +209,13 @@ proposed, applied, forgotten.
 Fill `~/.claude/skills/dream/assets/report-template.html`: replace
 `__META_JSON__` and `__PROPOSALS_JSON__` with the Step 4 data (valid JSON,
 escape quotes/newlines; ids MUST match the markdown). Write to
-`~/.claude/memory/dream-report.html` and mention it in your summary. If the
-template is missing, say so at the top of dream-report.md — never skip
+`~/.claude/memory/dream-report.html` and mention it in your summary.
+A night with zero proposals is closed on arrival — both pages render it as a
+quiet night, never as awaiting review; `resolved` records the user's decision
+on proposals and stays absent. Only the newest night can await review: apply
+reads the most recent list, so an older undecided night is `missed` — its
+proposals already carried forward or expired.
+If the template is missing, say so at the top of dream-report.md — never skip
 silently. The page is review-only: clicks build a `/dream apply ... ignore ...`
 command; it cannot modify memory.
 

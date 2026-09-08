@@ -35,7 +35,11 @@ opinion. You review, it remembers.
   `~/.claude/memory/memory.html` — one standalone page indexing what Claude
   currently knows: active facts grouped by category, the ignored list, and a
   night-by-night chronology rebuilt from the dated archives, including how
-  well the model's confidence predicted your verdicts. Built by a
+  well the model's confidence predicted your verdicts. Each night carries an
+  honest badge: only the newest one can be `awaiting review`, a night with no
+  proposals is a `quiet night`, and an older undecided night is `missed` —
+  its proposals were carried into the next report or expired; a run that read
+  more than a day is marked `deep dream`, with its window on the card. Built by a
   deterministic script from what's on disk — never written by the model by
   hand.
 - **Forgetting is a first-class verb**: `/dream forget <slug>` revokes a

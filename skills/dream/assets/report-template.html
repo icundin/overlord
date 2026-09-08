@@ -125,8 +125,9 @@
   .b-undo{background:transparent;color:var(--muted);border-color:transparent;display:none;align-items:center;gap:6px}
   .b-undo:hover{border-color:var(--hairline)}
   .card.approved .b-undo,.card.ignored .b-undo,.card.snoozed .b-undo{display:flex}
-  body.resolved .btns,body.resolved .cmdbar,body.resolved .kbd-hint{display:none}
-  body.resolved{padding-bottom:20px}
+  body.resolved .btns,body.resolved .cmdbar,body.resolved .kbd-hint,
+  body.quiet .btns,body.quiet .cmdbar,body.quiet .kbd-hint{display:none}
+  body.resolved,body.quiet{padding-bottom:20px}
   .state.applied-c{color:var(--green)}
   .empty-state{color:var(--muted);padding:40px;text-align:center;border:1px dashed var(--hairline);border-radius:12px;font-size:15px}
   .kbd-hint{font-size:13px;color:var(--faint);margin:10px 0 0}
@@ -219,6 +220,8 @@ const PROPOSALS = __PROPOSALS_JSON__;
 const state = {}; /* id -> 'approved' | 'ignored' | 'snoozed' | undefined; in-memory only */
 let focusIdx = -1;
 const RESOLVED = !!META.resolved; /* outcome recorded: read-only record mode */
+const QUIET = !PROPOSALS.length; /* nothing proposed: closed on arrival, no review chrome */
+if(QUIET) document.body.classList.add('quiet');
 if(RESOLVED){
   document.body.classList.add('resolved');
   for(const p of PROPOSALS){
@@ -267,7 +270,8 @@ function renderStats(){
   const remaining=PROPOSALS.length-decided;
   document.title=RESOLVED?'🌙 Dream report · resolved':(remaining?`(${remaining}) `:'')+'🌙 Dream report';
   const pctEl=document.getElementById('stickypct');
-  if(RESOLVED){pctEl.textContent='Resolved ✓';pctEl.style.color='var(--green)';document.getElementById('stickyfill').style.width='100%';document.getElementById('stickyfill').style.background='var(--green)'}
+  if(QUIET){pctEl.textContent='Nothing to review';pctEl.style.color='var(--faint)';document.getElementById('stickyfill').style.width='0'}
+  else if(RESOLVED){pctEl.textContent='Resolved ✓';pctEl.style.color='var(--green)';document.getElementById('stickyfill').style.width='100%';document.getElementById('stickyfill').style.background='var(--green)'}
   else if(PROPOSALS.length&&decided===PROPOSALS.length){pctEl.textContent='All reviewed ✓';pctEl.style.color='var(--green)';document.getElementById('stickyfill').style.background='var(--green)'}
   else{pctEl.textContent=Math.round(frac*100)+'% reviewed';pctEl.style.color='';document.getElementById('stickyfill').style.background=''}
   document.getElementById('stickystats').innerHTML=

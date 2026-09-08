@@ -2,6 +2,17 @@
 
 One changelog for the collection; every entry names the artifact it concerns.
 
+# 1.4.0 — 2026-09-08
+
+- Dream: A night with no proposals no longer asks to be reviewed — `memory.html` marks it `quiet night` and `dream-report.html` hides the apply/ignore bar and its shortcuts. A routine that woke up and found nothing has nothing to decide, but both pages read as if a decision were still owed.
+- Dream: Only the newest night can be `awaiting review`; an older undecided night is marked `missed`. Apply reads the most recent proposal list (`SKILL.md`), and anything left undecided is carried forward into the next report or expires — so an old night's badge was promising an action that no longer exists.
+- Dream: `SKILL.md` states both rules as invariants of the two pages, so the templates and the skill can't drift apart.
+- Dream: A deep dream is now identified by data instead of a label — `META` records `window_days`, the chronology derives the `deep dream` badge from it (anything wider than a day), and the expanded card shows the window as its own field. The old `title` field had to be remembered by hand and three of four deep dreams lost it; the window can't be forgotten because the run needs it to call the extractor. The badge also drops `weekly`: scheduling belongs to the routine, not to the report, and the skill's window is whatever the prompt asked for.
+- Dream: The night card's header is a grid, not a wrapping row — Sessions read, Dreamed at, Window and Resolved sit in fixed columns that line up across cards (two columns under 600px), and projects always take a row of their own. Layout that fell out of content width made two cards with identical fields look unrelated.
+- Dream: `memory.html` normalizes what past runs wrote differently — `outcome_at`'s five historical shapes (`5 August 2026 15:04`, `13 august 2026 08:20`, `10 August 2026, 08:20`, …) collapse to `YYYY-MM-DD HH:MM`. The empty case stops being free text: `projects` carries only the list, and the page writes one fixed note, `no work sessions in the window`. Each night used to word this however it felt, and nights disagreed on whether the skill's own dream runs count — `SKILL.md` now rules that they are never work: never counted in `sessions`, never listed in `projects`, so a night the user didn't work reads `0` whatever the skill left behind. `SKILL.md` fixes these shapes for future runs; the script normalizes the ones already archived, since the page is derived from the archives and never edits them.
+- Dream: The page footer's date drops `%-d`, which MSVC rejects: the script raised before writing anything on Windows, where part of the team works. The day now carries a leading zero.
+- Dream: `build_memory_page.py` recovers `window_days` for archives written before the field existed, reading the window each report already states in prose (`**Window:** 24 hours`, `last 7 days`) — all sixteen resolve, and the three deep dreams that had lost their label get it back. Archives stay untouched: the page is derived from them, never the other way round; a window that can't be read is reported as a note rather than guessed.
+
 # 1.3.0 — 2026-08-12
 
 - Dream: New verb — `/dream forget <slug>` revokes an applied memory on the user's explicit command: deletes the fact file, removes its index line, and records the revocation in `ignored.md` (final, never re-proposed). Until now nothing could remove a fact that time proved a bad call; the approval gate exists to filter the model's judgment, not the user's, so a user-initiated revocation needs no proposal loop.
