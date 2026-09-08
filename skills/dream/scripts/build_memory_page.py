@@ -168,7 +168,7 @@ def main():
         row["category"] = category.get(row["slug"] + ".md", "other")
 
     data = {
-        "generated_at": datetime.now().astimezone().strftime("%A %-d %B %Y · %H:%M"),
+        "generated_at": datetime.now().astimezone().strftime("%A %d %B %Y · %H:%M"),
         "facts": facts,
         "ignored": sorted(ignored, key=lambda r: r["date"], reverse=True),
         "nights": sorted(nights, key=lambda n: n["date"], reverse=True),
