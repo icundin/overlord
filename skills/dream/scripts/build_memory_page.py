@@ -60,41 +60,32 @@ def parse_ignored(path):
     return rows
 
 
-WEEKDAYS = ("monday", "tuesday", "wednesday", "thursday", "friday",
-            "saturday", "sunday")
-MONTHS = ("january", "february", "march", "april", "may", "june", "july",
-          "august", "september", "october", "november", "december")
-TIME_RE = re.compile(r"\b(\d{1,2}):(\d{2})\b")
-ISO_RE = re.compile(r"\b(\d{4})-(\d{2})-(\d{2})\b")
-PROSE_DATE_RE = re.compile(r"\b(\d{1,2})\s+([a-z]+)\s+(\d{4})\b", re.I)
+# Every shape a past run wrote its timestamps in; strptime does the parsing.
+STAMP_FORMATS = ("%Y-%m-%d %H:%M", "%d %B %Y %H:%M", "%d %B %Y, %H:%M",
+                 "%A %d %B %Y %H:%M")
 
 
 def human_date(iso):
-    """2026-08-05 -> 'wednesday 5 august 2026' (fixed table: never locale-dependent)."""
+    """2026-08-05 -> 'wednesday 5 august 2026' (no %-d: it is not portable)."""
     d = date.fromisoformat(iso)
-    return f"{WEEKDAYS[d.weekday()]} {d.day} {MONTHS[d.month - 1]} {d.year}"
+    return f"{d.strftime('%A')} {d.day} {d.strftime('%B')} {d.year}".lower()
 
 
 def norm_time(value):
-    m = TIME_RE.search(value or "")
-    return f"{int(m.group(1)):02d}:{m.group(2)}" if m else None
+    try:
+        return datetime.strptime((value or "").strip(), "%H:%M").strftime("%H:%M")
+    except ValueError:
+        return None
 
 
-def norm_stamp(value, fallback_iso):
+def norm_stamp(value):
     """Any shape a past run wrote -> 'YYYY-MM-DD HH:MM'; unparseable stays as it is."""
-    if not value:
-        return value
-    iso = None
-    m = ISO_RE.search(value)
-    if m:
-        iso = m.group(0)
-    else:
-        m = PROSE_DATE_RE.search(value)
-        if m and m.group(2).lower() in MONTHS:
-            iso = f"{m.group(3)}-{MONTHS.index(m.group(2).lower()) + 1:02d}-{int(m.group(1)):02d}"
-    iso = iso or fallback_iso
-    hhmm = norm_time(value)
-    return f"{iso} {hhmm}" if hhmm else iso
+    for fmt in STAMP_FORMATS:
+        try:
+            return datetime.strptime(value.strip(), fmt).strftime("%Y-%m-%d %H:%M")
+        except ValueError:
+            continue
+    return value
 
 
 NO_PROJECTS = "no work sessions in the window"
@@ -146,7 +137,7 @@ def parse_archives(archive_dir, notes):
         meta["date"] = human_date(night_iso)
         meta["dreamed_at"] = norm_time(meta.get("dreamed_at")) or "—"
         if meta.get("outcome_at"):
-            meta["outcome_at"] = norm_stamp(meta["outcome_at"], night_iso)
+            meta["outcome_at"] = norm_stamp(meta["outcome_at"])
         meta["projects"], meta["projects_note"] = norm_projects(meta.get("projects"))
         if not meta.get("window_days"):
             days = window_days(f.with_suffix(".md"))
