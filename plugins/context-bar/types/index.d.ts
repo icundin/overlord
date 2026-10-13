@@ -60,6 +60,9 @@ export type BarSettings = {
   customColors: Record<string, string>
 }
 
+// The actions that ask before they run: /compact, /clear (a new session), and resetting the settings.
+export type Confirmable = 'compact' | 'clear' | 'reset'
+
 export type Segment = Row & { cells: number }
 
 export type Panel = 'breakdown' | 'usage' | 'settings' | 'model' | 'effort'
@@ -75,7 +78,8 @@ declare module 'claude-code' {
       // Sections the person opened or closed in the open card; the rest keep their default.
       sections: Partial<Record<Section, boolean>>
       tally: Tally | null
-      isConfirmingClear: boolean
+      // The action a first click armed; a second click runs it, five seconds without one disarms it.
+      confirming: Confirmable | null
       // Whether the theme is a light one, so the bar's shades sit on white instead of black.
       isLight: boolean
       // The /model choices the config menu lists, read live so a new model shows up by itself.
@@ -90,7 +94,6 @@ declare module 'claude-code' {
       settings: BarSettings
       // Counts Enters in the settings fields; part of each field's key, so every Enter draws it afresh.
       fieldRevision: number
-      isConfirmingReset: boolean
     }
   }
 }

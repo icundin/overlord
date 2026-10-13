@@ -1,7 +1,7 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register, Timer } from 'claude-code'
 
-import type { BarSettings, Panel, Section, Tally, Tokens, Usage } from '../types'
+import type { BarSettings, Confirmable, Panel, Section, Tally, Tokens, Usage } from '../types'
 import { byServer } from './figures'
 import { modelChoices } from './format'
 import { distinctColors, themed } from './themes'
@@ -15,7 +15,7 @@ const panel = atom({ plugin: 'context-bar', key: 'panel' } as const, null)
 const fill = atom({ plugin: 'context-bar', key: 'fill' } as const, 1)
 const sections = atom({ plugin: 'context-bar', key: 'sections' } as const, {})
 const tally = atom({ plugin: 'context-bar', key: 'tally' } as const, null)
-const isConfirmingClear = atom({ plugin: 'context-bar', key: 'isConfirmingClear' } as const, false)
+const confirming = atom({ plugin: 'context-bar', key: 'confirming' } as const, null)
 const isLight = atom({ plugin: 'context-bar', key: 'isLight' } as const, false)
 const models = atom({ plugin: 'context-bar', key: 'models' } as const, [])
 const growth = atom({ plugin: 'context-bar', key: 'growth' } as const, {
@@ -29,7 +29,6 @@ const runningAgents = atom({ plugin: 'context-bar', key: 'runningAgents' } as co
 const isInitialized = atom({ plugin: 'context-bar', key: 'isInitialized' } as const, false)
 const settings = atom({ plugin: 'context-bar', key: 'settings' } as const, DEFAULT_SETTINGS)
 const fieldRevision = atom({ plugin: 'context-bar', key: 'fieldRevision' } as const, 0)
-const isConfirmingReset = atom({ plugin: 'context-bar', key: 'isConfirmingReset' } as const, false)
 
 const FRAME_MS = 30
 const FILL_MS = 300
@@ -167,14 +166,33 @@ async function showContext($: EngineInterface): Promise<void> {
   }
 }
 
-// Puts every setting back to its default; the first press only asks.
-async function resetSettings($: EngineInterface): Promise<void> {
-  if (!(await read($, isConfirmingReset))) {
-    await update($, isConfirmingReset, () => true)
+const CONFIRM_MS = 5000
+let confirmExpiry: Timer | null = null
+
+async function disarm($: EngineInterface): Promise<void> {
+  confirmExpiry?.cancel()
+  confirmExpiry = null
+  await update($, confirming, () => null)
+}
+
+// The one way an action asks first: a first click arms it (drawn in red), a second runs it, and five seconds without
+// one disarm it. One action is armed at a time; arming another, or closing or switching cards, disarms it.
+async function confirmFirst($: EngineInterface, action: Confirmable, perform: () => Promise<void>): Promise<void> {
+  const armed = await read($, confirming)
+  await disarm($)
+  if (armed === action) {
+    await perform()
 
     return
   }
-  await update($, isConfirmingReset, () => false)
+  await update($, confirming, () => action)
+  confirmExpiry = $.clock.after(CONFIRM_MS, () => {
+    void update($, confirming, was => (was === action ? null : was))
+  })
+}
+
+// Puts every setting back to its default.
+async function resetSettings($: EngineInterface): Promise<void> {
   await update($, settings, () => DEFAULT_SETTINGS)
   await $.store.set('settings', DEFAULT_SETTINGS)
   $.ui.toast('Settings reset to their defaults')
@@ -182,16 +200,14 @@ async function resetSettings($: EngineInterface): Promise<void> {
 
 // Opening a card resets its sections to their defaults, so it always opens the same way.
 async function toggle($: EngineInterface, which: Panel): Promise<Panel | null> {
-  await update($, isConfirmingClear, () => false)
-  await update($, isConfirmingReset, () => false)
+  await disarm($)
   await update($, sections, () => ({}))
 
   return update($, panel, was => (was === which ? null : which))
 }
 
 async function close($: EngineInterface): Promise<void> {
-  await update($, isConfirmingClear, () => false)
-  await update($, isConfirmingReset, () => false)
+  await disarm($)
   await update($, panel, () => null)
 }
 
@@ -203,15 +219,6 @@ async function run($: EngineInterface, command: string): Promise<void> {
     await $.command.run({ command })
   } catch {
     $.ui.toast(`/${command} failed`)
-  }
-}
-
-// `/clear` starts a new session (the old one stays resumable with /resume); the first press only asks.
-async function newSession($: EngineInterface): Promise<void> {
-  if (await read($, isConfirmingClear)) {
-    await run($, 'clear')
-  } else {
-    await update($, isConfirmingClear, () => true)
   }
 }
 
@@ -335,7 +342,7 @@ export const register: Register = on => {
         effort: await read($, effort),
         open,
         opened: await read($, sections),
-        isConfirmingClear: await read($, isConfirmingClear),
+        confirming: await read($, confirming),
         tally: await read($, tally),
         now: await $.clock.now(),
         fill: await read($, fill),
@@ -345,7 +352,6 @@ export const register: Register = on => {
         runningAgents: await read($, runningAgents),
         settings: chosen,
         fieldRevision: await read($, fieldRevision),
-        isConfirmingReset: await read($, isConfirmingReset),
         defaultColors: Object.fromEntries(current.rows.map(row => [row.name, row.color])),
       },
       {
@@ -354,12 +360,14 @@ export const register: Register = on => {
         close: () => close($),
         choose: (command, option) => choose($, command, option),
         showContext: () => showContext($),
-        compact: () => run($, 'compact'),
-        newSession: () => newSession($),
+        // /compact swaps the conversation the model sees for a summary; /clear starts a new session (the old one stays
+        // resumable with /resume).
+        compact: () => confirmFirst($, 'compact', () => run($, 'compact')),
+        newSession: () => confirmFirst($, 'clear', () => run($, 'clear')),
         changeSetting: change => changeSetting($, change),
         notify: message => notify($, message),
         submitted: () => update($, fieldRevision, was => was + 1),
-        resetSettings: () => resetSettings($),
+        resetSettings: () => confirmFirst($, 'reset', () => resetSettings($)),
       },
     )
   })

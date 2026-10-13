@@ -91,8 +91,8 @@ export function usageCard(kit: Kit) {
           Longer sessions cost more, even when cached. Compact mid-task, and start a new session when you switch tasks.
         </Text>
         <Box key="buttons" columnGap={2}>
-          {chip('compact', 'compact this session', act.compact)}
-          {chip('clear', view.isConfirmingClear ? 'confirm new session' : 'new session', act.newSession, view.isConfirmingClear)}
+          {chip('compact', view.confirming === 'compact' ? 'confirm compact' : 'compact this session', act.compact, view.confirming === 'compact')}
+          {chip('clear', view.confirming === 'clear' ? 'confirm new session' : 'new session', act.newSession, view.confirming === 'clear')}
         </Box>
       </Box>
     </Box>

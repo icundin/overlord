@@ -1,6 +1,6 @@
 import type { ElementTable, RenderChildren } from 'claude-code'
 
-import type { BarSettings, Growth, Panel, Section, Tally, Usage } from '../../types'
+import type { BarSettings, Confirmable, Growth, Panel, Section, Tally, Usage } from '../../types'
 import { DEFAULT_OPEN } from '../defaults'
 
 // Everything the band draws, read by the render hook.
@@ -10,7 +10,7 @@ export type View = {
   effort: string | null
   open: Panel | null
   opened: Partial<Record<Section, boolean>>
-  isConfirmingClear: boolean
+  confirming: Confirmable | null
   tally: Tally | null
   now: number
   fill: number
@@ -20,7 +20,6 @@ export type View = {
   runningAgents: number
   settings: BarSettings
   fieldRevision: number
-  isConfirmingReset: boolean
   // Each category's color in the default theme, by name: what a custom color falls back to.
   defaultColors: Record<string, string>
 }
@@ -32,6 +31,7 @@ export type Actions = {
   close: () => unknown
   choose: (command: 'model' | 'effort', option: string) => unknown
   showContext: () => unknown
+  // Asks first, then runs /compact.
   compact: () => unknown
   newSession: () => unknown
   changeSetting: (change: Partial<BarSettings>) => unknown

@@ -63,7 +63,7 @@ export const usageWith = (percentage: number, cost: number | null = null) => ({
 
 // `stored` seeds the mod's $.store; null leaves the store to the test's own hooks.
 export const surround = (on: On, theme: string, percentage: number, stored: Record<string, unknown> | null = {}, cost: number | null = null) => {
-  mock.clock(on, { now: Date.parse('2026-10-13T09:05:00.000Z') })
+  const clock = mock.clock(on, { now: Date.parse('2026-10-13T09:05:00.000Z') })
   if (stored !== null) {
     mock.store(on, stored)
   }
@@ -76,4 +76,6 @@ export const surround = (on: On, theme: string, percentage: number, stored: Reco
 
     return <Text key="engine">engine band</Text>
   })
+
+  return clock
 }

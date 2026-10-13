@@ -15,7 +15,7 @@ export function band(ui: ElementTable<'terminal' | 'desktop'>, view: View, act: 
   const { Box, Button, Text } = ui
   const { usage: current, open, effort: level } = view
   const kit: Kit = { ui, view, act, inner: view.width - 4, shadeBehind: view.isLight ? 'white' : 'black' }
-  const { chip, headerButton, dot } = parts(kit)
+  const { headerButton, dot } = parts(kit)
   const { inner, shadeBehind } = kit
   const hasUsage = (current.limits ?? []).length > 0 || current.cost != null
   const bar = segments(current.rows, inner)
@@ -62,7 +62,8 @@ export function band(ui: ElementTable<'terminal' | 'desktop'>, view: View, act: 
     { contextPercent: current.percentage, limits: current.limits ?? [], cost: current.cost },
     { context: view.settings.contextWarnPercent, limit: view.settings.limitWarnPercent, cost: view.settings.costWarnUsd },
   )
-  const isContextWarned = warnAt > 0 && current.percentage >= warnAt
+  // The context warning's `/compact` is itself the button: /compact opens no dialog, so the band keeps the keys.
+  const COMMAND = '/compact'
 
   return (
     <Box flexDirection="column" borderStyle="round" borderColor="subtle" paddingX={1}>
@@ -164,12 +165,44 @@ export function band(ui: ElementTable<'terminal' | 'desktop'>, view: View, act: 
         })}
       </Box>
       {warnings.length > 0 && (
-        <Box key="warnings" columnGap={2}>
-          <Text key="text" color="warning" wrap="truncate-end">
-            ⚠ {warnings.join(' · ')}
+        <Box key="warnings">
+          <Text key="mark" color="warning">
+            ⚠{' '}
           </Text>
-          {/* The context warning comes with its remedy: /compact opens no dialog, so the band keeps the keys. */}
-          {isContextWarned && chip('warning-compact', 'compact', act.compact)}
+          {warnings.flatMap((warning, i) => {
+            const separator =
+              i === 0
+                ? []
+                : [
+                    <Text key={`separator-${i}`} color="warning">
+                      {' · '}
+                    </Text>,
+                  ]
+            const at = warning.indexOf(COMMAND)
+
+            return at === -1
+              ? [
+                  ...separator,
+                  <Text key={`warning-${i}`} color="warning">
+                    {warning}
+                  </Text>,
+                ]
+              : [
+                  ...separator,
+                  <Text key={`warning-${i}`} color="warning">
+                    {warning.slice(0, at)}
+                  </Text>,
+                  // A first click asks, in red; a second runs it.
+                  <Button key="warning-compact" plain label={COMMAND} onPress={act.compact}>
+                    <Text color={view.confirming === 'compact' ? 'error' : 'warning'} bold>
+                      {view.confirming === 'compact' ? `${COMMAND}?` : COMMAND}
+                    </Text>
+                  </Button>,
+                  <Text key={`warning-${i}-rest`} color="warning">
+                    {warning.slice(at + COMMAND.length)}
+                  </Text>,
+                ]
+          })}
         </Box>
       )}
       {open !== null && (

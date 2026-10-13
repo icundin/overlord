@@ -180,9 +180,9 @@ export function settingsCard(kit: Kit) {
         <Box key="buttons">
           {chip(
             'reset',
-            view.isConfirmingReset ? 'confirm reset to defaults' : 'reset to defaults',
+            view.confirming === 'reset' ? 'confirm reset to defaults' : 'reset to defaults',
             act.resetSettings,
-            view.isConfirmingReset,
+            view.confirming === 'reset',
           )}
         </Box>
       </Box>

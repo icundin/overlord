@@ -83,6 +83,8 @@ test('draws the bar and toggles it with /context-bar', async ($, on) => {
   expect(ran).toContain('/clear ')
   await menus.press({ key: 'usage' })
   await menus.press({ key: 'compact' })
+  expect(ran).not.toContain('/compact ')
+  await menus.press({ key: 'compact' })
   expect(ran).toContain('/compact ')
   expect(await menus.find({ key: 'panel' })).toBeUndefined()
   await menus.press({ key: 'usage' })
@@ -274,7 +276,7 @@ test('shows the warning line as soon as a threshold is set below the figure', as
   expect(await ui.find({ type: 'Text', text: /^⚠/ })).toBeUndefined()
   await ui.press({ key: 'settings' })
   await ui.input({ key: 'input-costWarnUsd-0', text: '32' })
-  expect(await ui.find({ type: 'Text', text: /⚠ Session cost \$33\.40, past your \$32/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /^Session cost \$33\.40, past your \$32$/ })).toBeDefined()
   await ui.input({ key: 'input-costWarnUsd-1', text: '0' })
   expect(await ui.find({ type: 'Text', text: /^⚠/ })).toBeUndefined()
 })
@@ -323,8 +325,8 @@ test('shows the growth and cost of a turn, the turns left and running agents', a
   expect(ran).toEqual([])
 })
 
-test('offers /compact beside the context warning', async ($, on) => {
-  surround(on, 'dark', 85)
+test('asks before /compact from the word in the context warning, and lets the question lapse', async ($, on) => {
+  const clock = surround(on, 'dark', 85)
   const ran: string[] = []
   on('command.run', (_, e) => {
     ran.push(`/${e.command}`)
@@ -333,6 +335,12 @@ test('offers /compact beside the context warning', async ($, on) => {
   })
   await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
   const ui = await $.ui.mount({ plugin: 'context-bar', surface: 'terminal', ...BAND })
+  await ui.press({ key: 'warning-compact' })
+  expect(ran).toEqual([])
+  expect(await ui.find({ key: 'warning-compact', text: /\/compact\?/ })).toBeDefined()
+  await clock.advance(5000)
+  expect(await ui.find({ key: 'warning-compact', text: /\/compact\?/ })).toBeUndefined()
+  await ui.press({ key: 'warning-compact' })
   await ui.press({ key: 'warning-compact' })
   expect(ran).toEqual(['/compact'])
 })
@@ -353,4 +361,32 @@ test('drops settings an older version stored', async ($, on) => {
   expect(kept.at(-1)).toMatchObject({ contextWarnPercent: 70, showOnStart: false })
   expect(kept.at(-1)).not.toHaveProperty('shading')
   expect(kept.at(-1)).not.toHaveProperty('categoryColors')
+})
+
+test('lets every armed confirmation lapse after five seconds, and arms one at a time', async ($, on) => {
+  const clock = surround(on, 'dark', 25, {}, 12)
+  const ran: string[] = []
+  on('command.run', (_, e) => {
+    ran.push(`/${e.command}`)
+
+    return { text: 'ok' }
+  })
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  const ui = await $.ui.mount({ plugin: 'context-bar', surface: 'terminal', ...BAND })
+  await ui.press({ key: 'usage' })
+  await ui.press({ key: 'clear' })
+  expect(await ui.find({ key: 'clear', text: /confirm new session/ })).toBeDefined()
+  await clock.advance(5000)
+  expect(await ui.find({ key: 'clear', text: /confirm/ })).toBeUndefined()
+  // Arming compact disarms new session: a click on new session then only arms it.
+  await ui.press({ key: 'clear' })
+  await ui.press({ key: 'compact' })
+  expect(await ui.find({ key: 'clear', text: /confirm/ })).toBeUndefined()
+  await ui.press({ key: 'clear' })
+  expect(ran).toEqual([])
+  await ui.press({ key: 'settings' })
+  await ui.press({ key: 'reset' })
+  expect(await ui.find({ key: 'reset', text: /confirm reset/ })).toBeDefined()
+  await clock.advance(5000)
+  expect(await ui.find({ key: 'reset', text: /confirm/ })).toBeUndefined()
 })
