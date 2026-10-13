@@ -3,9 +3,10 @@
 > If unsure, propose — don't act.
 
 A personal toolkit for [Claude Code](https://docs.claude.com/en/docs/claude-code) —
-skills today; agents and other extensions as they earn their place. Each
-top-level folder mirrors its location under `~/.claude`, and every artifact
-documents itself in its own README.
+skills and mods today; agents and other extensions as they earn their place.
+`skills/` mirrors its place under `~/.claude`; `mods/` holds mods (plugins with a
+hooks module) this repository publishes as a marketplace. Every artifact documents
+itself in its own README.
 
 ## Skills
 
@@ -13,17 +14,17 @@ documents itself in its own README.
 |---|---|
 | [/dream](./skills/dream/) | Nightly memory consolidation — reads your recent sessions, proposes memory changes with your own words as evidence. Nothing is written without your approval. |
 
+## Mods
+
+| Mod | What it does |
+|---|---|
+| [context-bar](./mods/context-bar/) | The context window as a stacked bar above the prompt, one color per `/context` category, with the model, effort, a breakdown, plan usage and settings one click away. |
+
 ## Installing
 
-Copy the folder you want into the same place under your Claude home:
-
-```bash
-cp -r skills/<name> ~/.claude/skills/<name>
-```
-
-Then see that artifact's README for any setup it needs. Everything here is
-self-contained: one folder in, one folder out — no hooks, no settings
-surgery.
+Each artifact's README has its install steps: skills are copied into
+`~/.claude/skills/`, mods install from this repository's marketplace with
+`/plugin install`.
 
 ## License
 
