@@ -13,7 +13,8 @@ A Claude Code mod (a plugin with a hooks module): a band above the prompt that d
 
 - Claude Code 2.1.287 or later, where mods load by default; built and tested on 2.1.296. Mods are an
   early-access surface that may change between releases.
-- The band draws in the terminal and in the desktop app; other surfaces show nothing.
+- Terminal only: the desktop app and other surfaces keep their own band. The desktop draws text in a
+  proportional font, where the bar's cells, shades and hover cards don't line up.
 
 ## Install
 

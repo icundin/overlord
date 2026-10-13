@@ -38,7 +38,8 @@ test('draws the bar and toggles it with /context-bar', async ($, on) => {
     // drained
   }
 
-  for (const surface of ['terminal', 'desktop'] as const) {
+  {
+    const surface = 'terminal'
     const ui = await $.ui.mount({ plugin: 'context-bar', surface, ...BAND })
     expect(await ui.find({ key: 'bar' })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: /compacts at 167k/ })).toBeDefined()
@@ -389,4 +390,12 @@ test('lets every armed confirmation lapse after five seconds, and arms one at a 
   expect(await ui.find({ key: 'reset', text: /confirm reset/ })).toBeDefined()
   await clock.advance(5000)
   expect(await ui.find({ key: 'reset', text: /confirm/ })).toBeUndefined()
+})
+
+test('leaves the desktop band to the engine', async ($, on) => {
+  surround(on, 'dark', 25)
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+  const ui = await $.ui.mount({ plugin: 'context-bar', surface: 'desktop', ...BAND })
+  expect(await ui.find({ type: 'Text', text: /engine band/ })).toBeDefined()
+  expect(await ui.find({ key: 'breakdown' })).toBeUndefined()
 })

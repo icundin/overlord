@@ -317,8 +317,9 @@ export const register: Register = on => {
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     const current = await read($, usage)
 
-    // The band is raised on the terminal and desktop only; the check narrows the surface for the element table.
-    if (e.props.hasSurvey || current === null || (await read($, isHidden)) || (e.surface !== 'terminal' && e.surface !== 'desktop')) {
+    // Terminal only: the desktop app lays the band out in a proportional font, where its cells, shades and hover
+    // cards do not line up, so it keeps its own band there.
+    if (e.props.hasSurvey || current === null || (await read($, isHidden)) || e.surface !== 'terminal') {
       return next(e)
     }
 

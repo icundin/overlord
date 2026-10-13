@@ -2,6 +2,10 @@
 
 One changelog for the collection; every entry names the artifact it concerns.
 
+# 1.5.1 — 2026-10-13
+
+- Context bar: Draws on the terminal only; the desktop app keeps its own band. The desktop lays the band out in a proportional font, where the bar's cells and shades read as dot patterns, rows wrap and the hover cards land on the header, so a faithful version would need its own layout for every card.
+
 # 1.5.0 — 2026-10-13
 
 - **NEW:** Mod: `context-bar` — the context window drawn as a stacked bar above the prompt, one color per `/context` category, with the model and effort (each a menu that runs `/model` or `/effort`), a breakdown card, a usage card (plan limits, cost, tokens, compact and new-session buttons) and a settings card. `/context` shows the window only when asked; the bar keeps it in view while working, so compaction and limits stop arriving as surprises.
