@@ -1,0 +1,14 @@
+{
+  "name": "claude-code-toolkit",
+  "description": "Open-source resources for building and extending Claude.",
+  "owner": {
+    "name": "Inigo Cundin"
+  },
+  "plugins": [
+    {
+      "name": "context-bar",
+      "source": "./plugins/context-bar",
+      "description": "The context window as a stacked bar above the prompt, with the model, effort, breakdown, plan usage and settings"
+    }
+  ]
+}

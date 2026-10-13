@@ -8,6 +8,7 @@ One changelog for the collection; every entry names the artifact it concerns.
 - Context bar: Warnings at a context fill, a plan-limit use and a session cost the person sets (80%, 90% and $50 by default), shown as a line under the bar for as long as they apply, the context warning with a button that runs `/compact`. A notification fired on an event was missed, and waited for one: the interactive terminal never raised `session.measure`, so the line is worked out from the current figures each time the band draws.
 - Context bar: The header shows what the last turn added and cost, how many turns are left at that pace before the warning threshold or compaction, and how many subagents are running; the breakdown lists MCP tools by server, memory files and skills by source. The figures said how much was used, not how fast, nor what it was spent on.
 - Context bar: Settings live in the plugin's own store and are edited in the band, not in `/config`, where a plugin loaded from a folder did not list them.
+- Repository: `.claude-plugin/marketplace.json` makes the repository a plugin marketplace, so a plugin installs with `/plugin install <name> --marketplace icundin/claude-code-toolkit`; the README's install section covers both kinds of artifact.
 
 # 1.4.0 — 2026-09-08
 
