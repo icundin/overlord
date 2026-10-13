@@ -3,9 +3,10 @@
 > If unsure, propose — don't act.
 
 A personal toolkit for [Claude Code](https://docs.claude.com/en/docs/claude-code) —
-skills and plugins today; agents and other extensions as they earn their place. Each
-top-level folder mirrors its location under `~/.claude`, and every artifact
-documents itself in its own README.
+skills and plugins today; agents and other extensions as they earn their place.
+`skills/` mirrors its place under `~/.claude`; `plugins/` holds plugins this
+repository publishes as a marketplace. Every artifact documents itself in its own
+README.
 
 ## Skills
 
@@ -21,22 +22,9 @@ documents itself in its own README.
 
 ## Installing
 
-A skill: copy its folder into the same place under your Claude home:
-
-```bash
-cp -r skills/<name> ~/.claude/skills/<name>
-```
-
-A plugin: install it from this repository's marketplace, at the Claude Code
-prompt:
-
-```
-/plugin install <name> --marketplace icundin/claude-code-toolkit
-```
-
-Then see that artifact's README for any setup it needs. Everything here is
-self-contained: a skill is one folder in, one folder out; a plugin installs
-and uninstalls through `/plugin` — no settings surgery.
+Each artifact's README has its install steps: skills are copied into
+`~/.claude/skills/`, plugins install from this repository's marketplace with
+`/plugin install`.
 
 ## License
 
