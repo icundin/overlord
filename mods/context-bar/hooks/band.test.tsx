@@ -345,9 +345,9 @@ test('asks before /compact from the word in the context warning, and lets the qu
   expect(ran).toEqual(['/compact'])
 })
 
-test('drops settings an older version stored', async ($, on) => {
+test('drops stored settings it does not know', async ($, on) => {
   const kept: unknown[] = []
-  on('store.get', () => ({ value: { contextWarnPercent: 70, shading: 'dark', categoryColors: 'custom' } }))
+  on('store.get', () => ({ value: { contextWarnPercent: 70, retired: 'dark', unknown: 'custom' } }))
   on('store.set', (_, e) => {
     kept.push(e.value)
 
@@ -359,8 +359,8 @@ test('drops settings an older version stored', async ($, on) => {
   await ui.press({ key: 'settings' })
   await ui.press({ key: 'setting-showOnStart' })
   expect(kept.at(-1)).toMatchObject({ contextWarnPercent: 70, showOnStart: false })
-  expect(kept.at(-1)).not.toHaveProperty('shading')
-  expect(kept.at(-1)).not.toHaveProperty('categoryColors')
+  expect(kept.at(-1)).not.toHaveProperty('retired')
+  expect(kept.at(-1)).not.toHaveProperty('unknown')
 })
 
 test('lets every armed confirmation lapse after five seconds, and arms one at a time', async ($, on) => {

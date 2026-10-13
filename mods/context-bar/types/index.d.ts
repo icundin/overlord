@@ -22,7 +22,6 @@ export type Limit = { kind: string; percentUsed: number; resetsAt: string | null
 // The MCP tools the context carries, one row per server.
 export type McpServer = { server: string; tools: number; tokens: number }
 
-// `type` is the engine's word for where it comes from: `User`, `Project`, `AutoMem`, ...
 // Where a skill comes from: the engine's `source`, and the plugin's name for a plugin's skill.
 export type Skill = { name: string; source: string; pluginName?: string; tokens: number }
 
@@ -34,6 +33,7 @@ export type Growth = {
   deltas: number[]
 }
 
+// `type` is the engine's word for where it comes from: `User`, `Project`, `AutoMem`, ...
 export type MemoryFile = { path: string; type: string; tokens: number }
 
 // A collapsible section of a card.

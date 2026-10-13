@@ -12,7 +12,7 @@ export function usageCard(kit: Kit) {
   const { view, act } = kit
   const current = view.usage
   const counted = view.tally
-  const limits = current.limits ?? []
+  const limits = current.limits
   const labels = limits.map(limit => limitLabel(limit.kind))
   const labelWidth = Math.max(0, ...labels.map(label => label.length))
   const byModel = Object.entries(counted?.models ?? {})

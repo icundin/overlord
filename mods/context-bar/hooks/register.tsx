@@ -37,7 +37,7 @@ const FILL_MS = 300
 async function loadSettings($: EngineInterface): Promise<BarSettings> {
   const stored = await $.store.get('settings')
   const kept: Record<string, unknown> = typeof stored === 'object' && stored !== null ? { ...stored } : {}
-  // Fields an older version stored and this one no longer has are dropped, so they are not saved back.
+  // Fields this version does not know are dropped, so they are not saved back.
   const loaded: BarSettings = {
     ...DEFAULT_SETTINGS,
     ...Object.fromEntries(Object.entries(kept).filter(([key]) => key in DEFAULT_SETTINGS)),
@@ -113,7 +113,7 @@ async function choose($: EngineInterface, command: 'model' | 'effort', option: s
     }
     await refresh($)
   } catch {
-    $.ui.toast(`/${command} ${option} failed`)
+    notify($, `/${command} ${option} failed`)
   }
 }
 
@@ -162,7 +162,7 @@ async function showContext($: EngineInterface): Promise<void> {
   try {
     await $.command.run({ command: 'context' })
   } catch {
-    $.ui.toast('/context failed')
+    notify($, '/context failed')
   }
 }
 
@@ -195,7 +195,7 @@ async function confirmFirst($: EngineInterface, action: Confirmable, perform: ()
 async function resetSettings($: EngineInterface): Promise<void> {
   await update($, settings, () => DEFAULT_SETTINGS)
   await $.store.set('settings', DEFAULT_SETTINGS)
-  $.ui.toast('Settings reset to their defaults')
+  notify($, 'Settings reset to their defaults')
 }
 
 // Opening a card resets its sections to their defaults, so it always opens the same way.
@@ -218,7 +218,7 @@ async function run($: EngineInterface, command: string): Promise<void> {
   try {
     await $.command.run({ command })
   } catch {
-    $.ui.toast(`/${command} failed`)
+    notify($, `/${command} failed`)
   }
 }
 
@@ -250,8 +250,8 @@ export const register: Register = on => {
     return { text: hidden ? 'Context bar hidden.' : 'Context bar shown.' }
   })
 
-  // Raised whenever the context's fill, a plan limit or the cost moves; not every session raises it, so
-  // turn.complete refreshes too.
+  // Raised whenever the context's fill, a plan limit or the cost moves; an interactive session was seen not to raise
+  // it, so turn.complete refreshes too.
   on('session.measure', async ($, e, next) => {
     const result = await next(e)
     await refresh($).catch(() => undefined)
@@ -283,7 +283,7 @@ export const register: Register = on => {
           startCost: null,
           lastDelta: delta,
           lastCost: was.startCost === null || current.cost === null ? was.lastCost : current.cost - was.startCost,
-          deltas: [...(was.deltas ?? []), delta].slice(-5),
+          deltas: [...was.deltas, delta].slice(-5),
         }
       })
     }
@@ -322,9 +322,9 @@ export const register: Register = on => {
       return next(e)
     }
 
-    const hasUsage = (current.limits ?? []).length > 0 || current.cost != null
+    const hasUsage = current.limits.length > 0 || current.cost !== null
     const stored = await read($, panel)
-    // A panel this version no longer has (an older one's `details`) reads as closed.
+    // A stored panel the band does not draw, or usage without figures to show, reads as closed.
     const open =
       stored === 'breakdown' || stored === 'settings' || stored === 'model' || stored === 'effort' || (stored === 'usage' && hasUsage)
         ? stored

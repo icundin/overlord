@@ -17,7 +17,7 @@ export function band(ui: ElementTable<'terminal' | 'desktop'>, view: View, act: 
   const kit: Kit = { ui, view, act, inner: view.width - 4, shadeBehind: view.isLight ? 'white' : 'black' }
   const { headerButton, dot } = parts(kit)
   const { inner, shadeBehind } = kit
-  const hasUsage = (current.limits ?? []).length > 0 || current.cost != null
+  const hasUsage = current.limits.length > 0 || current.cost !== null
   const bar = segments(current.rows, inner)
   const shown = reveal(bar, view.fill)
   const { lastDelta, lastCost } = view.growth
@@ -32,7 +32,7 @@ export function band(ui: ElementTable<'terminal' | 'desktop'>, view: View, act: 
       : current.autoCompactThreshold !== null
         ? { tokens: current.autoCompactThreshold, label: 'compaction' }
         : null
-  const turnsLeft = mark === null ? null : turnsUntil(mark.tokens, current.totalTokens, view.growth.deltas ?? [])
+  const turnsLeft = mark === null ? null : turnsUntil(mark.tokens, current.totalTokens, view.growth.deltas)
   const projection = turnsLeft === null || mark === null ? '' : ` · ≈ ${turnsLeft} turn${turnsLeft === 1 ? '' : 's'} to ${mark.label}`
   const agentsNote = view.runningAgents > 0 ? `${view.runningAgents} agent${view.runningAgents === 1 ? '' : 's'}` : ''
   const compactsAt = current.autoCompactThreshold === null ? '' : ` · compacts at ${compact(current.autoCompactThreshold)}`
@@ -59,7 +59,7 @@ export function band(ui: ElementTable<'terminal' | 'desktop'>, view: View, act: 
   const totals = `${compact(current.totalTokens)}${detail}  ${current.percentage}% `
   // Worked out on every draw from the figures and the settings, so a changed threshold shows at once.
   const warnings = alerts(
-    { contextPercent: current.percentage, limits: current.limits ?? [], cost: current.cost },
+    { contextPercent: current.percentage, limits: current.limits, cost: current.cost },
     { context: view.settings.contextWarnPercent, limit: view.settings.limitWarnPercent, cost: view.settings.costWarnUsd },
   )
   // The context warning's `/compact` is itself the button: /compact opens no dialog, so the band keeps the keys.

@@ -1,7 +1,6 @@
 // Fitting the bar, lists and header into the cells the band has.
 
 import type { Row, Segment } from '../types'
-import { share } from './format'
 
 // The compact buffer gets two cells so it reads as a block, not a stray cell.
 const MIN_CELLS: Partial<Record<Row['kind'], number>> = { used: 1, buffer: 2 }
@@ -50,10 +49,10 @@ export function segments(rows: Row[], width: number): Segment[] {
   return shown.map((row, i) => ({ ...row, cells: cells[i] ?? 0 }))
 }
 
-// Draws the first `share` (0 to 1) of the used cells in their colors and the rest as free space.
-export function reveal(bar: Segment[], share: number): Segment[] {
+// Draws the first `portion` (0 to 1) of the used cells in their colors and the rest as free space.
+export function reveal(bar: Segment[], portion: number): Segment[] {
   const used = bar.filter(seg => seg.kind === 'used').reduce((sum, seg) => sum + seg.cells, 0)
-  let budget = Math.round(used * share)
+  let budget = Math.round(used * portion)
   const out: Segment[] = []
 
   for (const seg of bar) {

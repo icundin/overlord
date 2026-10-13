@@ -30,10 +30,10 @@ export function breakdownCard(kit: Kit) {
   const GAP = 3
   // The card's border and padding, the close button, and a section body's indent.
   const width = kit.inner - 4 - CLOSE_WIDTH - 2
-  const servers = current.mcpServers ?? []
-  const files = current.memoryFiles ?? []
+  const servers = current.mcpServers
+  const files = current.memoryFiles
   const fileNames = shortPaths(files.map(file => file.path))
-  const skillSources = bySource(current.skills ?? [])
+  const skillSources = bySource(current.skills)
   const lists = [
     servers.length > 0 && {
       key: 'mcp' as const,
