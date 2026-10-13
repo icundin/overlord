@@ -1,6 +1,6 @@
 import { expect, mock, test } from 'claude-code/testing'
 
-import { BAND, BREAKDOWN, CATEGORIES, configRows, surround } from './fixtures'
+import { BAND, BREAKDOWN, CATEGORIES, configRows, surround, usageWith } from './fixtures'
 import { segments } from './layout'
 
 test('draws the bar and toggles it with /context-bar', async ($, on) => {
@@ -398,4 +398,27 @@ test('leaves the desktop band to the engine', async ($, on) => {
   const ui = await $.ui.mount({ plugin: 'context-bar', surface: 'desktop', ...BAND })
   expect(await ui.find({ type: 'Text', text: /engine band/ })).toBeDefined()
   expect(await ui.find({ key: 'breakdown' })).toBeUndefined()
+})
+
+test('refreshes the bar once a compaction ends', async ($, on) => {
+  let percentage = 81
+  mock.clock(on, { now: Date.parse('2026-10-13T09:05:00.000Z') })
+  mock.store(on, {})
+  on('session.usage', () => usageWith(percentage))
+  on('config.list', () => ({ value: configRows('dark') }))
+  on('command.register', (_, e) => ({ value: { command: e.name } }))
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+  on('ui.render', ($, e) => {
+    const { Text } = $.ui.resolve(e)
+
+    return <Text key="engine">engine band</Text>
+  })
+  const summary = [{ role: 'user' as const, text: 'summary', toolUses: [] }]
+  on('session.compact', () => ({ messages: summary }))
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  percentage = 12
+  await $.session.compact({ trigger: 'manual', messages: summary })
+
+  const ui = await $.ui.mount({ plugin: 'context-bar', surface: 'terminal', ...BAND })
+  expect(await ui.find({ type: 'Text', text: /^ 12% $/ })).toBeDefined()
 })

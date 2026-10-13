@@ -259,6 +259,16 @@ export const register: Register = on => {
     return result
   })
 
+  // A /compact typed or clicked is no turn, so turn.complete never follows it.
+  on('session.compact', async ($, e, next) => {
+    const result = await next(e)
+    if (e.agentId === undefined && e.trigger !== 'precompute') {
+      await refresh($).catch(() => undefined)
+    }
+
+    return result
+  })
+
   on('turn.start', async ($, e, next) => {
     const current = await read($, usage)
     await update($, growth, was => ({ ...was, startTokens: current?.totalTokens ?? null, startCost: current?.cost ?? null }))

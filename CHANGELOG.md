@@ -2,6 +2,10 @@
 
 One changelog for the collection; every entry names the artifact it concerns.
 
+# 1.5.2 — 2026-10-13
+
+- Context bar: Refreshes as soon as a compaction ends, typed, clicked or automatic. It refreshed only when a turn completed, and `/compact` is no turn, so the bar kept the pre-compaction fill until the next message.
+
 # 1.5.1 — 2026-10-13
 
 - Context bar: Draws on the terminal only; the desktop app keeps its own band. The desktop lays the band out in a proportional font, where the bar's cells and shades read as dot patterns, rows wrap and the hover cards land on the header, so a faithful version would need its own layout for every card.
