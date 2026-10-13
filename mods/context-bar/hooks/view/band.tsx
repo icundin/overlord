@@ -11,7 +11,7 @@ import { settingsCard } from './settings'
 import { usageCard } from './usage'
 
 // The band: the header, the bar with a hover card per segment, the warning line, and the open card.
-export function band(ui: ElementTable<'terminal' | 'desktop'>, view: View, act: Actions) {
+export function band(ui: ElementTable<'terminal'>, view: View, act: Actions) {
   const { Box, Button, Text } = ui
   const { usage: current, open, effort: level } = view
   const kit: Kit = { ui, view, act, inner: view.width - 4, shadeBehind: view.isLight ? 'white' : 'black' }

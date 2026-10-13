@@ -45,8 +45,8 @@ export type Actions = {
 
 // What every card draws with: the surface's elements, the band's state and actions, and the cells it has.
 export type Kit = {
-  // The band is raised on the terminal and desktop surfaces only, both of which have an Input.
-  ui: ElementTable<'terminal' | 'desktop'>
+  // The band draws on the terminal only.
+  ui: ElementTable<'terminal'>
   view: View
   act: Actions
   // Inside the band's border and padding.
