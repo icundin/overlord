@@ -2,6 +2,10 @@
 
 One changelog for the collection; every entry names the artifact it concerns.
 
+# 1.5.3 — 2026-10-14
+
+- Context bar: Draws again in the session a `/clear` starts, the band's **new session** button included, with the saved settings. A `/clear` wipes the mod's session state and raises no `session.start`, where the mod read its settings and figures, so the bar was gone and the settings fell back to their defaults.
+
 # 1.5.2 — 2026-10-13
 
 - Context bar: Refreshes as soon as a compaction ends, typed, clicked or automatic. It refreshed only when a turn completed, and `/compact` is no turn, so the bar kept the pre-compaction fill until the next message.
