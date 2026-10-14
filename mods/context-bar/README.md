@@ -59,7 +59,8 @@ claude plugin uninstall context-bar@claude-code-toolkit
 - **The totals** show what the last turn added and cost (`+7.4k · $0.42 last turn`), the session's cost so far
   (`$1.16 total`) and, at the recent pace (the average of the last few turns that grew the context), how many turns
   are left before the warning threshold or compaction (`≈ 40 turns to 80%`). On a narrow terminal they drop that
-  detail first, the session's cost after the last turn's.
+  detail first, the session's cost after the last turn's, and **breakdown · usage · settings** move to a row of
+  their own under the bar when the header can't hold them.
 - **breakdown** lists every category, the MCP tools by server, the memory files and the skills by source, and links
   to `/context` for the full detail.
 - **usage** shows the plan limits and how old they are (`38%, 12% · updated 14 min ago`), the session's cost and time,
