@@ -1,17 +1,20 @@
+import type { Limit } from '../../types'
 import { DEFAULT_OPEN } from '../defaults'
 import { cacheHit, sumTokens, totalTokens } from '../figures'
 import { ago, compact, dollars, duration, levelColor, limitLabel, modelLabel, resetsIn } from '../format'
 import { MAIN, spendGroups } from '../spend'
 import type { SpendGroup } from '../spend'
+import { longestFitting } from '../layout'
 import { chunk, parts } from './kit'
 import type { Kit } from './kit'
 
 const BAR_CELLS = 20
+const MIN_BAR_CELLS = 10
 
 // The plan limits, the session's cost and time, the tokens counted, and compact or start anew.
 export function usageCard(kit: Kit) {
   const { Box, Button, Text } = kit.ui
-  const { section, chip } = parts(kit)
+  const { section, chip, tip } = parts(kit)
   const { view, act } = kit
   const current = view.usage
   const counted = view.tally
@@ -58,12 +61,14 @@ export function usageCard(kit: Kit) {
           ...(isMoreOpen ? group.folded.map(one => ({ group: one, label: one.label, isMore: false })) : []),
         ],
   )
-  const agentDetail = (group: SpendGroup) =>
-    [
-      dollars(group.usd),
-      ...(group.tokens === null ? [] : [`${compact(group.tokens)} tokens`]),
-      ...(group.models.length === 0 ? [] : [group.models.map(modelLabel).join(', ')]),
-    ].join(' · ')
+  // What follows an agent's bar, the longest first: cost, tokens and models, then without the models, then the cost.
+  const agentDetails = (group: SpendGroup) => {
+    const cost = dollars(group.usd)
+    const tokens = group.tokens === null ? [] : [`${compact(group.tokens)} tokens`]
+    const models = group.models.length === 0 ? [] : [group.models.map(modelLabel).join(', ')]
+
+    return [[cost, ...tokens, ...models].join(' · '), [cost, ...tokens].join(' · '), cost]
+  }
   // One label column for the limits and the agents, the folded rows counted open or not, so the bars start in line
   // and stay put when the list opens.
   const folded = groups.flatMap(group => group.folded ?? [])
@@ -73,16 +78,28 @@ export function usageCard(kit: Kit) {
     ...agentRows.map(row => row.label.length),
     ...folded.map(one => one.label.length),
   )
+  const limitDetails = (limit: Limit) => {
+    const left = limit.resetsAt === null ? '' : resetsIn(limit.resetsAt, view.now)
+
+    return left === '' ? [''] : [`resets in ${left}`, left]
+  }
+  // A row narrows as the card does: its bar first, down to MIN_BAR_CELLS, every bar one width so they stay in line;
+  // then its detail, to the longest form that fits. Past the bar: the section's indent, the label and its gap, and
+  // the percentage and the detail, each with its gap.
+  const longest = Math.max(0, ...[...limits.map(limitDetails), ...[...groups, ...folded].map(agentDetails)].map(([full = '']) => full.length))
+  const room = kit.card - 2 - labelWidth - 2 - 2 - 4 - 2
+  const barCells = Math.max(MIN_BAR_CELLS, Math.min(BAR_CELLS, room - longest))
+  const detail = (forms: string[]) => longestFitting(forms, room - barCells)
   // A bar filled to `percent`, the percentage, and the detail after it.
   const gauge = (percent: number, color: string, detail: string) => {
-    const filled = Math.min(BAR_CELLS, Math.round((percent / 100) * BAR_CELLS))
+    const filled = Math.min(barCells, Math.round((percent / 100) * barCells))
 
     return [
       <Text key="filled" color={color} backgroundColor={kit.shadeBehind}>
         {'▓'.repeat(filled)}
       </Text>,
       <Text key="empty" color="subtle">
-        {'░'.repeat(BAR_CELLS - filled)}
+        {'░'.repeat(barCells - filled)}
       </Text>,
       '  ',
       <Text key="percent" bold>
@@ -117,7 +134,7 @@ export function usageCard(kit: Kit) {
               labels[i] ?? '',
               limit.percentUsed,
               levelColor(limit.percentUsed),
-              limit.resetsAt === null ? '' : `resets in ${resetsIn(limit.resetsAt, view.now)}`,
+              detail(limitDetails(limit)),
             ),
           ),
         )}
@@ -145,11 +162,11 @@ export function usageCard(kit: Kit) {
                 </Button>
                 <Text>
                   {' '.repeat(labelWidth - label.length + 2)}
-                  {gauge(shareOf(group.usd), group.color, agentDetail(group))}
+                  {gauge(shareOf(group.usd), group.color, detail(agentDetails(group)))}
                 </Text>
               </Box>
             ) : (
-              meter(`agent-${group.key}`, label, shareOf(group.usd), group.color, agentDetail(group))
+              meter(`agent-${group.key}`, label, shareOf(group.usd), group.color, detail(agentDetails(group)))
             ),
           ),
         )}
@@ -167,9 +184,7 @@ export function usageCard(kit: Kit) {
             )),
         )}
       <Box key="actions" flexDirection="column">
-        <Text key="tip" dimColor>
-          Longer sessions cost more, even when cached. Compact mid-task, and start a new session when you switch tasks.
-        </Text>
+        {tip('Longer sessions cost more, even when cached. Compact mid-task, and start a new session when you switch tasks.')}
         <Box key="buttons" columnGap={2}>
           {chip('compact', view.confirming === 'compact' ? 'confirm compact' : 'compact this session', act.compact, view.confirming === 'compact')}
           {chip('clear', view.confirming === 'clear' ? 'confirm new session' : 'new session', act.newSession, view.confirming === 'clear')}

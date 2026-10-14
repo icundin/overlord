@@ -1,7 +1,8 @@
 import type { ElementTable, RenderChildren } from 'claude-code'
 
-import type { BarSettings, Confirmable, Growth, Panel, Section, Spend, Tally, Usage } from '../../types'
+import type { BarSettings, Confirmable, Growth, Panel, Row, Section, Spend, Tally, Usage } from '../../types'
 import { DEFAULT_OPEN } from '../defaults'
+import { balanced } from '../layout'
 
 // Everything the band draws, read by the render hook.
 export type View = {
@@ -53,12 +54,24 @@ export type Kit = {
   act: Actions
   // Inside the band's border and padding.
   inner: number
+  // Inside the open card's border and padding, beside its close button.
+  card: number
   // Shade glyphs on the theme's background read as a darker version of their color.
   shadeBehind: 'white' | 'black'
 }
 
 // "[x]" and the gap before it.
 export const CLOSE_WIDTH = 4
+
+// A row's color in the bar, the legend and the hover cards: the compact buffer in the warning color while
+// auto-compact is on, the free space and deferred schemas faint.
+export function swatchOf(row: Row, isAutoCompact: boolean): string {
+  if (row.kind === 'used') {
+    return row.color
+  }
+
+  return row.kind === 'buffer' ? (isAutoCompact ? 'warning' : 'inactive') : 'subtle'
+}
 
 export function chunk<T>(list: T[], size: number): T[][] {
   const out: T[][] = []
@@ -75,7 +88,7 @@ export function cycle<T extends string>(options: readonly T[], value: T): T {
 
 // The pieces the cards share. A Button inverts under the pointer, so every label is grey: inverted, it is a grey
 // background, not a white one.
-export function parts({ ui: { Box, Button, Text }, view, act }: Kit) {
+export function parts({ ui: { Box, Button, Text }, view, act, card }: Kit) {
   // A collapsible section: the title and a short summary, the body below while open. The summary's parts are
   // separated by ` · `, as in the header; a part that lists several things joins them with `, `.
   const section = (key: Section, title: string, summary: string[], body: () => RenderChildren) => {
@@ -136,5 +149,16 @@ export function parts({ ui: { Box, Button, Text }, view, act }: Kit) {
     </Text>
   )
 
-  return { section, chip, option, headerButton, dot }
+  // A card's closing note, wrapped into even lines.
+  const tip = (text: string) => (
+    <Box key="tip" flexDirection="column">
+      {balanced(text, card).map((line, i) => (
+        <Text key={`tip-${i}`} dimColor>
+          {line}
+        </Text>
+      ))}
+    </Box>
+  )
+
+  return { section, chip, option, headerButton, dot, tip }
 }

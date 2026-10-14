@@ -1,10 +1,10 @@
 import type { ElementTable } from 'claude-code'
 
-import { alerts, turnsUntil } from '../figures'
+import { alerts, hasUsage, turnsUntil } from '../figures'
 import { compact, dollars, levelColor, modelLabel, share, signed } from '../format'
 import { longestFitting, reveal, segments } from '../layout'
 import { breakdownCard } from './breakdown'
-import { parts } from './kit'
+import { CLOSE_WIDTH, parts, swatchOf } from './kit'
 import type { Actions, Kit, View } from './kit'
 import { menuCard } from './menu'
 import { settingsCard } from './settings'
@@ -14,10 +14,13 @@ import { usageCard } from './usage'
 export function band(ui: ElementTable<'terminal'>, view: View, act: Actions) {
   const { Box, Button, Text } = ui
   const { usage: current, open, effort: level } = view
-  const kit: Kit = { ui, view, act, inner: view.width - 4, shadeBehind: view.isLight ? 'white' : 'black' }
+  const inner = view.width - 4
+  // The card's border and padding, and the close button.
+  const kit: Kit = { ui, view, act, inner, card: inner - 4 - CLOSE_WIDTH, shadeBehind: view.isLight ? 'white' : 'black' }
   const { headerButton, dot } = parts(kit)
-  const { inner, shadeBehind } = kit
-  const hasUsage = current.limits.length > 0 || current.cost !== null
+  const { shadeBehind } = kit
+  const isUsageShown = hasUsage(current)
+  const isAutoCompact = current.autoCompactThreshold !== null
   const bar = segments(current.rows, inner)
   const shown = reveal(bar, view.fill)
   const { lastDelta, lastCost } = view.growth
@@ -38,19 +41,20 @@ export function band(ui: ElementTable<'terminal'>, view: View, act: Actions) {
   const agentsNote = view.runningAgents > 0 ? `${view.runningAgents} agent${view.runningAgents === 1 ? '' : 's'}` : ''
   const compactsAt = current.autoCompactThreshold === null ? '' : ` · compacts at ${compact(current.autoCompactThreshold)}`
   const ofMax = ` of ${compact(current.maxTokens)}`
-  // The header's left side as drawn: its items one cell apart.
-  const title = [
+  // The header's left side as drawn, its items one cell apart: the session, then the tabs, which take a row of their
+  // own under the bar when they do not fit beside the shortest totals.
+  const lead = [
     '◆ context',
     '·',
     modelLabel(current.model),
     ...(level === null ? [] : ['·', level]),
     ...(agentsNote === '' ? [] : ['·', agentsNote]),
-    '│',
-    'breakdown',
-    ...(hasUsage ? ['·', 'usage'] : []),
-    '·',
-    'settings',
-  ].join(' ')
+  ]
+  const tabNames = ['breakdown', ...(isUsageShown ? ['·', 'usage'] : []), '·', 'settings']
+  const shortestTotals = `${compact(current.totalTokens)}  ${current.percentage}% `.length
+  const withTabs = [...lead, '│', ...tabNames].join(' ')
+  const hasTabsRow = withTabs.length + 2 + shortestTotals > inner
+  const title = hasTabsRow ? lead.join(' ') : withTabs
   // The totals give up detail as the band narrows: the projection first, then the growth note, the session's cost,
   // the compaction point, and the window.
   const detail = longestFitting(
@@ -62,7 +66,7 @@ export function band(ui: ElementTable<'terminal'>, view: View, act: Actions) {
       ofMax,
       '',
     ],
-    inner - title.length - 2 - `${compact(current.totalTokens)}  ${current.percentage}% `.length,
+    inner - title.length - 2 - shortestTotals,
   )
   const totals = `${compact(current.totalTokens)}${detail}  ${current.percentage}% `
   // Worked out on every draw from the figures and the settings, so a changed threshold shows at once.
@@ -70,6 +74,13 @@ export function band(ui: ElementTable<'terminal'>, view: View, act: Actions) {
     { contextPercent: current.percentage, limits: current.limits, cost: current.cost },
     { context: view.settings.contextWarnPercent, limit: view.settings.limitWarnPercent, cost: view.settings.costWarnUsd },
   )
+  const tabs = [
+    headerButton('breakdown', 'breakdown', open === 'breakdown', () => act.toggle('breakdown')),
+    isUsageShown && dot('usage-dot'),
+    isUsageShown && headerButton('usage', 'usage', open === 'usage', () => act.toggle('usage')),
+    dot('settings-dot'),
+    headerButton('settings', 'settings', open === 'settings', () => act.toggle('settings')),
+  ]
   // The context warning's `/compact` is itself the button: /compact opens no dialog, so the band keeps the keys.
   const COMMAND = '/compact'
 
@@ -90,14 +101,12 @@ export function band(ui: ElementTable<'terminal'>, view: View, act: Actions) {
               {agentsNote}
             </Text>
           )}
-          <Text key="panels-bar" color="subtle">
-            │
-          </Text>
-          {headerButton('breakdown', 'breakdown', open === 'breakdown', () => act.toggle('breakdown'))}
-          {hasUsage && dot('usage-dot')}
-          {hasUsage && headerButton('usage', 'usage', open === 'usage', () => act.toggle('usage'))}
-          {dot('settings-dot')}
-          {headerButton('settings', 'settings', open === 'settings', () => act.toggle('settings'))}
+          {!hasTabsRow && (
+            <Text key="panels-bar" color="subtle">
+              │
+            </Text>
+          )}
+          {!hasTabsRow && tabs}
         </Box>
         <Text key="total">
           <Text bold>{compact(current.totalTokens)}</Text>
@@ -114,10 +123,8 @@ export function band(ui: ElementTable<'terminal'>, view: View, act: Actions) {
           const scope = `segment:${seg.name}`
 
           if (seg.kind === 'buffer') {
-            const isAuto = current.autoCompactThreshold !== null
-
             return [
-              <Text key={seg.name} color={isAuto ? 'warning' : 'inactive'} hover={{ scope, dimColor: true }}>
+              <Text key={seg.name} color={swatchOf(seg, isAutoCompact)} hover={{ scope, dimColor: true }}>
                 {'▒'.repeat(seg.cells)}
               </Text>,
             ]
@@ -150,8 +157,6 @@ export function band(ui: ElementTable<'terminal'>, view: View, act: Actions) {
           const name = seg.name.toLowerCase()
           // Padded to the totals' width so the card hides them; it never reaches the header's buttons.
           const padding = ' '.repeat(Math.max(0, totals.length - name.length - figures.length - 4))
-          const swatch =
-            seg.kind === 'used' ? seg.color : seg.kind === 'buffer' && current.autoCompactThreshold !== null ? 'warning' : 'subtle'
 
           return (
             <Box
@@ -164,7 +169,7 @@ export function band(ui: ElementTable<'terminal'>, view: View, act: Actions) {
             >
               <Text>
                 {padding}
-                <Text color={swatch}>■</Text> <Text bold>{name}</Text>
+                <Text color={swatchOf(seg, isAutoCompact)}>■</Text> <Text bold>{name}</Text>
                 {'  '}
                 <Text dimColor>{figures}</Text>
               </Text>
@@ -172,6 +177,11 @@ export function band(ui: ElementTable<'terminal'>, view: View, act: Actions) {
           )
         })}
       </Box>
+      {hasTabsRow && (
+        <Box key="tabs" columnGap={1}>
+          {tabs}
+        </Box>
+      )}
       {warnings.length > 0 && (
         <Box key="warnings">
           <Text key="mark" color="warning">

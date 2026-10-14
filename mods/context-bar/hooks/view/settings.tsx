@@ -1,4 +1,5 @@
 import type { BarSettings, Section } from '../../types'
+import { amount } from '../format'
 import { ordered } from '../layout'
 import { parseAmount, parseColor, parsePercent } from '../parse'
 import { CATEGORY_THEMES } from '../themes'
@@ -81,7 +82,7 @@ export function settingsCard(kit: Kit) {
 
               return value === null
                 ? act.notify('Type an amount in dollars, like 50 or 12.50; 0 turns the warning off.')
-                : save({ costWarnUsd: value }, value === 0 ? 'Cost warning turned off' : `Cost warning set to $${value}`)
+                : save({ costWarnUsd: value }, value === 0 ? 'Cost warning turned off' : `Cost warning set to ${amount(value)}`)
             },
           },
         },

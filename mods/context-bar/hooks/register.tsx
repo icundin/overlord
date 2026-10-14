@@ -1,8 +1,8 @@
 import { atom, read, update } from 'claude-code'
-import type { EngineInterface, Register, SessionRateLimit, Timer } from 'claude-code'
+import type { AgentInfo, EngineInterface, Register, SessionRateLimit, Timer } from 'claude-code'
 
-import type { BarSettings, Confirmable, Limit, Panel, Section, Spend, Tally, Tokens, Usage } from '../types'
-import { byServer, totalTokens } from './figures'
+import type { BarSettings, Confirmable, Limit, Panel, Section, Spend, Tally, Usage } from '../types'
+import { byServer, hasUsage, NO_TOKENS, sumTokens, tokensOf, totalTokens } from './figures'
 import { modelChoices } from './format'
 import { distinctColors, themed } from './themes'
 import { DEFAULT_OPEN, DEFAULT_SETTINGS } from './defaults'
@@ -124,10 +124,10 @@ async function readConfig($: EngineInterface): Promise<void> {
   }
 }
 
-// How many agents are at work now, by the engine's own list.
-async function countAgents($: EngineInterface): Promise<void> {
-  const agents = await $.agent.list()
-  const running = agents.filter(agent => agent.status === 'running' || agent.status === 'pending' || agent.status === 'waiting')
+// How many agents are at work now, by the engine's own list; `agents` when the caller has just read it.
+async function countAgents($: EngineInterface, agents?: AgentInfo[]): Promise<void> {
+  const listed = agents ?? (await $.agent.list())
+  const running = listed.filter(agent => agent.status === 'running' || agent.status === 'pending' || agent.status === 'waiting')
   await update($, runningAgents, () => running.length)
 }
 
@@ -150,7 +150,7 @@ function runSoon($: EngineInterface, command: string, args?: string, after?: () 
 
 // Runs `/model` or `/effort` as if typed, so the session's own setting changes and the transcript says so.
 async function choose($: EngineInterface, command: 'model' | 'effort', option: string): Promise<void> {
-  await update($, panel, () => null)
+  await close($)
   runSoon($, command, option, async () => {
     if (command === 'effort') {
       await update($, effort, () => option)
@@ -183,25 +183,30 @@ const SETTLE_TRIES = 20
 let settling = 0
 
 // Claude Code counts the compacted context a moment after /compact returns, so the figures are re-read until they
-// drop: one read at a time, each 250 ms after the last, for five seconds at most.
+// drop: one read at a time, each 250 ms after the last, for five seconds at most. A turn queued behind the /compact
+// started from the figures before it, so the drop becomes its start.
 async function refreshUntilDropped($: EngineInterface): Promise<void> {
   const poll = ++settling
   const before = (await read($, usage))?.totalTokens ?? Infinity
-  const tick = (tries: number): void => {
+  const attempt = (tries: number): void => {
     $.clock.after(SETTLE_MS, () => {
       void (async () => {
         if (poll !== settling) {
           return
         }
         await refresh($).catch(() => undefined)
-        const now = (await read($, usage).catch(() => null))?.totalTokens ?? Infinity
-        if (now >= before && tries < SETTLE_TRIES) {
-          tick(tries + 1)
+        const now = await read($, usage).catch(() => null)
+        if (now !== null && now.totalTokens < before) {
+          await update($, growth, was =>
+            was.startTokens === null ? was : { ...was, startTokens: now.totalTokens, startCost: now.cost },
+          )
+        } else if (tries < SETTLE_TRIES) {
+          attempt(tries + 1)
         }
       })()
     })
   }
-  tick(1)
+  attempt(1)
 }
 
 // The session's cost so far, or null where Claude Code keeps no ledger. The plain read costs nothing.
@@ -211,7 +216,7 @@ async function sessionCost($: EngineInterface): Promise<number | null> {
 
 // Who a request's loop is: the main loop, a subagent by its task description, or null for a loop no agent list names
 // (Claude Code's own forks, such as a compaction).
-async function spender($: EngineInterface, agentId: string | undefined, known: Spend | null): Promise<{ id: string; label: string } | null> {
+function spender(agentId: string | undefined, known: Spend | null, agents: AgentInfo[]): { id: string; label: string } | null {
   if (agentId === undefined) {
     return { id: MAIN, label: 'main' }
   }
@@ -219,26 +224,18 @@ async function spender($: EngineInterface, agentId: string | undefined, known: S
   if (seen) {
     return seen
   }
-  const listed = (await $.agent.list()).find(agent => agent.id === agentId)
+  const listed = agents.find(agent => agent.id === agentId)
 
   return listed ? { id: agentId, label: listed.description || listed.type } : null
 }
 
-async function count($: EngineInterface, change: (was: Tally) => Tally): Promise<void> {
-  const now = await $.clock.now()
-  await update($, tally, was => change(was ?? { since: now, apiMs: 0, activeMs: 0, models: {} }))
-}
+// Counts what began at `from`, which the tally then covers.
+async function count($: EngineInterface, from: number, change: (was: Tally) => Tally): Promise<void> {
+  await update($, tally, was => {
+    const counted = change(was ?? { since: from, apiMs: 0, activeMs: 0, models: {} })
 
-function addTokens(
-  was: Tokens | undefined,
-  usage: { input_tokens: number; output_tokens: number; cache_read_input_tokens: number; cache_creation_input_tokens: number },
-): Tokens {
-  return {
-    input: (was?.input ?? 0) + usage.input_tokens,
-    output: (was?.output ?? 0) + usage.output_tokens,
-    cacheRead: (was?.cacheRead ?? 0) + usage.cache_read_input_tokens,
-    cacheWrite: (was?.cacheWrite ?? 0) + usage.cache_creation_input_tokens,
-  }
+    return { ...counted, since: Math.min(counted.since, from) }
+  })
 }
 
 async function toggleSection($: EngineInterface, key: Section): Promise<void> {
@@ -355,13 +352,14 @@ export const register: Register = on => {
     return result
   })
 
-  // A typed /compact is no turn, so turn.complete never follows it.
+  // A typed /compact is no turn, so turn.complete never follows it. Should the hook fail, /compact goes on, run once:
+  // the catch's `next` hands back the run already made.
   on('command.run', { command: 'compact' }, async ($, e, next) => {
     const result = await next(e)
     await refreshUntilDropped($).catch(() => undefined)
 
     return result
-  })
+  }).catch(($, e, next) => next(e))
 
   on('turn.start', async ($, e, next) => {
     const current = await read($, usage)
@@ -373,7 +371,8 @@ export const register: Register = on => {
   on('turn.complete', async ($, e, next) => {
     const result = await next(e)
     if (e.agentId === undefined) {
-      await count($, was => ({ ...was, activeMs: was.activeMs + e.durationMs })).catch(() => undefined)
+      const startedAt = (await $.clock.now()) - e.durationMs
+      await count($, startedAt, was => ({ ...was, activeMs: was.activeMs + e.durationMs })).catch(() => undefined)
       await refresh($).catch(() => undefined)
       const current = await read($, usage)
       await update($, growth, was => {
@@ -407,10 +406,12 @@ export const register: Register = on => {
     if (costBefore !== null) {
       await update($, spend, was => costAtStart(was, costBefore))
     }
+    // A subagent's request reads the engine's list once, to name the subagent and count those at work.
+    const agents = e.agentId === undefined ? null : await $.agent.list().catch(() => null)
     // Known before the request, so nothing comes between reading the total after it and counting it.
-    const who = await spender($, e.agentId, await read($, spend)).catch(() => null)
-    if (e.agentId !== undefined) {
-      await countAgents($).catch(() => undefined)
+    const who = spender(e.agentId, await read($, spend), agents ?? [])
+    if (agents !== null) {
+      await countAgents($, agents).catch(() => undefined)
     }
     const result = yield* next(e)
     const ms = (await $.clock.now()) - startedAt
@@ -419,15 +420,15 @@ export const register: Register = on => {
     const after = await $.session.usage().catch(() => null)
     const costAfter = after?.cost?.usd ?? null
     if (costAfter !== null) {
-      await update($, spend, was => costAtEnd(was, costAfter, who, spent ? totalTokens(addTokens(undefined, spent)) : 0, spent?.model))
+      await update($, spend, was => costAtEnd(was, costAfter, who, spent ? totalTokens(tokensOf(spent)) : 0, spent?.model))
     }
     if (after !== null) {
       await stampLimits($, after.rateLimits).catch(() => undefined)
     }
-    await count($, was => ({
+    await count($, startedAt, was => ({
       ...was,
       apiMs: was.apiMs + ms,
-      models: spent ? { ...was.models, [spent.model]: addTokens(was.models[spent.model], spent) } : was.models,
+      models: spent ? { ...was.models, [spent.model]: sumTokens([was.models[spent.model] ?? NO_TOKENS, tokensOf(spent)]) } : was.models,
     })).catch(() => undefined)
 
     return result
@@ -439,19 +440,21 @@ export const register: Register = on => {
       settingUp = true
       $.clock.after(0, () => void setUp($))
     }
-    const current = await read($, usage)
-
     // Terminal only: the desktop app lays the band out in a proportional font, where its cells, shades and hover
-    // cards do not line up, so it keeps its own band there.
-    if (e.props.hasSurvey || current === null || (await read($, isHidden)) || e.surface !== 'terminal') {
+    // cards do not line up, so it keeps its own band there. A render re-runs on every state write it read, so a band
+    // not drawn reads no figures.
+    if (e.props.hasSurvey || e.surface !== 'terminal' || (await read($, isHidden))) {
+      return next(e)
+    }
+    const current = await read($, usage)
+    if (current === null) {
       return next(e)
     }
 
-    const hasUsage = current.limits.length > 0 || current.cost !== null
     const stored = await read($, panel)
     // A stored panel the band does not draw, or usage without figures to show, reads as closed.
     const open =
-      stored === 'breakdown' || stored === 'settings' || stored === 'model' || stored === 'effort' || (stored === 'usage' && hasUsage)
+      stored === 'breakdown' || stored === 'settings' || stored === 'model' || stored === 'effort' || (stored === 'usage' && hasUsage(current))
         ? stored
         : null
 

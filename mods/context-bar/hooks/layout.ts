@@ -90,6 +90,37 @@ export function longestFitting(options: string[], width: number): string {
   return options.find(option => option.length <= width) ?? options[options.length - 1] ?? ''
 }
 
+// Word-wraps `text` into as few lines as `width` allows, as even as they can be, so the last is as full as the rest:
+// the narrowest width that needs no more lines.
+export function balanced(text: string, width: number): string[] {
+  const lines = wrapped(text, width)
+
+  for (let narrower = Math.ceil(text.length / lines.length); narrower < width; narrower += 1) {
+    const even = wrapped(text, narrower)
+    if (even.length === lines.length) {
+      return even
+    }
+  }
+
+  return lines
+}
+
+function wrapped(text: string, width: number): string[] {
+  const lines: string[] = []
+  let line = ''
+
+  for (const word of text.split(' ')) {
+    if (line !== '' && line.length + 1 + word.length > width) {
+      lines.push(line)
+      line = word
+    } else {
+      line = line === '' ? word : `${line} ${word}`
+    }
+  }
+
+  return [...lines, line]
+}
+
 const KIND_ORDER: Record<Row['kind'], number> = { used: 0, buffer: 1, free: 2, deferred: 3 }
 
 // The breakdown's order, as the desktop app lists it: used rows by size, then the buffer, the free space,
@@ -100,9 +131,9 @@ export function ordered(rows: Row[]): Row[] {
 
 // Each path's last segments, two at least and as many more as it takes to tell it from the others:
 // `~/.claude/memory/MEMORY.md` and `~/.claude/projects/x/memory/MEMORY.md` read `.claude/memory/MEMORY.md`
-// and `x/memory/MEMORY.md`.
+// and `x/memory/MEMORY.md`. A Windows path keeps its backslashes.
 export function shortPaths(paths: string[]): string[] {
-  const parts = paths.map(path => path.split('/').filter(Boolean))
+  const parts = paths.map(path => path.split(/[\\/]/).filter(Boolean))
   const tail = (segments: string[], n: number) => segments.slice(-n).join('/')
 
   return parts.map((segments, i) => {
@@ -111,6 +142,6 @@ export function shortPaths(paths: string[]): string[] {
       n += 1
     }
 
-    return tail(segments, n)
+    return segments.slice(-n).join(paths[i]?.includes('\\') ? '\\' : '/')
   })
 }

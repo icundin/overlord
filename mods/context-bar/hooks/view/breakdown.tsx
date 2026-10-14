@@ -1,18 +1,15 @@
-import type { Usage } from '../../types'
 import { bySource } from '../figures'
 import { compact, share } from '../format'
 import { grid, ordered, shortPaths } from '../layout'
-import { CLOSE_WIDTH, parts } from './kit'
+import { parts, swatchOf } from './kit'
 import type { Kit } from './kit'
 
 // The categories, then the MCP tools by server, the memory files and the skills by source, and /context.
 export function breakdownCard(kit: Kit) {
   const { Box, Text } = kit.ui
-  const { section, chip } = parts(kit)
+  const { section, chip, tip } = parts(kit)
   const current = kit.view.usage
-  const isAuto = current.autoCompactThreshold !== null
-  const swatchOf = (row: Usage['rows'][number]) =>
-    row.kind === 'used' ? row.color : row.kind === 'buffer' ? (isAuto ? 'warning' : 'inactive') : 'subtle'
+  const isAutoCompact = current.autoCompactThreshold !== null
   const entries = ordered(current.rows)
     .filter(row => row.tokens > 0)
     .map(row => ({
@@ -28,8 +25,8 @@ export function breakdownCard(kit: Kit) {
   // "■ " + name + " " + tokens + " " + share
   const entryWidth = 2 + nameWidth + 1 + tokensWidth + 1 + shareWidth
   const GAP = 3
-  // The card's border and padding, the close button, and a section body's indent.
-  const width = kit.inner - 4 - CLOSE_WIDTH - 2
+  // A section body's indent.
+  const width = kit.card - 2
   const servers = current.mcpServers
   const files = current.memoryFiles
   const fileNames = shortPaths(files.map(file => file.path))
@@ -76,7 +73,7 @@ export function breakdownCard(kit: Kit) {
           <Box key={`row-${row}`} columnGap={GAP}>
             {line.map(entry => (
               <Text key={entry.row.name}>
-                <Text color={swatchOf(entry.row)}>■</Text> {entry.name.padEnd(nameWidth)}{' '}
+                <Text color={swatchOf(entry.row, isAutoCompact)}>■</Text> {entry.name.padEnd(nameWidth)}{' '}
                 <Text bold={entry.row.kind !== 'deferred'} dimColor={entry.row.kind === 'deferred'}>
                   {entry.tokens.padStart(tokensWidth)}
                 </Text>{' '}
@@ -101,9 +98,7 @@ export function breakdownCard(kit: Kit) {
         )
       })}
       <Box key="actions" flexDirection="column">
-        <Text key="tip" dimColor>
-          Runs /context: every tool, file and skill with its tokens, printed in the conversation above.
-        </Text>
+        {tip('Runs /context: every tool, file and skill with its tokens, printed in the conversation above.')}
         <Box key="buttons">{chip('context', 'see detailed breakdown', kit.act.showContext)}</Box>
       </Box>
     </Box>

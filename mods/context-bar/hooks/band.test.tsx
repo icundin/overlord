@@ -1,22 +1,13 @@
 import type { On } from 'claude-code'
-import { expect, mock, test } from 'claude-code/testing'
+import { expect, test } from 'claude-code/testing'
 
-import { BAND, BREAKDOWN, CATEGORIES, configRows, surround, typed, usageWith } from './fixtures'
+import { BAND, BREAKDOWN, CATEGORIES, surround, typed, usageWith } from './fixtures'
 import { segments } from './layout'
 
-test('draws the bar and toggles it with /context-bar', async ($, on) => {
-  const clock = mock.clock(on, { now: Date.parse('2026-10-13T09:05:00.000Z') })
-  on('session.usage', () => ({
-    value: { startedAt: 0, cost: { usd: 1.16 }, rateLimits: [{ kind: 'five_hour', percentUsed: 9, resetsAt: '2026-10-13T11:30:00.000Z' }], context: { window: 200000, tokens: 50000, percent: 25, breakdown: BREAKDOWN } },
-  }))
-  on('command.register', (_, e) => ({ value: { command: e.name } }))
-  on('ui.render', ($, e) => {
-    const { Text } = $.ui.resolve(e)
+const FIVE_HOUR = { kind: 'five_hour', percentUsed: 9, resetsAt: '2026-10-13T11:30:00.000Z' }
 
-    return <Text key="engine">engine band</Text>
-  })
-  on('session.start', (_, e) => ({ cwd: e.cwd }))
-  on('config.list', () => ({ value: configRows('dark') }))
+test('draws the bar and toggles it with /context-bar', async ($, on) => {
+  const clock = surround(on, 'dark', () => ({ value: { ...usageWith(25, 1.16).value, rateLimits: [FIVE_HOUR] } }))
   const ran: string[] = []
   on('command.run', (_, e) => {
     ran.push(`/${e.command} ${e.args}`)
@@ -59,13 +50,13 @@ test('draws the bar and toggles it with /context-bar', async ($, on) => {
   const menus = await $.ui.mount({ plugin: 'context-bar', surface: 'terminal', ...BAND })
   expect(await menus.find({ key: 'panel' })).toBeUndefined()
   await menus.press({ key: 'usage' })
-  expect(await menus.find({ type: 'Text', text: /resets in 2 hr 25 min/ })).toBeDefined()
+  expect(await menus.find({ type: 'Text', text: /2 hr 25 min/ })).toBeDefined()
   await menus.press({ key: 'section-limits' })
-  expect(await menus.find({ type: 'Text', text: /resets in/ })).toBeUndefined()
+  expect(await menus.find({ type: 'Text', text: /2 hr 25 min/ })).toBeUndefined()
   expect(await menus.find({ type: 'Text', text: /9%/ })).toBeDefined()
   await menus.press({ key: 'close' })
   await menus.press({ key: 'usage' })
-  expect(await menus.find({ type: 'Text', text: /resets in/ })).toBeDefined()
+  expect(await menus.find({ type: 'Text', text: /2 hr 25 min/ })).toBeDefined()
   expect(await menus.find({ type: 'Text', text: /cost \$1\.16/ })).toBeUndefined()
   await menus.press({ key: 'section-session' })
   await menus.press({ key: 'section-tokens' })
@@ -127,17 +118,7 @@ test('draws the bar and toggles it with /context-bar', async ($, on) => {
 })
 
 test('fills the bar from the left when /context-bar shows it', async ($, on) => {
-  const clock = mock.clock(on)
-  on('session.usage', () => ({
-    value: { startedAt: 0, rateLimits: [{ kind: 'five_hour', percentUsed: 9, resetsAt: '2026-10-13T11:30:00.000Z' }], context: { window: 200000, tokens: 50000, percent: 25, breakdown: BREAKDOWN } },
-  }))
-  on('command.register', (_, e) => ({ value: { command: e.name } }))
-  on('session.start', (_, e) => ({ cwd: e.cwd }))
-  on('ui.render', ($, e) => {
-    const { Text } = $.ui.resolve(e)
-
-    return <Text key="engine">engine band</Text>
-  })
+  const clock = surround(on, 'dark', () => ({ value: { ...usageWith(25).value, rateLimits: [FIVE_HOUR] } }))
   await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
   await $.command.run(typed('context-bar'))
   await $.command.run(typed('context-bar'))
@@ -157,7 +138,6 @@ test('fills the bar from the left when /context-bar shows it', async ($, on) => 
   await clock.advance(300)
   expect(await colored()).toBe(used)
 })
-
 
 // Claude Code runs a command once the session is idle, which can outlast a press's 10 s budget.
 test('returns from a press without waiting for the command it starts', async ($, on) => {
@@ -322,21 +302,9 @@ test('shows the warning line as soon as a threshold is set below the figure', as
 })
 
 test('shows the growth and cost of a turn, the turns left and running agents', async ($, on) => {
-  mock.clock(on, { now: Date.parse('2026-10-13T09:05:00.000Z') })
-  mock.store(on, {})
   let total = 50_000
   let cost = 1
-  on('session.usage', () => ({
-    value: {
-      startedAt: 0,
-      rateLimits: [],
-      cost: { usd: cost },
-      context: { window: 200000, tokens: total, percent: 25, breakdown: { ...BREAKDOWN, totalTokens: total, percentage: Math.round(total / 2000) } },
-    },
-  }))
-  on('config.list', () => ({ value: configRows('dark') }))
-  on('command.register', (_, e) => ({ value: { command: e.name } }))
-  on('session.start', (_, e) => ({ cwd: e.cwd }))
+  surround(on, 'dark', () => usageWith(Math.round(total / 2000), cost, total))
   on('turn.start', (_, e) => ({ turnId: e.turnId }))
   on('turn.complete', (_, e) => ({ text: e.answer }))
   on('agent.list', () => ({ value: [{ id: 'a1', description: 'review', type: 'general-purpose', status: 'running' }] as never }))
@@ -345,11 +313,6 @@ test('shows the growth and cost of a turn, the turns left and running agents', a
     ran.push(`/${e.command}`)
 
     return { text: 'ok' }
-  })
-  on('ui.render', ($, e) => {
-    const { Text } = $.ui.resolve(e)
-
-    return <Text key="engine">engine band</Text>
   })
   await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
   const finish = { answer: 'ok', durationMs: 1000, isAborted: false, reason: 'answer' as const }
@@ -457,7 +420,7 @@ test('leaves the desktop band to the engine', async ($, on) => {
 
 // A real compaction takes a while: /compact answers only once the test releases it.
 const compacting = (on: On, percentage: number) => {
-  const figures = { tokens: 162000, percentage, reads: 0, readMs: 0, reading: 0, mostReading: 0 }
+  const figures = { tokens: 162000, percentage, cost: null as number | null, reads: 0, readMs: 0, reading: 0, mostReading: 0 }
   const clock = surround(on, 'dark', async () => {
     figures.reads += 1
     figures.reading += 1
@@ -467,11 +430,11 @@ const compacting = (on: On, percentage: number) => {
     }
     figures.reading -= 1
 
-    return usageWith(figures.percentage, null, figures.tokens)
+    return usageWith(figures.percentage, figures.cost, figures.tokens)
   })
   let release = () => {}
   on('command.run', () => new Promise(resolve => (release = () => resolve({ text: 'ok' }))))
-  const compacted = (to: { tokens: number; percentage: number }) => Object.assign(figures, to)
+  const compacted = (to: Partial<Pick<typeof figures, 'tokens' | 'percentage' | 'cost'>>) => Object.assign(figures, to)
 
   return { clock, figures, compacted, release: () => release() }
 }
@@ -538,6 +501,28 @@ test('re-reads the figures for five seconds when a /compact leaves them as they 
   expect(figures.reads).toBe(before + 20)
   await clock.advance(5000)
   expect(figures.reads).toBe(before + 20)
+})
+
+// A prompt typed while /compact runs starts its turn before Claude Code counts the compacted context.
+test('measures a turn queued behind /compact from the compacted figures', async ($, on) => {
+  const { clock, compacted, release } = compacting(on, 81)
+  on('turn.start', (_, e) => ({ turnId: e.turnId }))
+  on('turn.complete', (_, e) => ({ text: e.answer }))
+  compacted({ cost: 1 })
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  const ran = $.command.run(typed('compact'))
+  await clock.settle()
+  release()
+  await ran
+  // The compaction's own request.
+  compacted({ cost: 1.3 })
+  await $.turn.start({ text: 'go', turnId: 't1' })
+  compacted(COMPACTED)
+  await clock.advance(250)
+  compacted({ tokens: COMPACTED.tokens + 5000, cost: 1.5 })
+  await $.turn.complete({ answer: 'ok', durationMs: 1000, isAborted: false, reason: 'answer', turnId: 't1' })
+  const ui = await $.ui.mount({ plugin: 'context-bar', surface: 'terminal', ...BAND, props: { ...BAND.props, bodyColumns: 200 } })
+  expect(await ui.find({ type: 'Text', text: /\+5k · \$0\.20 last turn/ })).toBeDefined()
 })
 
 test('re-reads the figures once a /compact clicked in the band ends', async ($, on) => {
@@ -680,4 +665,149 @@ test('sums up only the rows the split has, before the first request is counted',
   await ui.press({ key: 'usage' })
   expect(await ui.find({ type: 'Text', text: /^ {2}earlier 100%$/ })).toBeDefined()
   expect(await ui.find({ type: 'Text', text: /main/ })).toBeUndefined()
+})
+
+// At 120 columns the tip used to leave `tasks.` alone on its last line.
+test('wraps the cards\' tips into even lines', async ($, on) => {
+  surround(on, 'dark', 25, {}, 1)
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  const ui = await $.ui.mount({ plugin: 'context-bar', surface: 'terminal', ...BAND, props: { ...BAND.props, bodyColumns: 120 } })
+  await ui.press({ key: 'usage' })
+  expect(await ui.find({ type: 'Text', text: /^Longer sessions cost more, even when cached\. Compact$/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /^mid-task, and start a new session when you switch tasks\.$/ })).toBeDefined()
+})
+
+// The tally holds the first request's tokens and time, and the active time of the turn it ran in.
+test('counts from when the first counted turn began, not when its request ended', async ($, on) => {
+  const clock = surround(on, 'dark', 25, {}, 1)
+  on('turn.complete', (_, e) => ({ text: e.answer }))
+  on('turn.step', async function* (_, e) {
+    await clock.sleep(12_000)
+    const usage = { model: 'claude-opus-5-5', input_tokens: 2, output_tokens: 300, cache_read_input_tokens: 27_000, cache_creation_input_tokens: 18_700 }
+
+    return { turnId: e.turnId, index: e.index, answer: '', toolUses: [], stopReason: 'end_turn' as const, usage }
+  })
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  await clock.advance(3_000)
+  const step = (async () => {
+    for await (const _ of $.turn.step({ turnId: 't1', index: 0, model: 'claude-opus-5-5', messageCount: 1 })) {
+      // drained
+    }
+  })()
+  await clock.advance(12_000)
+  await step
+  const ui = await $.ui.mount({ plugin: 'context-bar', surface: 'terminal', ...BAND, props: { ...BAND.props, bodyColumns: 120 } })
+  await ui.press({ key: 'usage' })
+  expect(await ui.find({ type: 'Text', text: /^ · counted for the last 12s$/ })).toBeDefined()
+  await $.turn.complete({ answer: 'ok', durationMs: 15_000, isAborted: false, reason: 'answer', turnId: 't1' })
+  expect(await ui.find({ type: 'Text', text: /^ · counted for the last 15s$/ })).toBeDefined()
+})
+
+test('draws a segment\'s swatch in its bar\'s color, the buffer too with auto-compact off', async ($, on) => {
+  surround(on, 'dark', () => {
+    const { value } = usageWith(25)
+
+    return { value: { ...value, context: { ...value.context, breakdown: { ...BREAKDOWN, isAutoCompactEnabled: false, autoCompactThreshold: undefined } } } }
+  })
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  const ui = await $.ui.mount({ plugin: 'context-bar', surface: 'terminal', ...BAND })
+  const buffer = await ui.find({ type: 'Text', text: /^▒+$/ })
+  const swatches = await ui.findAll({ type: 'Text', text: /^■$/ })
+  expect(swatches.at(-1)?.props.color).toBe(buffer?.props.color)
+  await ui.press({ key: 'breakdown' })
+  const legend = (await ui.findAll({ type: 'Text', text: /^■$/ })).map(found => found.props.color)
+  expect(legend).toContain(buffer?.props.color)
+})
+
+test('disarms an armed confirmation when a menu choice closes the card', async ($, on) => {
+  surround(on, 'dark', 85)
+  on('command.run', () => ({ text: 'ok' }))
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  const ui = await $.ui.mount({ plugin: 'context-bar', surface: 'terminal', ...BAND })
+  await ui.press({ key: 'model' })
+  await ui.press({ key: 'warning-compact' })
+  expect(await ui.find({ key: 'warning-compact', text: /\/compact\?/ })).toBeDefined()
+  await ui.press({ key: 'model-sonnet' })
+  expect(await ui.find({ key: 'warning-compact', text: /\/compact\?/ })).toBeUndefined()
+})
+
+test('lists the agents once for a new subagent\'s request', async ($, on) => {
+  surround(on, 'dark', 25, {}, 1)
+  let lists = 0
+  on('agent.list', () => {
+    lists += 1
+
+    return { value: [{ id: 'a1', description: 'review', type: 'Explore', status: 'running' }] as never }
+  })
+  on('turn.step', async function* (_, e) {
+    return { turnId: e.turnId, index: e.index, answer: '', toolUses: [], stopReason: 'end_turn' as const, usage: null }
+  })
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  for await (const _ of $.turn.step({ turnId: 't1', index: 0, model: 'claude-opus-5-5', messageCount: 1, agentId: 'a1' })) {
+    // drained
+  }
+  expect(lists).toBe(1)
+})
+
+// The card has 66 cells at 80 columns: the band's and the card's borders and padding, the close button, the indent.
+test('fits the usage card\'s rows to a narrow terminal, the bars first, then the least of the detail', async ($, on) => {
+  let cost = 0.5
+  surround(on, 'dark', () => ({
+    value: {
+      ...usageWith(25).value,
+      cost: { usd: cost },
+      rateLimits: [
+        { kind: 'five_hour', percentUsed: 5, resetsAt: '2026-10-13T13:18:00.000Z' },
+        { kind: 'seven_day', percentUsed: 2, resetsAt: '2026-10-20T06:05:00.000Z' },
+      ],
+    },
+  }))
+  on('turn.step', async function* (_, e) {
+    cost += 0.25
+    const usage = { model: 'claude-opus-5-5', input_tokens: 2, output_tokens: 300, cache_read_input_tokens: 27_000, cache_creation_input_tokens: 18_700 }
+
+    return { turnId: e.turnId, index: e.index, answer: '', toolUses: [], stopReason: 'end_turn' as const, usage }
+  })
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  for await (const _ of $.turn.step({ turnId: 't1', index: 0, model: 'claude-opus-5-5', messageCount: 1 })) {
+    // drained
+  }
+  const row = async (text: RegExp) => (await ui.find({ type: 'Text', text }))?.text ?? ''
+  const ui = await $.ui.mount({ plugin: 'context-bar', surface: 'terminal', ...BAND, props: { ...BAND.props, bodyColumns: 80 } })
+  await ui.press({ key: 'usage' })
+  await ui.press({ key: 'section-agents' })
+  const rows = [
+    await row(/^session\s+[▓░]{10}\s+5%\s+resets in 4 hr 13 min$/),
+    await row(/^weekly · all models\s+[▓░]{10}\s+2%\s+resets in 6 d 21 hr$/),
+    // The models go first.
+    await row(/^main\s+[▓░]{10}\s+33%\s+\$0\.25 · 46k tokens$/),
+  ]
+  expect(rows.every(found => found.length > 0 && found.length <= 66)).toBe(true)
+  expect(new Set(rows.map(found => found.search(/[▓░]/))).size).toBe(1)
+})
+
+// Measured from what the header shows, so a longer model name or a running agent moves them by itself.
+test('moves the tabs to a row of their own when the header does not fit them', async ($, on) => {
+  surround(on, 'dark', 25, {}, 1)
+  on('agent.list', () => ({ value: [{ id: 'a1', description: 'review', type: 'Explore', status: 'running' }] as never }))
+  on('turn.step', async function* (_, e) {
+    return { turnId: e.turnId, index: e.index, answer: '', toolUses: [], stopReason: 'end_turn' as const, usage: null }
+  })
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  for await (const _ of $.turn.step({ turnId: 't1', index: 0, model: 'claude-opus-5-5', effort: 'high', messageCount: 1, agentId: 'a1' })) {
+    // drained
+  }
+  const wide = await $.ui.mount({ plugin: 'context-bar', surface: 'terminal', ...BAND, props: { ...BAND.props, bodyColumns: 120 } })
+  expect(await wide.find({ key: 'title', text: /1 agent.*breakdown/ })).toBeDefined()
+  expect(await wide.find({ key: 'tabs' })).toBeUndefined()
+  await wide.unmount()
+  // `◆ context · Opus 5.5 · 1 agent │ breakdown · usage · settings`, a gap and `50k  25% `: 72 cells, which 76 columns hold.
+  const fits = await $.ui.mount({ plugin: 'context-bar', surface: 'terminal', ...BAND, props: { ...BAND.props, bodyColumns: 76 } })
+  expect(await fits.find({ key: 'tabs' })).toBeUndefined()
+  await fits.unmount()
+  const narrow = await $.ui.mount({ plugin: 'context-bar', surface: 'terminal', ...BAND, props: { ...BAND.props, bodyColumns: 75 } })
+  expect(await narrow.find({ key: 'title', text: /breakdown/ })).toBeUndefined()
+  expect(await narrow.find({ key: 'tabs', text: /^breakdown·usage·settings$/ })).toBeDefined()
+  await narrow.press({ key: 'usage' })
+  expect(await narrow.find({ key: 'usage', text: /usage/ })).toBeDefined()
 })

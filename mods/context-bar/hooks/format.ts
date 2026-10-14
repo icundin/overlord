@@ -28,6 +28,11 @@ export function dollars(usd: number): string {
   return usd > 0 && usd < 0.005 ? '<$0.01' : `$${usd.toFixed(2)}`
 }
 
+// An amount as typed into a setting: `$50`, `$12.50`.
+export function amount(usd: number): string {
+  return Number.isInteger(usd) ? `$${usd}` : `$${usd.toFixed(2)}`
+}
+
 // `+12k`, `−200k` (a compaction), `+840`.
 export function signed(delta: number): string {
   return `${delta < 0 ? '−' : '+'}${compact(Math.abs(delta))}`

@@ -11,10 +11,12 @@ A Claude Code mod (a plugin with a hooks module): a band above the prompt that d
 
 ## Requirements
 
-- Claude Code 2.1.287 or later, where mods load by default; built and tested on 2.1.296. Mods are an
-  early-access surface that may change between releases.
+- Claude Code 2.1.296 or later, the oldest release it is tested on; built on 2.1.299. Mods are an early-access
+  surface that may change between releases.
 - Terminal only: the desktop app and other surfaces keep their own band. The desktop draws text in a
   proportional font, where the bar's cells, shades and hover cards don't line up.
+- A terminal that reports the mouse, for the band's buttons and hover cards. Inside tmux that takes
+  `set -g mouse on` in `~/.tmux.conf`.
 
 ## Install
 
@@ -42,7 +44,7 @@ claude plugin marketplace update claude-code-toolkit
 claude plugin update context-bar@claude-code-toolkit
 ```
 
-Then restart Claude Code to apply it.
+Then run `/reload-plugins` in a running session, or start a new one, to apply it.
 
 ```bash
 claude plugin uninstall context-bar@claude-code-toolkit
@@ -57,7 +59,8 @@ claude plugin uninstall context-bar@claude-code-toolkit
 - **The totals** show what the last turn added and cost (`+7.4k · $0.42 last turn`), the session's cost so far
   (`$1.16 total`) and, at the recent pace (the average of the last few turns that grew the context), how many turns
   are left before the warning threshold or compaction (`≈ 40 turns to 80%`). On a narrow terminal they drop that
-  detail first, the session's cost after the last turn's.
+  detail first, the session's cost after the last turn's, and **breakdown · usage · settings** move to a row of
+  their own under the bar when the header can't hold them.
 - **breakdown** lists every category, the MCP tools by server, the memory files and the skills by source, and links
   to `/context` for the full detail.
 - **usage** shows the plan limits and how old they are (`38%, 12% · updated 14 min ago`), the session's cost and time,
