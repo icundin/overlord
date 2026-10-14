@@ -165,6 +165,23 @@ test('starts hidden when the bar is set not to show at start', async ($, on) => 
   expect(await ui.find({ key: 'bar' })).toBeUndefined()
 })
 
+// A /clear wipes the session's state and raises no session.start: the band finds it so when it draws.
+test('draws the bar again in the fresh session a /clear starts', async ($, on) => {
+  const clock = surround(on, 'dark', 25, { settings: { contextWarnPercent: 20 } })
+  const ui = await $.ui.mount({ plugin: 'context-bar', surface: 'terminal', ...BAND })
+  expect(await ui.find({ key: 'bar' })).toBeUndefined()
+  await clock.advance(0)
+  expect(await ui.find({ key: 'bar' })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /^Context at 25%/ })).toBeDefined()
+})
+
+test('starts hidden after a /clear when the bar is set not to show at start', async ($, on) => {
+  const clock = surround(on, 'dark', 25, { settings: { showOnStart: false } })
+  const ui = await $.ui.mount({ plugin: 'context-bar', surface: 'terminal', ...BAND })
+  await clock.advance(0)
+  expect(await ui.find({ key: 'bar' })).toBeUndefined()
+})
+
 test('draws the shades on white for a light theme', async ($, on) => {
   surround(on, 'light', 25)
   await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })

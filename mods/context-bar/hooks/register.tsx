@@ -222,21 +222,33 @@ async function run($: EngineInterface, command: string): Promise<void> {
   }
 }
 
-export const register: Register = on => {
-  on('session.start', async ($, e, next) => {
-    await $.command.register({
-      name: 'context-bar',
-      description: 'Show or hide the context window bar above the prompt',
-    })
+let settingUp = false
+
+// Fills the session's state: the settings, whether the bar starts shown, and the figures.
+async function setUp($: EngineInterface): Promise<void> {
+  settingUp = true
+  try {
     // A reload raises session.start again; the setting applies only to the session's first.
     const loaded = await loadSettings($).catch(() => DEFAULT_SETTINGS)
     if (!(await read($, isInitialized))) {
       await update($, isHidden, () => !loaded.showOnStart)
       await update($, isInitialized, () => true)
     }
-    const result = await next(e)
     await readConfig($).catch(() => undefined)
     await refresh($).catch(() => undefined)
+  } finally {
+    settingUp = false
+  }
+}
+
+export const register: Register = on => {
+  on('session.start', async ($, e, next) => {
+    await $.command.register({
+      name: 'context-bar',
+      description: 'Show or hide the context window bar above the prompt',
+    })
+    const result = await next(e)
+    await setUp($)
 
     return result
   })
@@ -325,6 +337,11 @@ export const register: Register = on => {
   })
 
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
+    // A /clear wipes the session's state and raises no session.start; a render cannot write, so a timer sets it up.
+    if (!settingUp && !(await read($, isInitialized))) {
+      settingUp = true
+      $.clock.after(0, () => void setUp($))
+    }
     const current = await read($, usage)
 
     // Terminal only: the desktop app lays the band out in a proportional font, where its cells, shades and hover
