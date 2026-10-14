@@ -5,6 +5,7 @@ One changelog for the collection; every entry names the artifact it concerns.
 # 1.8.3 — 2026-10-14
 
 - Repository: One sentence describes the context bar wherever it is listed: its manifest, the marketplace, the root README and its own README. Each said something different, so `/plugin`, the marketplace and the READMEs described the same mod four ways.
+- Repository: The root README says how to release a version: the tag on the merge commit, the tag as the title, and notes by component ending with a link to the changelog. Nothing said a merge needs one, so releases stopped at v1.3.0 while the changelog reached 1.8.2; v1.4.0 to v1.8.2 were published afterwards, each on the merge that shipped it.
 
 # 1.8.2 — 2026-10-14
 

@@ -26,6 +26,16 @@ Each artifact's README has its install steps: skills are copied into
 `~/.claude/skills/`, mods install from this repository's marketplace with
 `/plugin install`.
 
+## Contributing
+
+After merging a pull request that adds a version to [CHANGELOG.md](./CHANGELOG.md), publish it as a GitHub
+release: the tag on the merge commit, the tag as its title, and notes listing the changes by component
+(`Context bar: …`), ending with a link to the changelog.
+
+```bash
+gh release create v1.8.2 --target <merge commit> --title v1.8.2 --notes-file notes.md
+```
+
 ## License
 
 [MIT](./LICENSE.txt)
