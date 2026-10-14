@@ -11,6 +11,8 @@ export const DEFAULT_OPEN: Record<Section, boolean> = {
   appearance: true,
   limits: true,
   session: false,
+  agents: false,
+  agentsMore: false,
   tokens: false,
 }
 

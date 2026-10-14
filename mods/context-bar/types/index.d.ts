@@ -37,9 +37,18 @@ export type Growth = {
 export type MemoryFile = { path: string; type: string; tokens: number }
 
 // A collapsible section of a card.
-export type Section = 'categories' | 'mcp' | 'memory' | 'skills' | 'general' | 'warnings' | 'appearance' | 'limits' | 'session' | 'tokens'
+export type Section = 'categories' | 'mcp' | 'memory' | 'skills' | 'general' | 'warnings' | 'appearance' | 'limits' | 'session' | 'agents' | 'agentsMore' | 'tokens'
 
 export type Tokens = { input: number; output: number; cacheRead: number; cacheWrite: number }
+
+// One agent's share of the session's cost, measured as its requests ended, the tokens they used, and the models that
+// answered them, in the order first seen. The main loop's id is `main`; a subagent's is the engine's, its label the
+// task description it was spawned with.
+export type AgentSpend = { id: string; label: string; usd: number; tokens: number; models: string[] }
+
+// The session's cost split by who spent it, in US dollars: `earlier` before the mod began counting, `other` Claude
+// Code's own requests (none the mod sees end), and each agent's. `read` is the last total read, the next growth's base.
+export type Spend = { earlier: number; other: number; read: number; agents: AgentSpend[] }
 
 // What the mod has counted itself, from `since` on: every model request's tokens by model, the time
 // spent waiting on the API, and the time the main loop's turns ran.
@@ -80,6 +89,7 @@ declare module 'claude-code' {
       // Sections the person opened or closed in the open card; the rest keep their default.
       sections: Partial<Record<Section, boolean>>
       tally: Tally | null
+      spend: Spend | null
       // The action a first click armed; a second click runs it, five seconds without one disarms it.
       confirming: Confirmable | null
       // Whether the theme is a light one, so the bar's shades sit on white instead of black.

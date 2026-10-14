@@ -61,7 +61,12 @@ claude plugin uninstall context-bar@claude-code-toolkit
 - **breakdown** lists every category, the MCP tools by server, the memory files and the skills by source, and links
   to `/context` for the full detail.
 - **usage** shows the plan limits and how old they are (`38%, 12% · updated 14 min ago`), the session's cost and time,
-  and the tokens; with buttons to compact the session or start a new one (both ask to confirm first).
+  the cost by agent, and the tokens; with buttons to compact the session or start a new one (both ask to confirm
+  first). **cost by agent** has a row per agent with a bar of its share, in line with the limits' bars: main
+  first, then each subagent by its task and **claude code** (Claude Code's own requests, a compaction for one) by
+  cost, and **earlier** last, the cost from before the mod counted. Each agent's row names the models it ran on.
+  A task run more than once on the same models shares a row (`list skills files ×2`), and past four rows the
+  cheapest fold into one (`› 3 more`), which a click opens.
 - **settings** opens the settings card.
 - **`/context-bar`** hides or shows the band; it fills in again when shown.
 - Every card closes with `[x]` or by clicking its header label again. Clicking in the band gives it the keyboard;
@@ -95,6 +100,9 @@ the second runs it, and the question lapses after five seconds.
 - The plan limits are the account's, but a session learns new figures only when one of its own requests comes
   back, so an idle session's go stale while other sessions use the plan; the usage card says how old they are.
   After a `/clear` the age is left out until the next response.
+- Claude Code hands mods only the session's total cost, so each agent's share is measured: the total's growth as
+  each of its requests returns. Two responses that land within a few milliseconds of each other can be counted to
+  one of them; the shares still add up to the total.
 - Per-model weekly limits and the plan's name are not available to mods.
 - With Claude Code's theme on `auto` the bar is shaded as dark, since a mod cannot see the terminal's colors;
   set **Display mode** to `light` in the settings card if your terminal is light.

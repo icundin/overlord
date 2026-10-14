@@ -592,3 +592,82 @@ test('says how old the plan limits are, from the last response any agent got', a
   await step('subagent-1')
   expect(await ui.find({ type: 'Text', text: /^ · updated just now$/ })).toBeDefined()
 })
+
+test('splits the session cost by agent in the usage card, its bars in line with the limits', async ($, on) => {
+  let cost = 0.5
+  surround(on, 'dark', () => ({
+    value: { ...usageWith(25).value, cost: { usd: cost }, rateLimits: [{ kind: 'seven_day', percentUsed: 30, resetsAt: '2026-10-16T13:05:00.000Z' }] },
+  }))
+  on('agent.list', () => ({ value: [{ id: 'a1', description: 'list hooks files', type: 'Explore', status: 'running' }] as never }))
+  const spent = { usd: 0 }
+  on('turn.step', async function* (_, e) {
+    cost += spent.usd
+    const usage = { model: 'claude-opus-5-5', input_tokens: 2, output_tokens: 300, cache_read_input_tokens: 27_000, cache_creation_input_tokens: 18_700 }
+
+    return { turnId: e.turnId, index: e.index, answer: '', toolUses: [], stopReason: 'end_turn' as const, usage }
+  })
+  const step = async (usd: number, agentId?: string) => {
+    spent.usd = usd
+    for await (const _ of $.turn.step({ turnId: 't1', index: 0, model: 'claude-opus-5-5', messageCount: 1, ...(agentId ? { agentId } : {}) })) {
+      // drained
+    }
+  }
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  await step(0.25)
+  // Claude Code's own request, between two of the agents'.
+  cost += 0.05
+  await step(0.2, 'a1')
+  await step(0.01, 'fork-1')
+
+  const ui = await $.ui.mount({ plugin: 'context-bar', surface: 'terminal', ...BAND, props: { ...BAND.props, bodyColumns: 120 } })
+  await ui.press({ key: 'usage' })
+  expect(await ui.find({ type: 'Text', text: /^ {2}main 25%, 1 subagent 20%$/ })).toBeDefined()
+  // Closed until asked for, as the session's figures and the tokens are.
+  expect(await ui.find({ type: 'Text', text: /^main\s/ })).toBeUndefined()
+  await ui.press({ key: 'section-agents' })
+  const row = async (text: RegExp) => (await ui.find({ type: 'Text', text }))?.text ?? ''
+  const main = await row(/^main\s+▓{5}░{15}\s+25%\s+\$0\.25 · 46k tokens · Opus 5\.5$/)
+  expect(main).not.toBe('')
+  expect(await row(/^list hooks files\s+▓{4}░{16}\s+20%\s+\$0\.20 · 46k tokens · Opus 5\.5$/)).not.toBe('')
+  // A fork no agent list names is Claude Code's own, with the request no agent made.
+  expect(await row(/^claude code\s+▓░{19}\s+6%\s+\$0\.06$/)).not.toBe('')
+  expect(await row(/^earlier\s+▓{10}░{10}\s+50%\s+\$0\.50$/)).not.toBe('')
+  const limit = await row(/^weekly · all models/)
+  const barAt = (text: string) => text.search(/[▓░]/)
+  expect(barAt(main)).toBe(barAt(limit))
+})
+
+test('opens the agents folded into one row, and folds them again', async ($, on) => {
+  let cost = 0
+  surround(on, 'dark', () => ({ value: { ...usageWith(25).value, cost: { usd: cost } } }))
+  on('agent.list', () => ({ value: [0, 1, 2, 3, 4, 5].map(i => ({ id: `a${i}`, description: `task ${i}`, type: 'Explore', status: 'running' })) as never }))
+  const spent = { usd: 0 }
+  on('turn.step', async function* (_, e) {
+    cost += spent.usd
+
+    return { turnId: e.turnId, index: e.index, answer: '', toolUses: [], stopReason: 'end_turn' as const, usage: null }
+  })
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  for (const [i, usd] of [0.6, 0.5, 0.4, 0.3, 0.2, 0.1].entries()) {
+    spent.usd = usd
+    for await (const _ of $.turn.step({ turnId: 't1', index: 0, model: 'claude-opus-5-5', messageCount: 1, agentId: `a${i}` })) {
+      // drained
+    }
+  }
+  const ui = await $.ui.mount({ plugin: 'context-bar', surface: 'terminal', ...BAND, props: { ...BAND.props, bodyColumns: 120 } })
+  await ui.press({ key: 'usage' })
+  await ui.press({ key: 'section-agents' })
+  // Only the label is the button: under the pointer it inverts, grey as the section titles do.
+  expect(await ui.find({ key: 'agents-more', text: /^› 2 more$/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /^task 5\s/ })).toBeUndefined()
+  const barAt = async () => ((await ui.find({ type: 'Text', text: /^main\s/ }))?.text ?? '').search(/[▓░]/)
+  const folded = await barAt()
+  await ui.press({ key: 'agents-more' })
+  expect(await ui.find({ key: 'agents-more', text: /^⌄ 2 more$/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /^task 4\s+▓/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /^task 5\s+▓/ })).toBeDefined()
+  // Opening the list moves no bar.
+  expect(await barAt()).toBe(folded)
+  await ui.press({ key: 'agents-more' })
+  expect(await ui.find({ type: 'Text', text: /^task 5\s/ })).toBeUndefined()
+})

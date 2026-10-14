@@ -1,13 +1,16 @@
+import { DEFAULT_OPEN } from '../defaults'
 import { cacheHit, sumTokens, totalTokens } from '../figures'
 import { ago, compact, duration, levelColor, limitLabel, modelLabel, resetsIn } from '../format'
+import { MAIN, spendGroups } from '../spend'
+import type { SpendGroup } from '../spend'
 import { chunk, parts } from './kit'
 import type { Kit } from './kit'
 
-const LIMIT_BAR = 20
+const BAR_CELLS = 20
 
 // The plan limits, the session's cost and time, the tokens counted, and compact or start anew.
 export function usageCard(kit: Kit) {
-  const { Box, Text } = kit.ui
+  const { Box, Button, Text } = kit.ui
   const { section, chip } = parts(kit)
   const { view, act } = kit
   const current = view.usage
@@ -15,7 +18,6 @@ export function usageCard(kit: Kit) {
   const limits = current.limits
   const limitsAge = view.limitsAt === null ? [] : [`updated ${ago(view.limitsAt, view.now)}`]
   const labels = limits.map(limit => limitLabel(limit.kind))
-  const labelWidth = Math.max(0, ...labels.map(label => label.length))
   const byModel = Object.entries(counted?.models ?? {})
   const tokens = sumTokens(byModel.map(([, one]) => one))
   const all = totalTokens(tokens)
@@ -33,6 +35,68 @@ export function usageCard(kit: Kit) {
   ].filter(figure => figure !== false)
   const figureWidth = Math.max(0, ...figures.map(figure => figure.label.length + 1 + figure.value.length))
   const modelNames = byModel.map(([model]) => modelLabel(model)).join(', ')
+  const groups = view.spend === null ? [] : spendGroups(view.spend)
+  const spendTotal = groups.reduce((sum, group) => sum + group.usd, 0)
+  const shareOf = (usd: number) => (spendTotal === 0 ? 0 : Math.round((usd / spendTotal) * 100))
+  const subagents = view.spend?.agents.filter(one => one.id !== MAIN) ?? []
+  const agentSummary = [
+    `main ${shareOf(groups.find(group => group.key === MAIN)?.usd ?? 0)}%`,
+    ...(subagents.length === 0
+      ? []
+      : [`${subagents.length} subagent${subagents.length === 1 ? '' : 's'} ${shareOf(subagents.reduce((sum, one) => sum + one.usd, 0))}%`]),
+  ].join(', ')
+  // The `N more` row opens to the rows it stands for, listed under it.
+  const isMoreOpen = view.opened.agentsMore ?? DEFAULT_OPEN.agentsMore
+  const agentRows = groups.flatMap(group =>
+    group.folded === undefined
+      ? [{ group, label: group.label, isMore: false }]
+      : [
+          { group, label: `${isMoreOpen ? '⌄' : '›'} ${group.label}`, isMore: true },
+          ...(isMoreOpen ? group.folded.map(one => ({ group: one, label: one.label, isMore: false })) : []),
+        ],
+  )
+  const agentDetail = (group: SpendGroup) =>
+    [
+      `$${group.usd.toFixed(2)}`,
+      ...(group.tokens === null ? [] : [`${compact(group.tokens)} tokens`]),
+      ...(group.models.length === 0 ? [] : [group.models.map(modelLabel).join(', ')]),
+    ].join(' · ')
+  // One label column for the limits and the agents, the folded rows counted open or not, so the bars start in line
+  // and stay put when the list opens.
+  const folded = groups.flatMap(group => group.folded ?? [])
+  const labelWidth = Math.max(
+    0,
+    ...labels.map(label => label.length),
+    ...agentRows.map(row => row.label.length),
+    ...folded.map(one => one.label.length),
+  )
+  // A bar filled to `percent`, the percentage, and the detail after it.
+  const gauge = (percent: number, color: string, detail: string) => {
+    const filled = Math.min(BAR_CELLS, Math.round((percent / 100) * BAR_CELLS))
+
+    return [
+      <Text key="filled" color={color} backgroundColor={kit.shadeBehind}>
+        {'▓'.repeat(filled)}
+      </Text>,
+      <Text key="empty" color="subtle">
+        {'░'.repeat(BAR_CELLS - filled)}
+      </Text>,
+      '  ',
+      <Text key="percent" bold>
+        {`${percent}%`.padStart(4)}
+      </Text>,
+      <Text key="detail" dimColor>
+        {detail === '' ? '' : `  ${detail}`}
+      </Text>,
+    ]
+  }
+  // A row of bars: the label, then its gauge.
+  const meter = (key: string, label: string, percent: number, color: string, detail: string) => (
+    <Text key={key}>
+      {label.padEnd(labelWidth)}{'  '}
+      {gauge(percent, color, detail)}
+    </Text>
+  )
   const tokenRows = [
     ['input', tokens.input],
     ['output', tokens.output],
@@ -44,22 +108,15 @@ export function usageCard(kit: Kit) {
     <Box key="usage" flexDirection="column" rowGap={1}>
       {limits.length > 0 &&
         section('limits', 'plan usage limits', [limits.map(limit => `${limit.percentUsed}%`).join(', '), ...limitsAge], () =>
-          limits.map((limit, i) => {
-            const filled = Math.min(LIMIT_BAR, Math.round((limit.percentUsed / 100) * LIMIT_BAR))
-
-            return (
-              <Text key={limit.kind}>
-                {(labels[i] ?? '').padEnd(labelWidth)}{'  '}
-                <Text color={levelColor(limit.percentUsed)} backgroundColor={kit.shadeBehind}>
-                  {'▓'.repeat(filled)}
-                </Text>
-                <Text color="subtle">{'░'.repeat(LIMIT_BAR - filled)}</Text>
-                {'  '}
-                <Text bold>{`${limit.percentUsed}%`.padStart(4)}</Text>
-                <Text dimColor>{limit.resetsAt === null ? '' : `  resets in ${resetsIn(limit.resetsAt, view.now)}`}</Text>
-              </Text>
-            )
-          }),
+          limits.map((limit, i) =>
+            meter(
+              limit.kind,
+              labels[i] ?? '',
+              limit.percentUsed,
+              levelColor(limit.percentUsed),
+              limit.resetsAt === null ? '' : `resets in ${resetsIn(limit.resetsAt, view.now)}`,
+            ),
+          ),
         )}
       {figures.length > 0 &&
         section('session', 'this session', current.cost === null ? [] : [`$${current.cost.toFixed(2)}`], () =>
@@ -73,6 +130,25 @@ export function usageCard(kit: Kit) {
               ))}
             </Box>
           )),
+        )}
+      {groups.length > 0 &&
+        section('agents', 'cost by agent', [agentSummary], () =>
+          agentRows.map(({ group, label, isMore }) =>
+            isMore ? (
+              // Only the label is the button, grey as every button label is (see `parts`).
+              <Box key="agents-more-row">
+                <Button key="agents-more" plain label={group.label} onPress={() => act.toggleSection('agentsMore')}>
+                  <Text color="inactive">{label}</Text>
+                </Button>
+                <Text>
+                  {' '.repeat(labelWidth - label.length + 2)}
+                  {gauge(shareOf(group.usd), group.color, agentDetail(group))}
+                </Text>
+              </Box>
+            ) : (
+              meter(`agent-${group.key}`, label, shareOf(group.usd), group.color, agentDetail(group))
+            ),
+          ),
         )}
       {counted !== null &&
         section(

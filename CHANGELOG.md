@@ -2,6 +2,10 @@
 
 One changelog for the collection; every entry names the artifact it concerns.
 
+# 1.8.0 — 2026-10-14
+
+- Context bar: The usage card splits the session's cost by agent: a row per agent with a bar of its share, in line with the plan limits' bars, and its cost, tokens and models: main first, then each subagent by its task and Claude Code's own requests by cost, and what was spent before the mod began counting last. A task run more than once on the same models shares a row with a count, and past four rows the cheapest fold into one that a click opens, so the card stays short however many subagents a session runs. The total said what the session cost, not which agent spent it. Claude Code hands mods only that total, so each agent's share is measured as the total's growth when its requests return, with no price table to keep up to date, and the shares add up to the total the card shows.
+
 # 1.7.0 — 2026-10-14
 
 - Context bar: The header shows the session's cost so far next to the last turn's (`$0.42 last turn · $1.16 total`). The total was only in the usage card, a click away, while the header showed one turn's share of it; on a narrow terminal the total outlasts the last turn's figures, as the running figure says more.
