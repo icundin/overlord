@@ -776,3 +776,29 @@ test('fits the usage card\'s rows to a narrow terminal, the bars first, then the
   expect(rows.every(found => found.length > 0 && found.length <= 66)).toBe(true)
   expect(new Set(rows.map(found => found.search(/[▓░]/))).size).toBe(1)
 })
+
+// Measured from what the header shows, so a longer model name or a running agent moves them by itself.
+test('moves the tabs to a row of their own when the header does not fit them', async ($, on) => {
+  surround(on, 'dark', 25, {}, 1)
+  on('agent.list', () => ({ value: [{ id: 'a1', description: 'review', type: 'Explore', status: 'running' }] as never }))
+  on('turn.step', async function* (_, e) {
+    return { turnId: e.turnId, index: e.index, answer: '', toolUses: [], stopReason: 'end_turn' as const, usage: null }
+  })
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  for await (const _ of $.turn.step({ turnId: 't1', index: 0, model: 'claude-opus-5-5', effort: 'high', messageCount: 1, agentId: 'a1' })) {
+    // drained
+  }
+  const wide = await $.ui.mount({ plugin: 'context-bar', surface: 'terminal', ...BAND, props: { ...BAND.props, bodyColumns: 120 } })
+  expect(await wide.find({ key: 'title', text: /1 agent.*breakdown/ })).toBeDefined()
+  expect(await wide.find({ key: 'tabs' })).toBeUndefined()
+  await wide.unmount()
+  // `◆ context · Opus 5.5 · 1 agent │ breakdown · usage · settings`, a gap and `50k  25% `: 72 cells, which 76 columns hold.
+  const fits = await $.ui.mount({ plugin: 'context-bar', surface: 'terminal', ...BAND, props: { ...BAND.props, bodyColumns: 76 } })
+  expect(await fits.find({ key: 'tabs' })).toBeUndefined()
+  await fits.unmount()
+  const narrow = await $.ui.mount({ plugin: 'context-bar', surface: 'terminal', ...BAND, props: { ...BAND.props, bodyColumns: 75 } })
+  expect(await narrow.find({ key: 'title', text: /breakdown/ })).toBeUndefined()
+  expect(await narrow.find({ key: 'tabs', text: /^breakdown·usage·settings$/ })).toBeDefined()
+  await narrow.press({ key: 'usage' })
+  expect(await narrow.find({ key: 'usage', text: /usage/ })).toBeDefined()
+})

@@ -8,6 +8,7 @@ One changelog for the collection; every entry names the artifact it concerns.
 - Context bar: The tokens' `counted for the last` runs from the start of the first turn the mod counted. It ran from the end of that turn's first request, so right after the first message it read `0s` beside the request's own API time.
 - Context bar: The cards' tips wrap into even lines. The text wraps at the card's width, which follows the terminal's, so no wording avoids a stray word at every width: at 120 columns the usage card's tip left `tasks.` alone on its last line.
 - Context bar: The usage card's rows fit a narrow terminal: the bars narrow first, down to 10 cells and all to one width so they stay in line, then each row's text gives up its least part (a limit's `resets in`, an agent's models, then its tokens). The bars kept 20 cells however little room the card had, so at 80 columns the plan limits' reset times wrapped onto lines of their own (`13 min` under `resets in 4 hr`).
+- Context bar: The header's tabs (breakdown, usage, settings) move to a row of their own under the bar when the header can't fit them beside the totals, measured from what it shows each time it draws, so a longer model name or a running agent moves them with no width to keep up to date. On an 80-column terminal the header broke onto a second line as soon as a subagent ran.
 
 # 1.8.1 — 2026-10-14
 
