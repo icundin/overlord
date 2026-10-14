@@ -1,22 +1,13 @@
 import type { On } from 'claude-code'
-import { expect, mock, test } from 'claude-code/testing'
+import { expect, test } from 'claude-code/testing'
 
-import { BAND, BREAKDOWN, CATEGORIES, configRows, surround, typed, usageWith } from './fixtures'
+import { BAND, BREAKDOWN, CATEGORIES, surround, typed, usageWith } from './fixtures'
 import { segments } from './layout'
 
-test('draws the bar and toggles it with /context-bar', async ($, on) => {
-  const clock = mock.clock(on, { now: Date.parse('2026-10-13T09:05:00.000Z') })
-  on('session.usage', () => ({
-    value: { startedAt: 0, cost: { usd: 1.16 }, rateLimits: [{ kind: 'five_hour', percentUsed: 9, resetsAt: '2026-10-13T11:30:00.000Z' }], context: { window: 200000, tokens: 50000, percent: 25, breakdown: BREAKDOWN } },
-  }))
-  on('command.register', (_, e) => ({ value: { command: e.name } }))
-  on('ui.render', ($, e) => {
-    const { Text } = $.ui.resolve(e)
+const FIVE_HOUR = { kind: 'five_hour', percentUsed: 9, resetsAt: '2026-10-13T11:30:00.000Z' }
 
-    return <Text key="engine">engine band</Text>
-  })
-  on('session.start', (_, e) => ({ cwd: e.cwd }))
-  on('config.list', () => ({ value: configRows('dark') }))
+test('draws the bar and toggles it with /context-bar', async ($, on) => {
+  const clock = surround(on, 'dark', () => ({ value: { ...usageWith(25, 1.16).value, rateLimits: [FIVE_HOUR] } }))
   const ran: string[] = []
   on('command.run', (_, e) => {
     ran.push(`/${e.command} ${e.args}`)
@@ -127,17 +118,7 @@ test('draws the bar and toggles it with /context-bar', async ($, on) => {
 })
 
 test('fills the bar from the left when /context-bar shows it', async ($, on) => {
-  const clock = mock.clock(on)
-  on('session.usage', () => ({
-    value: { startedAt: 0, rateLimits: [{ kind: 'five_hour', percentUsed: 9, resetsAt: '2026-10-13T11:30:00.000Z' }], context: { window: 200000, tokens: 50000, percent: 25, breakdown: BREAKDOWN } },
-  }))
-  on('command.register', (_, e) => ({ value: { command: e.name } }))
-  on('session.start', (_, e) => ({ cwd: e.cwd }))
-  on('ui.render', ($, e) => {
-    const { Text } = $.ui.resolve(e)
-
-    return <Text key="engine">engine band</Text>
-  })
+  const clock = surround(on, 'dark', () => ({ value: { ...usageWith(25).value, rateLimits: [FIVE_HOUR] } }))
   await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
   await $.command.run(typed('context-bar'))
   await $.command.run(typed('context-bar'))
@@ -157,7 +138,6 @@ test('fills the bar from the left when /context-bar shows it', async ($, on) => 
   await clock.advance(300)
   expect(await colored()).toBe(used)
 })
-
 
 // Claude Code runs a command once the session is idle, which can outlast a press's 10 s budget.
 test('returns from a press without waiting for the command it starts', async ($, on) => {
@@ -322,21 +302,9 @@ test('shows the warning line as soon as a threshold is set below the figure', as
 })
 
 test('shows the growth and cost of a turn, the turns left and running agents', async ($, on) => {
-  mock.clock(on, { now: Date.parse('2026-10-13T09:05:00.000Z') })
-  mock.store(on, {})
   let total = 50_000
   let cost = 1
-  on('session.usage', () => ({
-    value: {
-      startedAt: 0,
-      rateLimits: [],
-      cost: { usd: cost },
-      context: { window: 200000, tokens: total, percent: 25, breakdown: { ...BREAKDOWN, totalTokens: total, percentage: Math.round(total / 2000) } },
-    },
-  }))
-  on('config.list', () => ({ value: configRows('dark') }))
-  on('command.register', (_, e) => ({ value: { command: e.name } }))
-  on('session.start', (_, e) => ({ cwd: e.cwd }))
+  surround(on, 'dark', () => usageWith(Math.round(total / 2000), cost, total))
   on('turn.start', (_, e) => ({ turnId: e.turnId }))
   on('turn.complete', (_, e) => ({ text: e.answer }))
   on('agent.list', () => ({ value: [{ id: 'a1', description: 'review', type: 'general-purpose', status: 'running' }] as never }))
@@ -345,11 +313,6 @@ test('shows the growth and cost of a turn, the turns left and running agents', a
     ran.push(`/${e.command}`)
 
     return { text: 'ok' }
-  })
-  on('ui.render', ($, e) => {
-    const { Text } = $.ui.resolve(e)
-
-    return <Text key="engine">engine band</Text>
   })
   await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
   const finish = { answer: 'ok', durationMs: 1000, isAborted: false, reason: 'answer' as const }
