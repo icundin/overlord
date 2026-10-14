@@ -1,8 +1,8 @@
 import { atom, read, update } from 'claude-code'
 import type { AgentInfo, EngineInterface, Register, SessionRateLimit, Timer } from 'claude-code'
 
-import type { BarSettings, Confirmable, Limit, Panel, Section, Spend, Tally, Tokens, Usage } from '../types'
-import { byServer, totalTokens } from './figures'
+import type { BarSettings, Confirmable, Limit, Panel, Section, Spend, Tally, Usage } from '../types'
+import { byServer, hasUsage, NO_TOKENS, sumTokens, tokensOf, totalTokens } from './figures'
 import { modelChoices } from './format'
 import { distinctColors, themed } from './themes'
 import { DEFAULT_OPEN, DEFAULT_SETTINGS } from './defaults'
@@ -188,7 +188,7 @@ let settling = 0
 async function refreshUntilDropped($: EngineInterface): Promise<void> {
   const poll = ++settling
   const before = (await read($, usage))?.totalTokens ?? Infinity
-  const tick = (tries: number): void => {
+  const attempt = (tries: number): void => {
     $.clock.after(SETTLE_MS, () => {
       void (async () => {
         if (poll !== settling) {
@@ -201,12 +201,12 @@ async function refreshUntilDropped($: EngineInterface): Promise<void> {
             was.startTokens === null ? was : { ...was, startTokens: now.totalTokens, startCost: now.cost },
           )
         } else if (tries < SETTLE_TRIES) {
-          tick(tries + 1)
+          attempt(tries + 1)
         }
       })()
     })
   }
-  tick(1)
+  attempt(1)
 }
 
 // The session's cost so far, or null where Claude Code keeps no ledger. The plain read costs nothing.
@@ -236,18 +236,6 @@ async function count($: EngineInterface, from: number, change: (was: Tally) => T
 
     return { ...counted, since: Math.min(counted.since, from) }
   })
-}
-
-function addTokens(
-  was: Tokens | undefined,
-  usage: { input_tokens: number; output_tokens: number; cache_read_input_tokens: number; cache_creation_input_tokens: number },
-): Tokens {
-  return {
-    input: (was?.input ?? 0) + usage.input_tokens,
-    output: (was?.output ?? 0) + usage.output_tokens,
-    cacheRead: (was?.cacheRead ?? 0) + usage.cache_read_input_tokens,
-    cacheWrite: (was?.cacheWrite ?? 0) + usage.cache_creation_input_tokens,
-  }
 }
 
 async function toggleSection($: EngineInterface, key: Section): Promise<void> {
@@ -432,7 +420,7 @@ export const register: Register = on => {
     const after = await $.session.usage().catch(() => null)
     const costAfter = after?.cost?.usd ?? null
     if (costAfter !== null) {
-      await update($, spend, was => costAtEnd(was, costAfter, who, spent ? totalTokens(addTokens(undefined, spent)) : 0, spent?.model))
+      await update($, spend, was => costAtEnd(was, costAfter, who, spent ? totalTokens(tokensOf(spent)) : 0, spent?.model))
     }
     if (after !== null) {
       await stampLimits($, after.rateLimits).catch(() => undefined)
@@ -440,7 +428,7 @@ export const register: Register = on => {
     await count($, startedAt, was => ({
       ...was,
       apiMs: was.apiMs + ms,
-      models: spent ? { ...was.models, [spent.model]: addTokens(was.models[spent.model], spent) } : was.models,
+      models: spent ? { ...was.models, [spent.model]: sumTokens([was.models[spent.model] ?? NO_TOKENS, tokensOf(spent)]) } : was.models,
     })).catch(() => undefined)
 
     return result
@@ -463,11 +451,10 @@ export const register: Register = on => {
       return next(e)
     }
 
-    const hasUsage = current.limits.length > 0 || current.cost !== null
     const stored = await read($, panel)
     // A stored panel the band does not draw, or usage without figures to show, reads as closed.
     const open =
-      stored === 'breakdown' || stored === 'settings' || stored === 'model' || stored === 'effort' || (stored === 'usage' && hasUsage)
+      stored === 'breakdown' || stored === 'settings' || stored === 'model' || stored === 'effort' || (stored === 'usage' && hasUsage(current))
         ? stored
         : null
 

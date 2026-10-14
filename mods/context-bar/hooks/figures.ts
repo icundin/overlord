@@ -1,11 +1,15 @@
 // Figures derived from the session's usage: token sums, groupings, projections and warnings.
 
-import type { McpServer, Skill, Tokens } from '../types'
+import type { ModelUsage } from 'claude-code'
+
+import type { McpServer, Skill, Tokens, Usage } from '../types'
 import { amount, dollars, limitLabel } from './format'
 
 export function totalTokens(tokens: Tokens): number {
   return tokens.input + tokens.output + tokens.cacheRead + tokens.cacheWrite
 }
+
+export const NO_TOKENS: Tokens = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }
 
 export function sumTokens(all: Tokens[]): Tokens {
   return all.reduce(
@@ -15,8 +19,23 @@ export function sumTokens(all: Tokens[]): Tokens {
       cacheRead: sum.cacheRead + one.cacheRead,
       cacheWrite: sum.cacheWrite + one.cacheWrite,
     }),
-    { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+    NO_TOKENS,
   )
+}
+
+// A response's usage, as the mod counts it.
+export function tokensOf(usage: ModelUsage): Tokens {
+  return {
+    input: usage.input_tokens,
+    output: usage.output_tokens,
+    cacheRead: usage.cache_read_input_tokens,
+    cacheWrite: usage.cache_creation_input_tokens,
+  }
+}
+
+// Whether the usage card has figures to show: a plan limit or the session's cost.
+export function hasUsage(usage: Usage): boolean {
+  return usage.limits.length > 0 || usage.cost !== null
 }
 
 // The share of the input side read from the cache, as a whole percentage; null before any input.

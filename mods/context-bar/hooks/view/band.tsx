@@ -1,6 +1,6 @@
 import type { ElementTable } from 'claude-code'
 
-import { alerts, turnsUntil } from '../figures'
+import { alerts, hasUsage, turnsUntil } from '../figures'
 import { compact, dollars, levelColor, modelLabel, share, signed } from '../format'
 import { longestFitting, reveal, segments } from '../layout'
 import { breakdownCard } from './breakdown'
@@ -19,7 +19,7 @@ export function band(ui: ElementTable<'terminal'>, view: View, act: Actions) {
   const kit: Kit = { ui, view, act, inner, card: inner - 4 - CLOSE_WIDTH, shadeBehind: view.isLight ? 'white' : 'black' }
   const { headerButton, dot } = parts(kit)
   const { shadeBehind } = kit
-  const hasUsage = current.limits.length > 0 || current.cost !== null
+  const isUsageShown = hasUsage(current)
   const isAutoCompact = current.autoCompactThreshold !== null
   const bar = segments(current.rows, inner)
   const shown = reveal(bar, view.fill)
@@ -50,7 +50,7 @@ export function band(ui: ElementTable<'terminal'>, view: View, act: Actions) {
     ...(level === null ? [] : ['·', level]),
     ...(agentsNote === '' ? [] : ['·', agentsNote]),
   ]
-  const tabNames = ['breakdown', ...(hasUsage ? ['·', 'usage'] : []), '·', 'settings']
+  const tabNames = ['breakdown', ...(isUsageShown ? ['·', 'usage'] : []), '·', 'settings']
   const shortestTotals = `${compact(current.totalTokens)}  ${current.percentage}% `.length
   const withTabs = [...lead, '│', ...tabNames].join(' ')
   const hasTabsRow = withTabs.length + 2 + shortestTotals > inner
@@ -76,8 +76,8 @@ export function band(ui: ElementTable<'terminal'>, view: View, act: Actions) {
   )
   const tabs = [
     headerButton('breakdown', 'breakdown', open === 'breakdown', () => act.toggle('breakdown')),
-    hasUsage && dot('usage-dot'),
-    hasUsage && headerButton('usage', 'usage', open === 'usage', () => act.toggle('usage')),
+    isUsageShown && dot('usage-dot'),
+    isUsageShown && headerButton('usage', 'usage', open === 'usage', () => act.toggle('usage')),
     dot('settings-dot'),
     headerButton('settings', 'settings', open === 'settings', () => act.toggle('settings')),
   ]
