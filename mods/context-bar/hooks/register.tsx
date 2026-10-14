@@ -364,13 +364,14 @@ export const register: Register = on => {
     return result
   })
 
-  // A typed /compact is no turn, so turn.complete never follows it.
+  // A typed /compact is no turn, so turn.complete never follows it. Should the hook fail, /compact goes on, run once:
+  // the catch's `next` hands back the run already made.
   on('command.run', { command: 'compact' }, async ($, e, next) => {
     const result = await next(e)
     await refreshUntilDropped($).catch(() => undefined)
 
     return result
-  })
+  }).catch(($, e, next) => next(e))
 
   on('turn.start', async ($, e, next) => {
     const current = await read($, usage)

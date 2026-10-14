@@ -13,6 +13,7 @@ One changelog for the collection; every entry names the artifact it concerns.
 - Context bar: With auto-compact off, the compact buffer's swatch in its hover card is the bar's color; it was a fainter grey than the bar and the breakdown.
 - Context bar: A cost warning with cents reads `$12.50` in the warning line and in the toast that confirms it; it read `$12.5`.
 - Context bar: Choosing a model or an effort level disarms an armed confirmation, as closing any card does; the context warning's `/compact?` stayed armed.
+- Context bar: A subagent's request reads the agent list once before it starts, not twice; a band that isn't drawn (hidden, or on the desktop) reads no figures, so it no longer redraws for nothing on each refresh; and the `/compact` hook carries a `.catch`, so should it fail, `/compact` still runs, once.
 
 # 1.8.1 — 2026-10-14
 
