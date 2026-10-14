@@ -11,10 +11,12 @@ A Claude Code mod (a plugin with a hooks module): a band above the prompt that d
 
 ## Requirements
 
-- Claude Code 2.1.287 or later, where mods load by default; built and tested on 2.1.296. Mods are an
-  early-access surface that may change between releases.
+- Claude Code 2.1.296 or later, the oldest release it is tested on; built on 2.1.299. Mods are an early-access
+  surface that may change between releases.
 - Terminal only: the desktop app and other surfaces keep their own band. The desktop draws text in a
   proportional font, where the bar's cells, shades and hover cards don't line up.
+- A terminal that reports the mouse, for the band's buttons and hover cards. Inside tmux that takes
+  `set -g mouse on` in `~/.tmux.conf`.
 
 ## Install
 
@@ -42,7 +44,7 @@ claude plugin marketplace update claude-code-toolkit
 claude plugin update context-bar@claude-code-toolkit
 ```
 
-Then restart Claude Code to apply it.
+Then run `/reload-plugins` in a running session, or start a new one, to apply it.
 
 ```bash
 claude plugin uninstall context-bar@claude-code-toolkit
