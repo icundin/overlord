@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 
-import { ago, compact, duration, limitLabel, modelAlias, modelChoices, modelLabel, resetsIn, share, signed } from './format'
+import { ago, compact, dollars, duration, limitLabel, modelAlias, modelChoices, modelLabel, resetsIn, share, signed } from './format'
 
 test('shortens the model id to family and version', async () => {
   const ids = {
@@ -59,4 +59,8 @@ test('formats figures as the band shows them', async () => {
 
 test('formats durations', async () => {
   expect([duration(45_000), duration(127_000), duration(3_900_000)]).toEqual(['45s', '2m 7s', '1h 5m'])
+})
+
+test('writes an amount under a cent as such, never as free', async () => {
+  expect([dollars(0), dollars(0.004), dollars(0.005), dollars(1.163)]).toEqual(['$0.00', '<$0.01', '$0.01', '$1.16'])
 })

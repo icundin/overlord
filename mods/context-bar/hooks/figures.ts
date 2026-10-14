@@ -1,7 +1,7 @@
 // Figures derived from the session's usage: token sums, groupings, projections and warnings.
 
 import type { McpServer, Skill, Tokens } from '../types'
-import { limitLabel } from './format'
+import { dollars, limitLabel } from './format'
 
 export function totalTokens(tokens: Tokens): number {
   return tokens.input + tokens.output + tokens.cacheRead + tokens.cacheWrite
@@ -70,7 +70,7 @@ export function alerts(
   const out: string[] = []
 
   if (thresholds.cost > 0 && reading.cost !== null && reading.cost >= thresholds.cost) {
-    out.push(`Session cost $${reading.cost.toFixed(2)}, past your $${thresholds.cost}`)
+    out.push(`Session cost ${dollars(reading.cost)}, past your $${thresholds.cost}`)
   }
   if (thresholds.context > 0 && reading.contextPercent >= thresholds.context) {
     out.push(`Context at ${reading.contextPercent}%: consider /compact`)

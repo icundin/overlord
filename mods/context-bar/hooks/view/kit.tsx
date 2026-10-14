@@ -1,6 +1,6 @@
 import type { ElementTable, RenderChildren } from 'claude-code'
 
-import type { BarSettings, Confirmable, Growth, Panel, Section, Tally, Usage } from '../../types'
+import type { BarSettings, Confirmable, Growth, Panel, Section, Spend, Tally, Usage } from '../../types'
 import { DEFAULT_OPEN } from '../defaults'
 
 // Everything the band draws, read by the render hook.
@@ -12,6 +12,7 @@ export type View = {
   opened: Partial<Record<Section, boolean>>
   confirming: Confirmable | null
   tally: Tally | null
+  spend: Spend | null
   limitsAt: number | null
   now: number
   fill: number

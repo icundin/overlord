@@ -1,11 +1,12 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register, SessionRateLimit, Timer } from 'claude-code'
 
-import type { BarSettings, Confirmable, Limit, Panel, Section, Tally, Tokens, Usage } from '../types'
-import { byServer } from './figures'
+import type { BarSettings, Confirmable, Limit, Panel, Section, Spend, Tally, Tokens, Usage } from '../types'
+import { byServer, totalTokens } from './figures'
 import { modelChoices } from './format'
 import { distinctColors, themed } from './themes'
 import { DEFAULT_OPEN, DEFAULT_SETTINGS } from './defaults'
+import { costAtEnd, costAtStart, MAIN, startSpend } from './spend'
 import { band } from './view/band'
 
 const usage = atom({ plugin: 'context-bar', key: 'usage' } as const, null)
@@ -16,6 +17,7 @@ const panel = atom({ plugin: 'context-bar', key: 'panel' } as const, null)
 const fill = atom({ plugin: 'context-bar', key: 'fill' } as const, 1)
 const sections = atom({ plugin: 'context-bar', key: 'sections' } as const, {})
 const tally = atom({ plugin: 'context-bar', key: 'tally' } as const, null)
+const spend = atom({ plugin: 'context-bar', key: 'spend' } as const, null)
 const confirming = atom({ plugin: 'context-bar', key: 'confirming' } as const, null)
 const isLight = atom({ plugin: 'context-bar', key: 'isLight' } as const, false)
 const models = atom({ plugin: 'context-bar', key: 'models' } as const, [])
@@ -87,9 +89,8 @@ async function refresh($: EngineInterface): Promise<void> {
   await update($, usage, () => next)
 }
 
-// The plan limits a response just brought, read with the moment they came. The plain read costs nothing.
-async function stampLimits($: EngineInterface): Promise<void> {
-  const { rateLimits } = await $.session.usage()
+// The plan limits a response just brought, kept with the moment they came.
+async function stampLimits($: EngineInterface, rateLimits: SessionRateLimit[]): Promise<void> {
   const now = await $.clock.now()
   await update($, usage, was => (was === null ? null : { ...was, limits: toLimits(rateLimits) }))
   await update($, limitsAt, () => now)
@@ -203,6 +204,26 @@ async function refreshUntilDropped($: EngineInterface): Promise<void> {
   tick(1)
 }
 
+// The session's cost so far, or null where Claude Code keeps no ledger. The plain read costs nothing.
+async function sessionCost($: EngineInterface): Promise<number | null> {
+  return (await $.session.usage()).cost?.usd ?? null
+}
+
+// Who a request's loop is: the main loop, a subagent by its task description, or null for a loop no agent list names
+// (Claude Code's own forks, such as a compaction).
+async function spender($: EngineInterface, agentId: string | undefined, known: Spend | null): Promise<{ id: string; label: string } | null> {
+  if (agentId === undefined) {
+    return { id: MAIN, label: 'main' }
+  }
+  const seen = known?.agents.find(one => one.id === agentId)
+  if (seen) {
+    return seen
+  }
+  const listed = (await $.agent.list()).find(agent => agent.id === agentId)
+
+  return listed ? { id: agentId, label: listed.description || listed.type } : null
+}
+
 async function count($: EngineInterface, change: (was: Tally) => Tally): Promise<void> {
   const now = await $.clock.now()
   await update($, tally, was => change(was ?? { since: now, apiMs: 0, activeMs: 0, models: {} }))
@@ -294,6 +315,11 @@ async function setUp($: EngineInterface): Promise<void> {
     }
     await readConfig($).catch(() => undefined)
     await refresh($).catch(() => undefined)
+    // The cost so far is the earlier part; a reload keeps counting where it was.
+    const cost = await sessionCost($).catch(() => null)
+    if (cost !== null && (await read($, spend)) === null) {
+      await update($, spend, () => startSpend(cost))
+    }
     tick($)
   } finally {
     settingUp = false
@@ -377,13 +403,27 @@ export const register: Register = on => {
       await update($, effort, () => (e.effort === undefined ? null : String(e.effort)))
     }
     const startedAt = await $.clock.now()
+    const costBefore = await sessionCost($).catch(() => null)
+    if (costBefore !== null) {
+      await update($, spend, was => costAtStart(was, costBefore))
+    }
+    // Known before the request, so nothing comes between reading the total after it and counting it.
+    const who = await spender($, e.agentId, await read($, spend)).catch(() => null)
     if (e.agentId !== undefined) {
       await countAgents($).catch(() => undefined)
     }
     const result = yield* next(e)
     const ms = (await $.clock.now()) - startedAt
-    await stampLimits($).catch(() => undefined)
     const { usage: spent } = result
+    // The plain read costs nothing.
+    const after = await $.session.usage().catch(() => null)
+    const costAfter = after?.cost?.usd ?? null
+    if (costAfter !== null) {
+      await update($, spend, was => costAtEnd(was, costAfter, who, spent ? totalTokens(addTokens(undefined, spent)) : 0, spent?.model))
+    }
+    if (after !== null) {
+      await stampLimits($, after.rateLimits).catch(() => undefined)
+    }
     await count($, was => ({
       ...was,
       apiMs: was.apiMs + ms,
@@ -429,6 +469,7 @@ export const register: Register = on => {
         opened: await read($, sections),
         confirming: await read($, confirming),
         tally: await read($, tally),
+        spend: await read($, spend),
         limitsAt: await read($, limitsAt),
         now: await $.clock.now(),
         fill: await read($, fill),
