@@ -740,6 +740,22 @@ test('counts from when the first counted turn began, not when its request ended'
   expect(await ui.find({ type: 'Text', text: /^ · counted for the last 15s$/ })).toBeDefined()
 })
 
+test('draws a segment\'s swatch in its bar\'s color, the buffer too with auto-compact off', async ($, on) => {
+  surround(on, 'dark', () => {
+    const { value } = usageWith(25)
+
+    return { value: { ...value, context: { ...value.context, breakdown: { ...BREAKDOWN, isAutoCompactEnabled: false, autoCompactThreshold: undefined } } } }
+  })
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  const ui = await $.ui.mount({ plugin: 'context-bar', surface: 'terminal', ...BAND })
+  const buffer = await ui.find({ type: 'Text', text: /^▒+$/ })
+  const swatches = await ui.findAll({ type: 'Text', text: /^■$/ })
+  expect(swatches.at(-1)?.props.color).toBe(buffer?.props.color)
+  await ui.press({ key: 'breakdown' })
+  const legend = (await ui.findAll({ type: 'Text', text: /^■$/ })).map(found => found.props.color)
+  expect(legend).toContain(buffer?.props.color)
+})
+
 // The card has 66 cells at 80 columns: the band's and the card's borders and padding, the close button, the indent.
 test('fits the usage card\'s rows to a narrow terminal, the bars first, then the least of the detail', async ($, on) => {
   let cost = 0.5

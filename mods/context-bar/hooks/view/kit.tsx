@@ -1,6 +1,6 @@
 import type { ElementTable, RenderChildren } from 'claude-code'
 
-import type { BarSettings, Confirmable, Growth, Panel, Section, Spend, Tally, Usage } from '../../types'
+import type { BarSettings, Confirmable, Growth, Panel, Row, Section, Spend, Tally, Usage } from '../../types'
 import { DEFAULT_OPEN } from '../defaults'
 import { balanced } from '../layout'
 
@@ -62,6 +62,16 @@ export type Kit = {
 
 // "[x]" and the gap before it.
 export const CLOSE_WIDTH = 4
+
+// A row's color in the bar, the legend and the hover cards: the compact buffer in the warning color while
+// auto-compact is on, the free space and deferred schemas faint.
+export function swatchOf(row: Row, isAutoCompact: boolean): string {
+  if (row.kind === 'used') {
+    return row.color
+  }
+
+  return row.kind === 'buffer' ? (isAutoCompact ? 'warning' : 'inactive') : 'subtle'
+}
 
 export function chunk<T>(list: T[], size: number): T[][] {
   const out: T[][] = []

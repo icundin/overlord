@@ -4,7 +4,7 @@ import { alerts, turnsUntil } from '../figures'
 import { compact, dollars, levelColor, modelLabel, share, signed } from '../format'
 import { longestFitting, reveal, segments } from '../layout'
 import { breakdownCard } from './breakdown'
-import { CLOSE_WIDTH, parts } from './kit'
+import { CLOSE_WIDTH, parts, swatchOf } from './kit'
 import type { Actions, Kit, View } from './kit'
 import { menuCard } from './menu'
 import { settingsCard } from './settings'
@@ -20,6 +20,7 @@ export function band(ui: ElementTable<'terminal'>, view: View, act: Actions) {
   const { headerButton, dot } = parts(kit)
   const { shadeBehind } = kit
   const hasUsage = current.limits.length > 0 || current.cost !== null
+  const isAutoCompact = current.autoCompactThreshold !== null
   const bar = segments(current.rows, inner)
   const shown = reveal(bar, view.fill)
   const { lastDelta, lastCost } = view.growth
@@ -122,10 +123,8 @@ export function band(ui: ElementTable<'terminal'>, view: View, act: Actions) {
           const scope = `segment:${seg.name}`
 
           if (seg.kind === 'buffer') {
-            const isAuto = current.autoCompactThreshold !== null
-
             return [
-              <Text key={seg.name} color={isAuto ? 'warning' : 'inactive'} hover={{ scope, dimColor: true }}>
+              <Text key={seg.name} color={swatchOf(seg, isAutoCompact)} hover={{ scope, dimColor: true }}>
                 {'▒'.repeat(seg.cells)}
               </Text>,
             ]
@@ -158,8 +157,6 @@ export function band(ui: ElementTable<'terminal'>, view: View, act: Actions) {
           const name = seg.name.toLowerCase()
           // Padded to the totals' width so the card hides them; it never reaches the header's buttons.
           const padding = ' '.repeat(Math.max(0, totals.length - name.length - figures.length - 4))
-          const swatch =
-            seg.kind === 'used' ? seg.color : seg.kind === 'buffer' && current.autoCompactThreshold !== null ? 'warning' : 'subtle'
 
           return (
             <Box
@@ -172,7 +169,7 @@ export function band(ui: ElementTable<'terminal'>, view: View, act: Actions) {
             >
               <Text>
                 {padding}
-                <Text color={swatch}>■</Text> <Text bold>{name}</Text>
+                <Text color={swatchOf(seg, isAutoCompact)}>■</Text> <Text bold>{name}</Text>
                 {'  '}
                 <Text dimColor>{figures}</Text>
               </Text>
