@@ -1,6 +1,6 @@
 import { DEFAULT_OPEN } from '../defaults'
 import { cacheHit, sumTokens, totalTokens } from '../figures'
-import { ago, compact, duration, levelColor, limitLabel, modelLabel, resetsIn } from '../format'
+import { ago, compact, dollars, duration, levelColor, limitLabel, modelLabel, resetsIn } from '../format'
 import { MAIN, spendGroups } from '../spend'
 import type { SpendGroup } from '../spend'
 import { chunk, parts } from './kit'
@@ -24,7 +24,7 @@ export function usageCard(kit: Kit) {
   const hit = cacheHit(tokens)
   // The desktop app's three columns: cost, api, active, then each model's share and the cache hit rate.
   const figures = [
-    current.cost !== null && { label: 'cost', value: `$${current.cost.toFixed(2)}` },
+    current.cost !== null && { label: 'cost', value: dollars(current.cost) },
     counted !== null && { label: 'api', value: duration(counted.apiMs) },
     counted !== null && { label: 'active', value: duration(counted.activeMs) },
     ...byModel.map(([model, one]) => ({
@@ -57,7 +57,7 @@ export function usageCard(kit: Kit) {
   )
   const agentDetail = (group: SpendGroup) =>
     [
-      `$${group.usd.toFixed(2)}`,
+      dollars(group.usd),
       ...(group.tokens === null ? [] : [`${compact(group.tokens)} tokens`]),
       ...(group.models.length === 0 ? [] : [group.models.map(modelLabel).join(', ')]),
     ].join(' · ')
@@ -119,7 +119,7 @@ export function usageCard(kit: Kit) {
           ),
         )}
       {figures.length > 0 &&
-        section('session', 'this session', current.cost === null ? [] : [`$${current.cost.toFixed(2)}`], () =>
+        section('session', 'this session', current.cost === null ? [] : [dollars(current.cost)], () =>
           chunk(figures, 3).map((line, row) => (
             <Box key={`figures-${row}`} columnGap={3}>
               {line.map(figure => (

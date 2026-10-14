@@ -1,7 +1,7 @@
 import type { ElementTable } from 'claude-code'
 
 import { alerts, turnsUntil } from '../figures'
-import { compact, levelColor, modelLabel, share, signed } from '../format'
+import { compact, dollars, levelColor, modelLabel, share, signed } from '../format'
 import { longestFitting, reveal, segments } from '../layout'
 import { breakdownCard } from './breakdown'
 import { parts } from './kit'
@@ -22,9 +22,9 @@ export function band(ui: ElementTable<'terminal'>, view: View, act: Actions) {
   const shown = reveal(bar, view.fill)
   const { lastDelta, lastCost } = view.growth
   const growthNote = lastDelta
-    ? ` · ${signed(lastDelta)}${lastCost !== null && lastCost > 0 ? ` · $${lastCost.toFixed(2)}` : ''} last turn`
+    ? ` · ${signed(lastDelta)}${lastCost !== null && lastCost > 0 ? ` · ${dollars(lastCost)}` : ''} last turn`
     : ''
-  const totalNote = current.cost !== null && current.cost > 0 ? ` · $${current.cost.toFixed(2)} total` : ''
+  const totalNote = current.cost !== null && current.cost > 0 ? ` · ${dollars(current.cost)} total` : ''
   // The next mark the context heads for: the warning threshold, else the compaction point.
   const warnAt = view.settings.contextWarnPercent
   const mark =

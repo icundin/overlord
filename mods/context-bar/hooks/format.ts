@@ -23,6 +23,11 @@ function trim(n: number): string {
   return n.toFixed(1).replace(/\.0$/, '')
 }
 
+// `$1.16`; an amount that rounds to nothing but is not nothing, `<$0.01`.
+export function dollars(usd: number): string {
+  return usd > 0 && usd < 0.005 ? '<$0.01' : `$${usd.toFixed(2)}`
+}
+
 // `+12k`, `−200k` (a compaction), `+840`.
 export function signed(delta: number): string {
   return `${delta < 0 ? '−' : '+'}${compact(Math.abs(delta))}`
