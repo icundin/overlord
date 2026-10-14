@@ -457,7 +457,7 @@ test('leaves the desktop band to the engine', async ($, on) => {
 
 // A real compaction takes a while: /compact answers only once the test releases it.
 const compacting = (on: On, percentage: number) => {
-  const figures = { tokens: 162000, percentage, reads: 0, readMs: 0, reading: 0, mostReading: 0 }
+  const figures = { tokens: 162000, percentage, cost: null as number | null, reads: 0, readMs: 0, reading: 0, mostReading: 0 }
   const clock = surround(on, 'dark', async () => {
     figures.reads += 1
     figures.reading += 1
@@ -467,11 +467,11 @@ const compacting = (on: On, percentage: number) => {
     }
     figures.reading -= 1
 
-    return usageWith(figures.percentage, null, figures.tokens)
+    return usageWith(figures.percentage, figures.cost, figures.tokens)
   })
   let release = () => {}
   on('command.run', () => new Promise(resolve => (release = () => resolve({ text: 'ok' }))))
-  const compacted = (to: { tokens: number; percentage: number }) => Object.assign(figures, to)
+  const compacted = (to: Partial<Pick<typeof figures, 'tokens' | 'percentage' | 'cost'>>) => Object.assign(figures, to)
 
   return { clock, figures, compacted, release: () => release() }
 }
@@ -538,6 +538,28 @@ test('re-reads the figures for five seconds when a /compact leaves them as they 
   expect(figures.reads).toBe(before + 20)
   await clock.advance(5000)
   expect(figures.reads).toBe(before + 20)
+})
+
+// A prompt typed while /compact runs starts its turn before Claude Code counts the compacted context.
+test('measures a turn queued behind /compact from the compacted figures', async ($, on) => {
+  const { clock, compacted, release } = compacting(on, 81)
+  on('turn.start', (_, e) => ({ turnId: e.turnId }))
+  on('turn.complete', (_, e) => ({ text: e.answer }))
+  compacted({ cost: 1 })
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  const ran = $.command.run(typed('compact'))
+  await clock.settle()
+  release()
+  await ran
+  // The compaction's own request.
+  compacted({ cost: 1.3 })
+  await $.turn.start({ text: 'go', turnId: 't1' })
+  compacted(COMPACTED)
+  await clock.advance(250)
+  compacted({ tokens: COMPACTED.tokens + 5000, cost: 1.5 })
+  await $.turn.complete({ answer: 'ok', durationMs: 1000, isAborted: false, reason: 'answer', turnId: 't1' })
+  const ui = await $.ui.mount({ plugin: 'context-bar', surface: 'terminal', ...BAND, props: { ...BAND.props, bodyColumns: 200 } })
+  expect(await ui.find({ type: 'Text', text: /\+5k · \$0\.20 last turn/ })).toBeDefined()
 })
 
 test('re-reads the figures once a /compact clicked in the band ends', async ($, on) => {

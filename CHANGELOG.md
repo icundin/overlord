@@ -2,6 +2,10 @@
 
 One changelog for the collection; every entry names the artifact it concerns.
 
+# 1.8.2 — 2026-10-14
+
+- Context bar: A turn typed while `/compact` runs measures its growth and cost from the compacted context. Claude Code counts the compacted context a moment after `/compact` returns, and the turn started from the figures before it, so the header read `−133k · $0.50 last turn` for a turn that added 5k and cost $0.20.
+
 # 1.8.1 — 2026-10-14
 
 - Context bar: The cost by agent's summary says only what its rows say. Loaded into a running session that had already spent (an update applied with `/reload-plugins`), the mod has counted no request yet, so the rows hold only the earlier cost, while the summary read `main 0%`; it now reads `earlier 100%` until the next message.

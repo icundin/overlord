@@ -183,7 +183,8 @@ const SETTLE_TRIES = 20
 let settling = 0
 
 // Claude Code counts the compacted context a moment after /compact returns, so the figures are re-read until they
-// drop: one read at a time, each 250 ms after the last, for five seconds at most.
+// drop: one read at a time, each 250 ms after the last, for five seconds at most. A turn queued behind the /compact
+// started from the figures before it, so the drop becomes its start.
 async function refreshUntilDropped($: EngineInterface): Promise<void> {
   const poll = ++settling
   const before = (await read($, usage))?.totalTokens ?? Infinity
@@ -194,8 +195,12 @@ async function refreshUntilDropped($: EngineInterface): Promise<void> {
           return
         }
         await refresh($).catch(() => undefined)
-        const now = (await read($, usage).catch(() => null))?.totalTokens ?? Infinity
-        if (now >= before && tries < SETTLE_TRIES) {
+        const now = await read($, usage).catch(() => null)
+        if (now !== null && now.totalTokens < before) {
+          await update($, growth, was =>
+            was.startTokens === null ? was : { ...was, startTokens: now.totalTokens, startCost: now.cost },
+          )
+        } else if (tries < SETTLE_TRIES) {
           tick(tries + 1)
         }
       })()
