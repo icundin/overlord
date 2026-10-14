@@ -131,9 +131,9 @@ export function ordered(rows: Row[]): Row[] {
 
 // Each path's last segments, two at least and as many more as it takes to tell it from the others:
 // `~/.claude/memory/MEMORY.md` and `~/.claude/projects/x/memory/MEMORY.md` read `.claude/memory/MEMORY.md`
-// and `x/memory/MEMORY.md`.
+// and `x/memory/MEMORY.md`. A Windows path keeps its backslashes.
 export function shortPaths(paths: string[]): string[] {
-  const parts = paths.map(path => path.split('/').filter(Boolean))
+  const parts = paths.map(path => path.split(/[\\/]/).filter(Boolean))
   const tail = (segments: string[], n: number) => segments.slice(-n).join('/')
 
   return parts.map((segments, i) => {
@@ -142,6 +142,6 @@ export function shortPaths(paths: string[]): string[] {
       n += 1
     }
 
-    return tail(segments, n)
+    return segments.slice(-n).join(paths[i]?.includes('\\') ? '\\' : '/')
   })
 }

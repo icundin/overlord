@@ -65,6 +65,16 @@ test('shortens memory file paths, keeping as many folders as tell them apart', a
   ).toEqual(['.claude/CLAUDE.md', '.claude/memory/MEMORY.md', '-Users-me-Code-app/memory/MEMORY.md'])
 })
 
+test('shortens Windows paths too, keeping their backslashes', async () => {
+  expect(
+    shortPaths([
+      'C:\\Users\\me\\.claude\\CLAUDE.md',
+      'C:\\Users\\me\\.claude\\memory\\MEMORY.md',
+      'C:\\Users\\me\\.claude\\projects\\C--Users-me-Code-app\\memory\\MEMORY.md',
+    ]),
+  ).toEqual(['.claude\\CLAUDE.md', '.claude\\memory\\MEMORY.md', 'C--Users-me-Code-app\\memory\\MEMORY.md'])
+})
+
 test('fits the header detail to the width', async () => {
   expect(longestFitting(['a long one', 'short', ''], 7)).toBe('short')
   expect(longestFitting(['a long one', 'short', ''], 3)).toBe('')
