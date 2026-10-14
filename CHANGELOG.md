@@ -2,6 +2,10 @@
 
 One changelog for the collection; every entry names the artifact it concerns.
 
+# 1.6.0 — 2026-10-14
+
+- Context bar: The cards' section summaries separate their parts with ` · `, as the header does, and join a list with `, ` (`50k · 25%`, `1.2M · Opus 5.5, Haiku 5.5 · counted for the last 5m`). The summaries used two spaces in some places and ` · ` in others, the limits for a list and the tokens between different things, so the age added to the limits had no separator of its own.
+
 # 1.5.4 — 2026-10-14
 
 - Context bar: Shows the compacted fill after a `/compact`, typed or clicked, on every install. The 1.5.2 refresh ran as the compaction ended, before Claude Code counted the compacted context, so it redrew the old fill; the bar now re-reads the figures until they drop, one read at a time, for five seconds at most. It hooks `/compact` itself instead of `session.compact`, which doesn't run in a plugin installed where an organization manages Claude Code.

@@ -42,7 +42,7 @@ export function usageCard(kit: Kit) {
   return (
     <Box key="usage" flexDirection="column" rowGap={1}>
       {limits.length > 0 &&
-        section('limits', 'plan usage limits', [limits.map(limit => `${limit.percentUsed}%`).join(' · ')], () =>
+        section('limits', 'plan usage limits', [limits.map(limit => `${limit.percentUsed}%`).join(', ')], () =>
           limits.map((limit, i) => {
             const filled = Math.min(LIMIT_BAR, Math.round((limit.percentUsed / 100) * LIMIT_BAR))
 
@@ -77,7 +77,7 @@ export function usageCard(kit: Kit) {
         section(
           'tokens',
           'tokens',
-          [compact(all), `${modelNames ? `${modelNames} · ` : ''}counted for the last ${duration(view.now - counted.since)}`],
+          [compact(all), ...(modelNames ? [modelNames] : []), `counted for the last ${duration(view.now - counted.since)}`],
           () =>
             tokenRows.map(([label, value]) => (
               <Text key={label}>
