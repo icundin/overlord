@@ -360,9 +360,23 @@ test('shows the growth and cost of a turn, the turns left and running agents', a
 
   const ui = await $.ui.mount({ plugin: 'context-bar', surface: 'terminal', ...BAND, props: { ...BAND.props, bodyColumns: 200 } })
   // 60k of 200k, warning at 80% (160k), 10k a turn: 10 turns.
-  expect(await ui.find({ type: 'Text', text: /\+10k · \$0\.42 last turn · ≈ 10 turns to 80%/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /\+10k · \$0\.42 last turn · \$1\.42 total · ≈ 10 turns to 80%/ })).toBeDefined()
   expect(await ui.find({ type: 'Text', text: /^1 agent$/ })).toBeDefined()
   expect(ran).toEqual([])
+  await ui.unmount()
+
+  // Narrowing, the projection goes first, then the last turn, then the total, then the compaction point.
+  const shown: string[] = []
+  for (let columns = 200; columns >= 60; columns -= 1) {
+    const band = await $.ui.mount({ plugin: 'context-bar', surface: 'terminal', ...BAND, props: { ...BAND.props, bodyColumns: columns } })
+    const has = async (text: RegExp) => ((await band.find({ type: 'Text', text })) === undefined ? '' : text.source)
+    const parts = (await Promise.all([/turns to/, /last turn/, /total/, /compacts at/].map(has))).filter(Boolean).join(',')
+    if (shown.at(-1) !== parts) {
+      shown.push(parts)
+    }
+    await band.unmount()
+  }
+  expect(shown).toEqual(['turns to,last turn,total,compacts at', 'last turn,total,compacts at', 'total,compacts at', 'compacts at'])
 })
 
 test('asks before /compact from the word in the context warning, and lets the question lapse', async ($, on) => {

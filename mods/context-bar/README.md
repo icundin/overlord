@@ -4,7 +4,7 @@ A Claude Code mod (a plugin with a hooks module): a band above the prompt that d
 `/context` category, with the model, the effort level, and cards for the breakdown and the plan usage.
 
 ```
-◆ context · Opus 5.5 · high │ breakdown · usage · settings     312k of 1M · +7.4k · $0.42 last turn · ≈ 40 turns to 80%  31%
+◆ context · Opus 5.5 · high │ breakdown · usage · settings     312k of 1M · +7.4k · $0.42 last turn · $1.16 total · ≈ 40 turns to 80%  31%
 ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░▒▒
 ⚠ Session cost $51.20, past your $50
 ```
@@ -54,10 +54,10 @@ claude plugin uninstall context-bar@claude-code-toolkit
 - **Model and effort** in the header open a menu that runs `/model` or `/effort` for you, as if typed: Claude Code
   applies them as it does those commands (`/effort` saves the level as your default). While subagents work, the
   header counts them (`2 agents`).
-- **The totals** show what the last turn added and cost (`+7.4k · $0.42 last turn`) and, at the recent pace (the
-  average of the last few turns that grew the context), how many turns are left before the warning threshold or
-  compaction (`≈ 40 turns to 80%`). On a narrow terminal they drop
-  that detail first.
+- **The totals** show what the last turn added and cost (`+7.4k · $0.42 last turn`), the session's cost so far
+  (`$1.16 total`) and, at the recent pace (the average of the last few turns that grew the context), how many turns
+  are left before the warning threshold or compaction (`≈ 40 turns to 80%`). On a narrow terminal they drop that
+  detail first, the session's cost after the last turn's.
 - **breakdown** lists every category, the MCP tools by server, the memory files and the skills by source, and links
   to `/context` for the full detail.
 - **usage** shows the plan limits and how old they are (`38%, 12% · updated 14 min ago`), the session's cost and time,

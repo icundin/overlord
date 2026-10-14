@@ -24,6 +24,7 @@ export function band(ui: ElementTable<'terminal'>, view: View, act: Actions) {
   const growthNote = lastDelta
     ? ` · ${signed(lastDelta)}${lastCost !== null && lastCost > 0 ? ` · $${lastCost.toFixed(2)}` : ''} last turn`
     : ''
+  const totalNote = current.cost !== null && current.cost > 0 ? ` · $${current.cost.toFixed(2)} total` : ''
   // The next mark the context heads for: the warning threshold, else the compaction point.
   const warnAt = view.settings.contextWarnPercent
   const mark =
@@ -50,10 +51,17 @@ export function band(ui: ElementTable<'terminal'>, view: View, act: Actions) {
     '·',
     'settings',
   ].join(' ')
-  // The totals give up detail as the band narrows: the projection first, then the growth note, the compaction point,
-  // and the window.
+  // The totals give up detail as the band narrows: the projection first, then the growth note, the session's cost,
+  // the compaction point, and the window.
   const detail = longestFitting(
-    [`${ofMax}${compactsAt}${growthNote}${projection}`, `${ofMax}${compactsAt}${growthNote}`, `${ofMax}${compactsAt}`, ofMax, ''],
+    [
+      `${ofMax}${compactsAt}${growthNote}${totalNote}${projection}`,
+      `${ofMax}${compactsAt}${growthNote}${totalNote}`,
+      `${ofMax}${compactsAt}${totalNote}`,
+      `${ofMax}${compactsAt}`,
+      ofMax,
+      '',
+    ],
     inner - title.length - 2 - `${compact(current.totalTokens)}  ${current.percentage}% `.length,
   )
   const totals = `${compact(current.totalTokens)}${detail}  ${current.percentage}% `
