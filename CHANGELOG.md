@@ -2,6 +2,10 @@
 
 One changelog for the collection; every entry names the artifact it concerns.
 
+# 1.7.0 — 2026-10-14
+
+- Context bar: The header shows the session's cost so far next to the last turn's (`$0.42 last turn · $1.16 total`). The total was only in the usage card, a click away, while the header showed one turn's share of it; on a narrow terminal the total outlasts the last turn's figures, as the running figure says more.
+
 # 1.6.0 — 2026-10-14
 
 - Context bar: The usage card says how old the plan limits are (`38%, 12% · updated 14 min ago`). The limits belong to the account, but a session learns new figures only when one of its own requests comes back, main thread or subagent, so an idle session showed figures other sessions had long moved past as if they were current. The card redraws each minute while open, since an idle band draws nothing new by itself; its reset countdowns move on with it.
