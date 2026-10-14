@@ -1,3 +1,4 @@
+import type { On } from 'claude-code'
 import { expect, mock, test } from 'claude-code/testing'
 
 import { BAND, BREAKDOWN, CATEGORIES, configRows, surround, usageWith } from './fixtures'
@@ -421,7 +422,7 @@ test('leaves the desktop band to the engine', async ($, on) => {
 })
 
 // /compact returns before the engine counts the compacted context: the figures move a moment later.
-const compacting = (on: Parameters<typeof surround>[0], percentage: number) => {
+const compacting = (on: On, percentage: number) => {
   const clock = mock.clock(on, { now: Date.parse('2026-10-13T09:05:00.000Z') })
   mock.store(on, {})
   const figures = { tokens: 162000, percentage, reads: 0 }

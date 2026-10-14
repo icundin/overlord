@@ -284,8 +284,7 @@ export const register: Register = on => {
     return { text: hidden ? 'Context bar hidden.' : 'Context bar shown.' }
   })
 
-  // Raised whenever the context's fill, a plan limit or the cost moves; an interactive session was seen not to raise
-  // it, so turn.complete refreshes too.
+  // Raised whenever the context's fill, a plan limit or the cost moves.
   on('session.measure', async ($, e, next) => {
     const result = await next(e)
     await refresh($).catch(() => undefined)
