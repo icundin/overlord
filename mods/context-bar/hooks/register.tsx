@@ -102,19 +102,32 @@ async function countAgents($: EngineInterface): Promise<void> {
   await update($, runningAgents, () => running.length)
 }
 
+// Runs a slash command as if typed. Claude Code runs it once the session is idle, which can outlast a press's 10 s
+// budget, so it starts from a timer once the press returns; `after` follows a run that worked.
+function runSoon($: EngineInterface, command: string, args?: string, after?: () => Promise<void>): void {
+  $.clock.after(0, () => {
+    void (async () => {
+      try {
+        await $.command.run({ command, args })
+      } catch {
+        notify($, `/${[command, args].filter(Boolean).join(' ')} failed`)
+
+        return
+      }
+      await after?.()
+    })().catch(() => undefined)
+  })
+}
+
 // Runs `/model` or `/effort` as if typed, so the session's own setting changes and the transcript says so.
 async function choose($: EngineInterface, command: 'model' | 'effort', option: string): Promise<void> {
   await update($, panel, () => null)
-
-  try {
-    await $.command.run({ command, args: option })
+  runSoon($, command, option, async () => {
     if (command === 'effort') {
       await update($, effort, () => option)
     }
     await refresh($)
-  } catch {
-    notify($, `/${command} ${option} failed`)
-  }
+  })
 }
 
 let filling: Timer | null = null
@@ -180,12 +193,8 @@ async function toggleSection($: EngineInterface, key: Section): Promise<void> {
 }
 
 // Runs `/context` for its full breakdown, as if typed.
-async function showContext($: EngineInterface): Promise<void> {
-  try {
-    await $.command.run({ command: 'context' })
-  } catch {
-    notify($, '/context failed')
-  }
+function showContext($: EngineInterface): void {
+  runSoon($, 'context')
 }
 
 const CONFIRM_MS = 5000
@@ -234,14 +243,9 @@ async function close($: EngineInterface): Promise<void> {
 }
 
 // Runs a slash command as if typed, closing the card first.
-async function run($: EngineInterface, command: string): Promise<void> {
+async function run($: EngineInterface, command: string, after?: () => Promise<void>): Promise<void> {
   await close($)
-
-  try {
-    await $.command.run({ command })
-  } catch {
-    notify($, `/${command} failed`)
-  }
+  runSoon($, command, undefined, after)
 }
 
 let settingUp = false
@@ -408,13 +412,8 @@ export const register: Register = on => {
         choose: (command, option) => choose($, command, option),
         showContext: () => showContext($),
         // /compact swaps the conversation the model sees for a summary; /clear starts a new session (the old one stays
-        // resumable with /resume).
-        // A compaction outlasts a press's 10 s budget, so it runs from a timer once the press returns; the mod's own
-        // /compact does not reach its command.run hook, so the timer re-reads the figures itself.
-        compact: () =>
-          confirmFirst($, 'compact', async () => {
-            $.clock.after(0, () => void run($, 'compact').then(() => refreshUntilMoved($).catch(() => undefined)))
-          }),
+        // resumable with /resume). The mod's own /compact does not reach its command.run hook, so it re-reads itself.
+        compact: () => confirmFirst($, 'compact', () => run($, 'compact', () => refreshUntilMoved($))),
         newSession: () => confirmFirst($, 'clear', () => run($, 'clear')),
         changeSetting: change => changeSetting($, change),
         notify: message => notify($, message),

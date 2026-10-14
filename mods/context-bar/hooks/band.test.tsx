@@ -82,12 +82,13 @@ test('draws the bar and toggles it with /context-bar', async ($, on) => {
   expect(await menus.find({ key: 'clear', text: /confirm/ })).toBeUndefined()
   await menus.press({ key: 'clear' })
   await menus.press({ key: 'clear' })
+  await clock.settle()
   expect(ran).toContain('/clear ')
   await menus.press({ key: 'usage' })
   await menus.press({ key: 'compact' })
   expect(ran).not.toContain('/compact ')
   await menus.press({ key: 'compact' })
-  await clock.advance(0)
+  await clock.settle()
   expect(ran).toContain('/compact ')
   expect(await menus.find({ key: 'panel' })).toBeUndefined()
   await menus.press({ key: 'usage' })
@@ -99,11 +100,13 @@ test('draws the bar and toggles it with /context-bar', async ($, on) => {
   await menus.press({ key: 'section-mcp' })
   expect(await menus.find({ type: 'Text', text: /docs 2 tools/ })).toBeDefined()
   await menus.press({ key: 'context' })
+  await clock.settle()
   expect(ran).toContain('/context ')
   await menus.press({ key: 'effort' })
   expect(await menus.find({ key: 'legend' })).toBeUndefined()
   expect(await menus.find({ key: 'effort-max' })).toBeDefined()
   await menus.press({ key: 'effort-medium' })
+  await clock.settle()
   expect(ran).toContain('/effort medium')
   expect(await menus.find({ key: 'panel' })).toBeUndefined()
   expect(await menus.find({ key: 'effort', text: /medium/ })).toBeDefined()
@@ -112,6 +115,7 @@ test('draws the bar and toggles it with /context-bar', async ($, on) => {
   expect(await menus.find({ key: 'panel' })).toBeUndefined()
   await menus.press({ key: 'model' })
   await menus.press({ key: 'model-fable[1m]' })
+  await clock.settle()
   expect(ran).toContain('/model fable[1m]')
   await menus.unmount()
 
@@ -160,6 +164,27 @@ test('fills the bar from the left when /context-bar shows it', async ($, on) => 
 })
 
 
+// Claude Code runs a command once the session is idle, which can outlast a press's 10 s budget.
+test('returns from a press without waiting for the command it starts', async ($, on) => {
+  const clock = surround(on, 'dark', 25)
+  const ran: string[] = []
+  let release = () => {}
+  on('command.run', (_, e) => {
+    ran.push(`/${e.command}`)
+
+    return new Promise(resolve => {
+      release = () => resolve({ text: 'ok' })
+    })
+  })
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  const ui = await $.ui.mount({ plugin: 'context-bar', surface: 'terminal', ...BAND })
+  await ui.press({ key: 'breakdown' })
+  await ui.press({ key: 'context' })
+  await clock.settle()
+  expect(ran).toEqual(['/context'])
+  release()
+})
+
 test('starts hidden when the bar is set not to show at start', async ($, on) => {
   surround(on, 'dark', 25, { settings: { showOnStart: false } })
   await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
@@ -172,7 +197,7 @@ test('draws the bar again in the fresh session a /clear starts', async ($, on) =
   const clock = surround(on, 'dark', 25, { settings: { contextWarnPercent: 20 } })
   const ui = await $.ui.mount({ plugin: 'context-bar', surface: 'terminal', ...BAND })
   expect(await ui.find({ key: 'bar' })).toBeUndefined()
-  await clock.advance(0)
+  await clock.settle()
   expect(await ui.find({ key: 'bar' })).toBeDefined()
   expect(await ui.find({ type: 'Text', text: /^Context at 25%/ })).toBeDefined()
 })
@@ -180,7 +205,7 @@ test('draws the bar again in the fresh session a /clear starts', async ($, on) =
 test('starts hidden after a /clear when the bar is set not to show at start', async ($, on) => {
   const clock = surround(on, 'dark', 25, { settings: { showOnStart: false } })
   const ui = await $.ui.mount({ plugin: 'context-bar', surface: 'terminal', ...BAND })
-  await clock.advance(0)
+  await clock.settle()
   expect(await ui.find({ key: 'bar' })).toBeUndefined()
 })
 
@@ -363,7 +388,7 @@ test('asks before /compact from the word in the context warning, and lets the qu
   await ui.press({ key: 'warning-compact' })
   await ui.press({ key: 'warning-compact' })
   expect(ran).toEqual([])
-  await clock.advance(0)
+  await clock.settle()
   expect(ran).toEqual(['/compact'])
 })
 
