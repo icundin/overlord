@@ -150,7 +150,7 @@ function runSoon($: EngineInterface, command: string, args?: string, after?: () 
 
 // Runs `/model` or `/effort` as if typed, so the session's own setting changes and the transcript says so.
 async function choose($: EngineInterface, command: 'model' | 'effort', option: string): Promise<void> {
-  await update($, panel, () => null)
+  await close($)
   runSoon($, command, option, async () => {
     if (command === 'effort') {
       await update($, effort, () => option)

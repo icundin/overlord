@@ -12,6 +12,7 @@ One changelog for the collection; every entry names the artifact it concerns.
 - Context bar: The breakdown shortens the memory files' Windows paths as it does the others (`.claude\CLAUDE.md`). It split paths on `/` only, so on Windows each file showed its full path.
 - Context bar: With auto-compact off, the compact buffer's swatch in its hover card is the bar's color; it was a fainter grey than the bar and the breakdown.
 - Context bar: A cost warning with cents reads `$12.50` in the warning line and in the toast that confirms it; it read `$12.5`.
+- Context bar: Choosing a model or an effort level disarms an armed confirmation, as closing any card does; the context warning's `/compact?` stayed armed.
 
 # 1.8.1 — 2026-10-14
 

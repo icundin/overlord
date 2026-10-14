@@ -756,6 +756,18 @@ test('draws a segment\'s swatch in its bar\'s color, the buffer too with auto-co
   expect(legend).toContain(buffer?.props.color)
 })
 
+test('disarms an armed confirmation when a menu choice closes the card', async ($, on) => {
+  surround(on, 'dark', 85)
+  on('command.run', () => ({ text: 'ok' }))
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  const ui = await $.ui.mount({ plugin: 'context-bar', surface: 'terminal', ...BAND })
+  await ui.press({ key: 'model' })
+  await ui.press({ key: 'warning-compact' })
+  expect(await ui.find({ key: 'warning-compact', text: /\/compact\?/ })).toBeDefined()
+  await ui.press({ key: 'model-sonnet' })
+  expect(await ui.find({ key: 'warning-compact', text: /\/compact\?/ })).toBeUndefined()
+})
+
 // The card has 66 cells at 80 columns: the band's and the card's borders and padding, the close button, the indent.
 test('fits the usage card\'s rows to a narrow terminal, the bars first, then the least of the detail', async ($, on) => {
   let cost = 0.5
