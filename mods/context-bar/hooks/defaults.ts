@@ -21,6 +21,7 @@ export const DEFAULT_SETTINGS: BarSettings = {
   contextWarnPercent: 80,
   limitWarnPercent: 90,
   costWarnUsd: 50,
+  barStyle: 'shaded',
   displayMode: 'auto',
   categoryTheme: 'default',
   customColors: {},

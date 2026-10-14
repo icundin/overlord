@@ -7,6 +7,7 @@ import type { ThemeName } from '../themes'
 import { cycle, parts } from './kit'
 import type { Kit } from './kit'
 
+const BAR_STYLES = ['shaded', 'solid'] as const
 const DISPLAY_MODES = ['auto', 'dark', 'light'] as const
 const THEME_CHOICES = ['default', ...(Object.keys(CATEGORY_THEMES) as ThemeName[]), 'custom'] as const
 
@@ -93,11 +94,22 @@ export function settingsCard(kit: Kit) {
       heading: 'appearance',
       rows: [
         {
-          key: 'displayMode',
-          label: 'Display mode',
-          value: `${current.displayMode} ›`,
-          change: () => act.changeSetting({ displayMode: cycle(DISPLAY_MODES, current.displayMode) }),
+          key: 'barStyle',
+          label: 'Bar style',
+          value: `${current.barStyle} ›`,
+          change: () => act.changeSetting({ barStyle: cycle(BAR_STYLES, current.barStyle) }),
         },
+        // What sits behind the shades; solid blocks have nothing behind them.
+        ...(current.barStyle === 'shaded'
+          ? [
+              {
+                key: 'displayMode',
+                label: 'Display mode',
+                value: `${current.displayMode} ›`,
+                change: () => act.changeSetting({ displayMode: cycle(DISPLAY_MODES, current.displayMode) }),
+              },
+            ]
+          : []),
         {
           key: 'categoryTheme',
           label: 'Category theme',

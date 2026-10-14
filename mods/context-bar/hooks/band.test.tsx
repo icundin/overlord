@@ -811,3 +811,30 @@ test('moves the tabs to a row of their own when the header does not fit them', a
   await narrow.press({ key: 'usage' })
   expect(await narrow.find({ key: 'usage', text: /usage/ })).toBeDefined()
 })
+
+test('draws the bars solid when the bar style is set so, and keeps the choice', async ($, on) => {
+  const kept: unknown[] = []
+  on('store.get', () => ({ value: undefined }))
+  on('store.set', (_, e) => {
+    kept.push(e.value)
+
+    return { value: undefined }
+  })
+  surround(on, 'dark', () => ({ value: { ...usageWith(25, 1).value, rateLimits: [{ kind: 'five_hour', percentUsed: 50, resetsAt: '2026-10-13T11:30:00.000Z' }] } }), null)
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  const ui = await $.ui.mount({ plugin: 'context-bar', surface: 'terminal', ...BAND, props: { ...BAND.props, bodyColumns: 120 } })
+  await ui.press({ key: 'settings' })
+  expect(await ui.find({ key: 'setting-barStyle', text: /shaded/ })).toBeDefined()
+  expect(await ui.find({ key: 'setting-displayMode' })).toBeDefined()
+  await ui.press({ key: 'setting-barStyle' })
+  expect(await ui.find({ key: 'setting-barStyle', text: /solid/ })).toBeDefined()
+  expect(kept.at(-1)).toMatchObject({ barStyle: 'solid' })
+  // Display mode only sets what sits behind the shades.
+  expect(await ui.find({ key: 'setting-displayMode' })).toBeUndefined()
+  expect(await ui.findAll({ type: 'Text', text: /^▓+$/ })).toEqual([])
+  const solid = await ui.findAll({ type: 'Text', text: /^█+$/ })
+  expect(solid.length).toBeGreaterThan(0)
+  expect(solid.every(found => found.props.backgroundColor === undefined)).toBe(true)
+  await ui.press({ key: 'usage' })
+  expect(await ui.find({ type: 'Text', text: /^█{10}$/ })).toBeDefined()
+})

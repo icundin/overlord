@@ -3,6 +3,7 @@ import type { ElementTable, RenderChildren } from 'claude-code'
 import type { BarSettings, Confirmable, Growth, Panel, Row, Section, Spend, Tally, Usage } from '../../types'
 import { DEFAULT_OPEN } from '../defaults'
 import { balanced } from '../layout'
+import { lighter } from '../themes'
 
 // Everything the band draws, read by the render hook.
 export type View = {
@@ -71,6 +72,16 @@ export function swatchOf(row: Row, isAutoCompact: boolean): string {
   }
 
   return row.kind === 'buffer' ? (isAutoCompact ? 'warning' : 'inactive') : 'subtle'
+}
+
+// A bar's filled cells in `color`, in the bar style: shade glyphs on the theme's background, which the color fills under
+// the pointer; or full blocks, which turn lighter (a theme key, with no hex to lighten, dims).
+export function filled({ view, shadeBehind }: Pick<Kit, 'view' | 'shadeBehind'>, color: string) {
+  const light = lighter(color)
+
+  return view.settings.barStyle === 'solid'
+    ? { glyph: '█', style: { color }, hover: light === null ? { dimColor: true } : { color: light } }
+    : { glyph: '▓', style: { color, backgroundColor: shadeBehind }, hover: { backgroundColor: color } }
 }
 
 export function chunk<T>(list: T[], size: number): T[][] {
