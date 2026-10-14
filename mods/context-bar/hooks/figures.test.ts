@@ -13,6 +13,7 @@ test('lists the thresholds the figures stand past, and treats 0 as off', async (
   ])
   expect(alerts({ contextPercent: 30, limits: [{ kind: 'five_hour', percentUsed: 10 }], cost: 12 }, thresholds)).toEqual([])
   expect(alerts({ contextPercent: 99, limits: [limit], cost: 999 }, { context: 0, limit: 0, cost: 0 })).toEqual([])
+  expect(alerts({ contextPercent: 0, limits: [], cost: 13 }, { ...thresholds, cost: 12.5 })).toEqual(['Session cost $13.00, past your $12.50'])
 })
 
 test('projects the turns left at the recent pace, leaving compactions out', async () => {
