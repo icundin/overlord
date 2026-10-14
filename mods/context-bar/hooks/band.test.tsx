@@ -704,6 +704,16 @@ test('sums up only the rows the split has, before the first request is counted',
   expect(await ui.find({ type: 'Text', text: /main/ })).toBeUndefined()
 })
 
+// At 120 columns the tip used to leave `tasks.` alone on its last line.
+test('wraps the cards\' tips into even lines', async ($, on) => {
+  surround(on, 'dark', 25, {}, 1)
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  const ui = await $.ui.mount({ plugin: 'context-bar', surface: 'terminal', ...BAND, props: { ...BAND.props, bodyColumns: 120 } })
+  await ui.press({ key: 'usage' })
+  expect(await ui.find({ type: 'Text', text: /^Longer sessions cost more, even when cached\. Compact$/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /^mid-task, and start a new session when you switch tasks\.$/ })).toBeDefined()
+})
+
 // The tally holds the first request's tokens and time, and the active time of the turn it ran in.
 test('counts from when the first counted turn began, not when its request ended', async ($, on) => {
   const clock = surround(on, 'dark', 25, {}, 1)

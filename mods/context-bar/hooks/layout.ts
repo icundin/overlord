@@ -90,6 +90,37 @@ export function longestFitting(options: string[], width: number): string {
   return options.find(option => option.length <= width) ?? options[options.length - 1] ?? ''
 }
 
+// Word-wraps `text` into as few lines as `width` allows, as even as they can be, so the last is as full as the rest:
+// the narrowest width that needs no more lines.
+export function balanced(text: string, width: number): string[] {
+  const lines = wrapped(text, width)
+
+  for (let narrower = Math.ceil(text.length / lines.length); narrower < width; narrower += 1) {
+    const even = wrapped(text, narrower)
+    if (even.length === lines.length) {
+      return even
+    }
+  }
+
+  return lines
+}
+
+function wrapped(text: string, width: number): string[] {
+  const lines: string[] = []
+  let line = ''
+
+  for (const word of text.split(' ')) {
+    if (line !== '' && line.length + 1 + word.length > width) {
+      lines.push(line)
+      line = word
+    } else {
+      line = line === '' ? word : `${line} ${word}`
+    }
+  }
+
+  return [...lines, line]
+}
+
 const KIND_ORDER: Record<Row['kind'], number> = { used: 0, buffer: 1, free: 2, deferred: 3 }
 
 // The breakdown's order, as the desktop app lists it: used rows by size, then the buffer, the free space,

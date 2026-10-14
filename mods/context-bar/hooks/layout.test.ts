@@ -1,7 +1,7 @@
 import { expect, test } from 'claude-code/testing'
 
 import { CATEGORIES } from './fixtures'
-import { grid, longestFitting, ordered, reveal, segments, shortPaths } from './layout'
+import { balanced, grid, longestFitting, ordered, reveal, segments, shortPaths } from './layout'
 
 test('fills the width exactly and leaves deferred rows out', async () => {
   const bar = segments(CATEGORIES, 37)
@@ -68,4 +68,19 @@ test('shortens memory file paths, keeping as many folders as tell them apart', a
 test('fits the header detail to the width', async () => {
   expect(longestFitting(['a long one', 'short', ''], 7)).toBe('short')
   expect(longestFitting(['a long one', 'short', ''], 3)).toBe('')
+})
+
+test('wraps a paragraph into even lines, never one word alone on the last', async () => {
+  const tip = 'Longer sessions cost more, even when cached. Compact mid-task, and start a new session when you switch tasks.'
+  for (let width = 20; width <= 200; width += 1) {
+    const lines = balanced(tip, width)
+    expect(lines.join(' ')).toBe(tip)
+    expect(lines.every(line => line.length <= width)).toBe(true)
+    expect(lines.length === 1 || (lines.at(-1) ?? '').includes(' ')).toBe(true)
+  }
+  expect(balanced(tip, 108)).toEqual([
+    'Longer sessions cost more, even when cached. Compact',
+    'mid-task, and start a new session when you switch tasks.',
+  ])
+  expect(balanced(tip, 200)).toEqual([tip])
 })

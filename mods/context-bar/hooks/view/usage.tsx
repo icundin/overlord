@@ -11,7 +11,7 @@ const BAR_CELLS = 20
 // The plan limits, the session's cost and time, the tokens counted, and compact or start anew.
 export function usageCard(kit: Kit) {
   const { Box, Button, Text } = kit.ui
-  const { section, chip } = parts(kit)
+  const { section, chip, tip } = parts(kit)
   const { view, act } = kit
   const current = view.usage
   const counted = view.tally
@@ -167,9 +167,7 @@ export function usageCard(kit: Kit) {
             )),
         )}
       <Box key="actions" flexDirection="column">
-        <Text key="tip" dimColor>
-          Longer sessions cost more, even when cached. Compact mid-task, and start a new session when you switch tasks.
-        </Text>
+        {tip('Longer sessions cost more, even when cached. Compact mid-task, and start a new session when you switch tasks.')}
         <Box key="buttons" columnGap={2}>
           {chip('compact', view.confirming === 'compact' ? 'confirm compact' : 'compact this session', act.compact, view.confirming === 'compact')}
           {chip('clear', view.confirming === 'clear' ? 'confirm new session' : 'new session', act.newSession, view.confirming === 'clear')}

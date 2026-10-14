@@ -4,7 +4,7 @@ import { alerts, turnsUntil } from '../figures'
 import { compact, dollars, levelColor, modelLabel, share, signed } from '../format'
 import { longestFitting, reveal, segments } from '../layout'
 import { breakdownCard } from './breakdown'
-import { parts } from './kit'
+import { CLOSE_WIDTH, parts } from './kit'
 import type { Actions, Kit, View } from './kit'
 import { menuCard } from './menu'
 import { settingsCard } from './settings'
@@ -14,9 +14,11 @@ import { usageCard } from './usage'
 export function band(ui: ElementTable<'terminal'>, view: View, act: Actions) {
   const { Box, Button, Text } = ui
   const { usage: current, open, effort: level } = view
-  const kit: Kit = { ui, view, act, inner: view.width - 4, shadeBehind: view.isLight ? 'white' : 'black' }
+  const inner = view.width - 4
+  // The card's border and padding, and the close button.
+  const kit: Kit = { ui, view, act, inner, card: inner - 4 - CLOSE_WIDTH, shadeBehind: view.isLight ? 'white' : 'black' }
   const { headerButton, dot } = parts(kit)
-  const { inner, shadeBehind } = kit
+  const { shadeBehind } = kit
   const hasUsage = current.limits.length > 0 || current.cost !== null
   const bar = segments(current.rows, inner)
   const shown = reveal(bar, view.fill)
