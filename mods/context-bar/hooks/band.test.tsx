@@ -450,9 +450,15 @@ test('leaves the desktop band to the engine', async ($, on) => {
 const compacting = (on: On, percentage: number) => {
   const clock = mock.clock(on, { now: Date.parse('2026-10-13T09:05:00.000Z') })
   mock.store(on, {})
-  const figures = { tokens: 162000, percentage, reads: 0 }
-  on('session.usage', () => {
+  const figures = { tokens: 162000, percentage, reads: 0, readMs: 0, reading: 0, mostReading: 0 }
+  on('session.usage', async () => {
     figures.reads += 1
+    figures.reading += 1
+    figures.mostReading = Math.max(figures.mostReading, figures.reading)
+    if (figures.readMs > 0) {
+      await clock.sleep(figures.readMs)
+    }
+    figures.reading -= 1
     const { value } = usageWith(figures.percentage)
 
     return { value: { ...value, context: { ...value.context, breakdown: { ...value.context.breakdown, totalTokens: figures.tokens } } } }
@@ -485,6 +491,30 @@ test('re-reads the figures after /compact until they move', async ($, on) => {
   const reads = figures.reads
   await clock.advance(5000)
   expect(figures.reads).toBe(reads)
+})
+
+test('keeps re-reading after /compact past figures that grew since the last refresh', async ($, on) => {
+  const { clock, figures } = compacting(on, 81)
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  figures.tokens = 165000
+  figures.percentage = 83
+  await $.command.run(TYPED_COMPACT)
+  const ui = await $.ui.mount({ plugin: 'context-bar', surface: 'terminal', ...BAND })
+  await clock.advance(250)
+  expect(await ui.find({ type: 'Text', text: /^ 83% $/ })).toBeDefined()
+  figures.tokens = 24000
+  figures.percentage = 12
+  await clock.advance(250)
+  expect(await ui.find({ type: 'Text', text: /^ 12% $/ })).toBeDefined()
+})
+
+test('re-reads the figures after /compact one read at a time', async ($, on) => {
+  const { clock, figures } = compacting(on, 81)
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  figures.readMs = 600
+  await $.command.run(TYPED_COMPACT)
+  await clock.advance(5000)
+  expect(figures.mostReading).toBe(1)
 })
 
 test('stops re-reading the figures when a /compact leaves them as they were', async ($, on) => {

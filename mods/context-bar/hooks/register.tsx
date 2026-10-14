@@ -151,24 +151,28 @@ async function animateFill($: EngineInterface): Promise<void> {
 
 const SETTLE_MS = 250
 const SETTLE_TRIES = 20
-let settling: Timer | null = null
+let settling = 0
 
-// The engine counts the compacted context a moment after /compact returns, so the figures are re-read until they
-// move, for five seconds at most.
-async function refreshUntilMoved($: EngineInterface): Promise<void> {
-  settling?.cancel()
-  const before = (await read($, usage))?.totalTokens
-  let tries = 0
-  settling = $.clock.every(SETTLE_MS, () => {
-    void (async () => {
-      tries += 1
-      await refresh($).catch(() => undefined)
-      if ((await read($, usage))?.totalTokens !== before || tries >= SETTLE_TRIES) {
-        settling?.cancel()
-        settling = null
-      }
-    })()
-  })
+// Claude Code counts the compacted context a moment after /compact returns, so the figures are re-read until they
+// drop: one read at a time, each 250 ms after the last, for five seconds at most.
+async function refreshUntilDropped($: EngineInterface): Promise<void> {
+  const poll = ++settling
+  const before = (await read($, usage))?.totalTokens ?? Infinity
+  const tick = (tries: number): void => {
+    $.clock.after(SETTLE_MS, () => {
+      void (async () => {
+        if (poll !== settling) {
+          return
+        }
+        await refresh($).catch(() => undefined)
+        const now = (await read($, usage).catch(() => null))?.totalTokens ?? Infinity
+        if (now >= before && tries < SETTLE_TRIES) {
+          tick(tries + 1)
+        }
+      })()
+    })
+  }
+  tick(1)
 }
 
 async function count($: EngineInterface, change: (was: Tally) => Tally): Promise<void> {
@@ -299,7 +303,7 @@ export const register: Register = on => {
   // A typed /compact is no turn, so turn.complete never follows it.
   on('command.run', { command: 'compact' }, async ($, e, next) => {
     const result = await next(e)
-    await refreshUntilMoved($).catch(() => undefined)
+    await refreshUntilDropped($).catch(() => undefined)
 
     return result
   })
@@ -413,7 +417,7 @@ export const register: Register = on => {
         showContext: () => showContext($),
         // /compact swaps the conversation the model sees for a summary; /clear starts a new session (the old one stays
         // resumable with /resume). The mod's own /compact does not reach its command.run hook, so it re-reads itself.
-        compact: () => confirmFirst($, 'compact', () => run($, 'compact', () => refreshUntilMoved($))),
+        compact: () => confirmFirst($, 'compact', () => run($, 'compact', () => refreshUntilDropped($))),
         newSession: () => confirmFirst($, 'clear', () => run($, 'clear')),
         changeSetting: change => changeSetting($, change),
         notify: message => notify($, message),

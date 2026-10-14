@@ -4,7 +4,7 @@ One changelog for the collection; every entry names the artifact it concerns.
 
 # 1.5.4 — 2026-10-14
 
-- Context bar: Shows the compacted fill after a `/compact`, typed or clicked, on every install. The 1.5.2 refresh ran as the compaction ended, before Claude Code counted the compacted context, so it redrew the old fill; the bar now re-reads the figures until they move, for five seconds at most. It hooks `/compact` itself instead of `session.compact`, which doesn't run in a plugin installed where an organization manages Claude Code.
+- Context bar: Shows the compacted fill after a `/compact`, typed or clicked, on every install. The 1.5.2 refresh ran as the compaction ended, before Claude Code counted the compacted context, so it redrew the old fill; the bar now re-reads the figures until they drop, one read at a time, for five seconds at most. It hooks `/compact` itself instead of `session.compact`, which doesn't run in a plugin installed where an organization manages Claude Code.
 - Context bar: Every button in the band that runs a command (compact, new session, `/model`, `/effort`, `/context`) starts it once the click returns. The click waited for the command to finish: during a turn Claude Code holds it until the session is idle, and a compaction alone takes longer than Claude Code's 10-second budget for a click, so the click ended with `ui.press hook skipped: ran past its 10s budget`.
 
 # 1.5.3 — 2026-10-14
