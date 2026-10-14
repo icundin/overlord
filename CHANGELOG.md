@@ -2,6 +2,10 @@
 
 One changelog for the collection; every entry names the artifact it concerns.
 
+# 1.8.3 — 2026-10-14
+
+- Repository: One sentence describes the context bar wherever it is listed: its manifest, the marketplace, the root README and its own README. Each said something different, so `/plugin`, the marketplace and the READMEs described the same mod four ways.
+
 # 1.8.2 — 2026-10-14
 
 - Context bar: A turn typed while `/compact` runs measures its growth and cost from the compacted context. Claude Code counts the compacted context a moment after `/compact` returns, and the turn started from the figures before it, so the header read `−133k · $0.50 last turn` for a turn that added 5k and cost $0.20.

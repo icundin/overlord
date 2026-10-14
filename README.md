@@ -18,7 +18,7 @@ itself in its own README.
 
 | Mod | What it does |
 |---|---|
-| [context-bar](./mods/context-bar/) | The context window as a stacked bar above the prompt, one color per `/context` category, with the model, effort, a breakdown, plan usage and settings one click away. |
+| [context-bar](./mods/context-bar/) | The context window as a stacked bar above the prompt, with its breakdown, plan usage and settings one click away. |
 
 ## Installing
 
