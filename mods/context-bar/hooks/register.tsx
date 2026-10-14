@@ -1,5 +1,5 @@
 import { atom, read, update } from 'claude-code'
-import type { EngineInterface, Register, SessionRateLimit, Timer } from 'claude-code'
+import type { AgentInfo, EngineInterface, Register, SessionRateLimit, Timer } from 'claude-code'
 
 import type { BarSettings, Confirmable, Limit, Panel, Section, Spend, Tally, Tokens, Usage } from '../types'
 import { byServer, totalTokens } from './figures'
@@ -124,10 +124,10 @@ async function readConfig($: EngineInterface): Promise<void> {
   }
 }
 
-// How many agents are at work now, by the engine's own list.
-async function countAgents($: EngineInterface): Promise<void> {
-  const agents = await $.agent.list()
-  const running = agents.filter(agent => agent.status === 'running' || agent.status === 'pending' || agent.status === 'waiting')
+// How many agents are at work now, by the engine's own list; `agents` when the caller has just read it.
+async function countAgents($: EngineInterface, agents?: AgentInfo[]): Promise<void> {
+  const listed = agents ?? (await $.agent.list())
+  const running = listed.filter(agent => agent.status === 'running' || agent.status === 'pending' || agent.status === 'waiting')
   await update($, runningAgents, () => running.length)
 }
 
@@ -216,7 +216,7 @@ async function sessionCost($: EngineInterface): Promise<number | null> {
 
 // Who a request's loop is: the main loop, a subagent by its task description, or null for a loop no agent list names
 // (Claude Code's own forks, such as a compaction).
-async function spender($: EngineInterface, agentId: string | undefined, known: Spend | null): Promise<{ id: string; label: string } | null> {
+function spender(agentId: string | undefined, known: Spend | null, agents: AgentInfo[]): { id: string; label: string } | null {
   if (agentId === undefined) {
     return { id: MAIN, label: 'main' }
   }
@@ -224,7 +224,7 @@ async function spender($: EngineInterface, agentId: string | undefined, known: S
   if (seen) {
     return seen
   }
-  const listed = (await $.agent.list()).find(agent => agent.id === agentId)
+  const listed = agents.find(agent => agent.id === agentId)
 
   return listed ? { id: agentId, label: listed.description || listed.type } : null
 }
@@ -417,10 +417,12 @@ export const register: Register = on => {
     if (costBefore !== null) {
       await update($, spend, was => costAtStart(was, costBefore))
     }
+    // A subagent's request reads the engine's list once, to name the subagent and count those at work.
+    const agents = e.agentId === undefined ? null : await $.agent.list().catch(() => null)
     // Known before the request, so nothing comes between reading the total after it and counting it.
-    const who = await spender($, e.agentId, await read($, spend)).catch(() => null)
-    if (e.agentId !== undefined) {
-      await countAgents($).catch(() => undefined)
+    const who = spender(e.agentId, await read($, spend), agents ?? [])
+    if (agents !== null) {
+      await countAgents($, agents).catch(() => undefined)
     }
     const result = yield* next(e)
     const ms = (await $.clock.now()) - startedAt
@@ -449,11 +451,14 @@ export const register: Register = on => {
       settingUp = true
       $.clock.after(0, () => void setUp($))
     }
-    const current = await read($, usage)
-
     // Terminal only: the desktop app lays the band out in a proportional font, where its cells, shades and hover
-    // cards do not line up, so it keeps its own band there.
-    if (e.props.hasSurvey || current === null || (await read($, isHidden)) || e.surface !== 'terminal') {
+    // cards do not line up, so it keeps its own band there. A render re-runs on every state write it read, so a band
+    // not drawn reads no figures.
+    if (e.props.hasSurvey || e.surface !== 'terminal' || (await read($, isHidden))) {
+      return next(e)
+    }
+    const current = await read($, usage)
+    if (current === null) {
       return next(e)
     }
 

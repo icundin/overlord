@@ -768,6 +768,24 @@ test('disarms an armed confirmation when a menu choice closes the card', async (
   expect(await ui.find({ key: 'warning-compact', text: /\/compact\?/ })).toBeUndefined()
 })
 
+test('lists the agents once for a new subagent\'s request', async ($, on) => {
+  surround(on, 'dark', 25, {}, 1)
+  let lists = 0
+  on('agent.list', () => {
+    lists += 1
+
+    return { value: [{ id: 'a1', description: 'review', type: 'Explore', status: 'running' }] as never }
+  })
+  on('turn.step', async function* (_, e) {
+    return { turnId: e.turnId, index: e.index, answer: '', toolUses: [], stopReason: 'end_turn' as const, usage: null }
+  })
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  for await (const _ of $.turn.step({ turnId: 't1', index: 0, model: 'claude-opus-5-5', messageCount: 1, agentId: 'a1' })) {
+    // drained
+  }
+  expect(lists).toBe(1)
+})
+
 // The card has 66 cells at 80 columns: the band's and the card's borders and padding, the close button, the indent.
 test('fits the usage card\'s rows to a narrow terminal, the bars first, then the least of the detail', async ($, on) => {
   let cost = 0.5
