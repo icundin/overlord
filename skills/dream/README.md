@@ -10,7 +10,7 @@ changes — each one a single fact, backed by a verbatim quote of your own
 words, with the model's confidence and category attached as display-only
 opinion. You review, it remembers.
 
-### How it works
+## How it works
 
 - **Census-complete**: every candidate found gets an explicit verdict
   (`propose` or `drop: <reason>` from a closed vocabulary) printed at the end
@@ -60,7 +60,7 @@ opinion. You review, it remembers.
   show nothing but the zero in the stats row, which remains the nightly
   attestation that memory wasn't touched.
 
-### Install
+## Install
 
 1. Copy this folder to `~/.claude/skills/dream/`.
 2. Create the memory store and wire it into every session — in
@@ -99,7 +99,7 @@ opinion. You review, it remembers.
 
    No scheduler? Just type `/dream` in any session and approve as it goes.
 
-### Usage
+## Usage
 
 ```
 /dream                          review last 24h, propose changes
@@ -111,7 +111,7 @@ opinion. You review, it remembers.
 Deep dream, any time: *"Run the dream skill as a DEEP DREAM (7-day window)."*
 The prompt may override the window ("deep dream, 14 days").
 
-### Security
+## Security
 
 Both executables are stdlib-only, no network, no subprocess — auditable in
 one sitting. `scripts/extract.py` is read-only by construction (~50 lines);
@@ -120,14 +120,14 @@ instead of improvised shell. `scripts/build_memory_page.py` writes exactly
 one file, `~/.claude/memory/memory.html`, rendered deterministically from
 what is already on disk — no model judgment involved.
 
-### Portability
+## Portability
 
 Developed and run on macOS; Linux equivalent. Windows: `~/.claude` resolves
 to `%USERPROFILE%\.claude`, and the skill documents faithful PowerShell
 equivalents for its POSIX commands — specified, not yet tested. Reports
 welcome.
 
-### Prior art
+## Prior art
 
 Modeled on Anthropic's dreaming feature for Claude Code. The internal
 consolidation prompt documented at
