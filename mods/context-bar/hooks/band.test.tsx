@@ -671,3 +671,13 @@ test('opens the agents folded into one row, and folds them again', async ($, on)
   await ui.press({ key: 'agents-more' })
   expect(await ui.find({ type: 'Text', text: /^task 5\s/ })).toBeUndefined()
 })
+
+// Loaded into a session that has already spent: nothing counted yet, so all of it is earlier.
+test('sums up only the rows the split has, before the first request is counted', async ($, on) => {
+  surround(on, 'dark', 25, {}, 12.93)
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  const ui = await $.ui.mount({ plugin: 'context-bar', surface: 'terminal', ...BAND, props: { ...BAND.props, bodyColumns: 120 } })
+  await ui.press({ key: 'usage' })
+  expect(await ui.find({ type: 'Text', text: /^ {2}earlier 100%$/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /main/ })).toBeUndefined()
+})

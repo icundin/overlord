@@ -39,12 +39,15 @@ export function usageCard(kit: Kit) {
   const spendTotal = groups.reduce((sum, group) => sum + group.usd, 0)
   const shareOf = (usd: number) => (spendTotal === 0 ? 0 : Math.round((usd / spendTotal) * 100))
   const subagents = view.spend?.agents.filter(one => one.id !== MAIN) ?? []
-  const agentSummary = [
-    `main ${shareOf(groups.find(group => group.key === MAIN)?.usd ?? 0)}%`,
+  const main = groups.find(group => group.key === MAIN)
+  const shares = [
+    ...(main === undefined ? [] : [`main ${shareOf(main.usd)}%`]),
     ...(subagents.length === 0
       ? []
       : [`${subagents.length} subagent${subagents.length === 1 ? '' : 's'} ${shareOf(subagents.reduce((sum, one) => sum + one.usd, 0))}%`]),
-  ].join(', ')
+  ]
+  // Says only what the rows say: before the first request is counted, what there is (`earlier 100%`).
+  const agentSummary = (shares.length > 0 ? shares : groups.map(group => `${group.label} ${shareOf(group.usd)}%`)).join(', ')
   // The `N more` row opens to the rows it stands for, listed under it.
   const isMoreOpen = view.opened.agentsMore ?? DEFAULT_OPEN.agentsMore
   const agentRows = groups.flatMap(group =>
