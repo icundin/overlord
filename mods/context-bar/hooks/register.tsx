@@ -292,7 +292,7 @@ export const register: Register = on => {
     return { text: hidden ? 'Context bar hidden.' : 'Context bar shown.' }
   })
 
-  // Raised whenever the context's fill, a plan limit or the cost moves.
+  // Raised after each main-thread turn and when a plan limit moves a whole point; a /compact raises none.
   on('session.measure', async ($, e, next) => {
     const result = await next(e)
     await refresh($).catch(() => undefined)
