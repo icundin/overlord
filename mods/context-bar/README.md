@@ -90,8 +90,8 @@ the second runs it, and the question lapses after five seconds.
 
 ## Limits
 
-- Token, time and cache figures are counted by the mod from when it loads, since Claude Code does not
-  hand mods the session's earlier requests. The cost is the whole session's.
+- Token, time and cache figures are counted by the mod from when it loads, and again from a `/clear`,
+  since Claude Code does not hand mods the session's earlier requests. The cost is the whole session's.
 - Per-model weekly limits and the plan's name are not available to mods.
 - With Claude Code's theme on `auto` the bar is shaded as dark, since a mod cannot see the terminal's colors;
   set **Display mode** to `light` in the settings card if your terminal is light.
