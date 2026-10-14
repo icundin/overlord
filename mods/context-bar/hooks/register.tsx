@@ -136,6 +136,28 @@ async function animateFill($: EngineInterface): Promise<void> {
   })
 }
 
+const SETTLE_MS = 250
+const SETTLE_TRIES = 20
+let settling: Timer | null = null
+
+// The engine counts the compacted context a moment after /compact returns, so the figures are re-read until they
+// move, for five seconds at most.
+async function refreshUntilMoved($: EngineInterface): Promise<void> {
+  settling?.cancel()
+  const before = (await read($, usage))?.totalTokens
+  let tries = 0
+  settling = $.clock.every(SETTLE_MS, () => {
+    void (async () => {
+      tries += 1
+      await refresh($).catch(() => undefined)
+      if ((await read($, usage))?.totalTokens !== before || tries >= SETTLE_TRIES) {
+        settling?.cancel()
+        settling = null
+      }
+    })()
+  })
+}
+
 async function count($: EngineInterface, change: (was: Tally) => Tally): Promise<void> {
   const now = await $.clock.now()
   await update($, tally, was => change(was ?? { since: now, apiMs: 0, activeMs: 0, models: {} }))
@@ -271,12 +293,10 @@ export const register: Register = on => {
     return result
   })
 
-  // A /compact typed or clicked is no turn, so turn.complete never follows it.
-  on('session.compact', async ($, e, next) => {
+  // A typed /compact is no turn, so turn.complete never follows it.
+  on('command.run', { command: 'compact' }, async ($, e, next) => {
     const result = await next(e)
-    if (e.agentId === undefined && e.trigger !== 'precompute') {
-      await refresh($).catch(() => undefined)
-    }
+    await refreshUntilMoved($).catch(() => undefined)
 
     return result
   })
@@ -390,7 +410,12 @@ export const register: Register = on => {
         showContext: () => showContext($),
         // /compact swaps the conversation the model sees for a summary; /clear starts a new session (the old one stays
         // resumable with /resume).
-        compact: () => confirmFirst($, 'compact', () => run($, 'compact')),
+        // A compaction outlasts a press's 10 s budget, so it runs from a timer once the press returns; the mod's own
+        // /compact does not reach its command.run hook, so the timer re-reads the figures itself.
+        compact: () =>
+          confirmFirst($, 'compact', async () => {
+            $.clock.after(0, () => void run($, 'compact').then(() => refreshUntilMoved($).catch(() => undefined)))
+          }),
         newSession: () => confirmFirst($, 'clear', () => run($, 'clear')),
         changeSetting: change => changeSetting($, change),
         notify: message => notify($, message),

@@ -4,7 +4,7 @@ import { BAND, BREAKDOWN, CATEGORIES, configRows, surround, usageWith } from './
 import { segments } from './layout'
 
 test('draws the bar and toggles it with /context-bar', async ($, on) => {
-  mock.clock(on, { now: Date.parse('2026-10-13T09:05:00.000Z') })
+  const clock = mock.clock(on, { now: Date.parse('2026-10-13T09:05:00.000Z') })
   on('session.usage', () => ({
     value: { startedAt: 0, cost: { usd: 1.16 }, rateLimits: [{ kind: 'five_hour', percentUsed: 9, resetsAt: '2026-10-13T11:30:00.000Z' }], context: { window: 200000, tokens: 50000, percent: 25, breakdown: BREAKDOWN } },
   }))
@@ -86,6 +86,7 @@ test('draws the bar and toggles it with /context-bar', async ($, on) => {
   await menus.press({ key: 'compact' })
   expect(ran).not.toContain('/compact ')
   await menus.press({ key: 'compact' })
+  await clock.advance(0)
   expect(ran).toContain('/compact ')
   expect(await menus.find({ key: 'panel' })).toBeUndefined()
   await menus.press({ key: 'usage' })
@@ -360,6 +361,8 @@ test('asks before /compact from the word in the context warning, and lets the qu
   expect(await ui.find({ key: 'warning-compact', text: /\/compact\?/ })).toBeUndefined()
   await ui.press({ key: 'warning-compact' })
   await ui.press({ key: 'warning-compact' })
+  expect(ran).toEqual([])
+  await clock.advance(0)
   expect(ran).toEqual(['/compact'])
 })
 
@@ -417,25 +420,65 @@ test('leaves the desktop band to the engine', async ($, on) => {
   expect(await ui.find({ key: 'breakdown' })).toBeUndefined()
 })
 
-test('refreshes the bar once a compaction ends', async ($, on) => {
-  let percentage = 81
-  mock.clock(on, { now: Date.parse('2026-10-13T09:05:00.000Z') })
+// /compact returns before the engine counts the compacted context: the figures move a moment later.
+const compacting = (on: Parameters<typeof surround>[0], percentage: number) => {
+  const clock = mock.clock(on, { now: Date.parse('2026-10-13T09:05:00.000Z') })
   mock.store(on, {})
-  on('session.usage', () => usageWith(percentage))
+  const figures = { tokens: 162000, percentage, reads: 0 }
+  on('session.usage', () => {
+    figures.reads += 1
+    const { value } = usageWith(figures.percentage)
+
+    return { value: { ...value, context: { ...value.context, breakdown: { ...value.context.breakdown, totalTokens: figures.tokens } } } }
+  })
   on('config.list', () => ({ value: configRows('dark') }))
   on('command.register', (_, e) => ({ value: { command: e.name } }))
+  on('command.run', () => ({ text: 'ok' }))
   on('session.start', (_, e) => ({ cwd: e.cwd }))
   on('ui.render', ($, e) => {
     const { Text } = $.ui.resolve(e)
 
     return <Text key="engine">engine band</Text>
   })
-  const summary = [{ role: 'user' as const, text: 'summary', toolUses: [] }]
-  on('session.compact', () => ({ messages: summary }))
-  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
-  percentage = 12
-  await $.session.compact({ trigger: 'manual', messages: summary })
 
+  return { clock, figures }
+}
+
+const TYPED_COMPACT = { command: 'compact', args: '', origin: { kind: 'composer' }, presentation: { isFullscreen: false, columns: 120 } } as const
+
+test('re-reads the figures after /compact until they move', async ($, on) => {
+  const { clock, figures } = compacting(on, 81)
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  await $.command.run(TYPED_COMPACT)
+  figures.tokens = 24000
+  figures.percentage = 12
   const ui = await $.ui.mount({ plugin: 'context-bar', surface: 'terminal', ...BAND })
+  expect(await ui.find({ type: 'Text', text: /^ 81% $/ })).toBeDefined()
+  await clock.advance(250)
+  expect(await ui.find({ type: 'Text', text: /^ 12% $/ })).toBeDefined()
+  const reads = figures.reads
+  await clock.advance(5000)
+  expect(figures.reads).toBe(reads)
+})
+
+test('stops re-reading the figures when a /compact leaves them as they were', async ($, on) => {
+  const { clock, figures } = compacting(on, 81)
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  await $.command.run(TYPED_COMPACT)
+  await clock.advance(5000)
+  const reads = figures.reads
+  await clock.advance(5000)
+  expect(figures.reads).toBe(reads)
+})
+
+test('re-reads the figures after a /compact clicked in the band', async ($, on) => {
+  const { clock, figures } = compacting(on, 85)
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  const ui = await $.ui.mount({ plugin: 'context-bar', surface: 'terminal', ...BAND })
+  await ui.press({ key: 'warning-compact' })
+  await ui.press({ key: 'warning-compact' })
+  figures.tokens = 24000
+  figures.percentage = 12
+  await clock.advance(250)
   expect(await ui.find({ type: 'Text', text: /^ 12% $/ })).toBeDefined()
 })
