@@ -8,7 +8,7 @@
     {
       "name": "context-bar",
       "source": "./mods/context-bar",
-      "description": "The context window as a stacked bar above the prompt, with the model, effort, breakdown, plan usage and settings"
+      "description": "The context window as a stacked bar above the prompt, with its breakdown, plan usage and settings one click away."
     }
   ]
 }

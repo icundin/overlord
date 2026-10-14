@@ -1,7 +1,6 @@
 # context-bar
 
-A Claude Code mod (a plugin with a hooks module): a band above the prompt that draws the context window as a stacked bar, one color per
-`/context` category, with the model, the effort level, and cards for the breakdown and the plan usage.
+A Claude Code mod (a plugin with a hooks module): the context window as a stacked bar above the prompt, with its breakdown, plan usage and settings one click away.
 
 ```
 ◆ context · Opus 5.5 · high │ breakdown · usage · settings     312k of 1M · +7.4k · $0.42 last turn · $1.16 total · ≈ 40 turns to 80%  31%

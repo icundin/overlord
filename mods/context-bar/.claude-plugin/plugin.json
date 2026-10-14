@@ -1,7 +1,7 @@
 {
   "name": "context-bar",
   "version": "0.4.2",
-  "description": "Draws the context window as a stacked bar above the prompt, one color per /context category; /context-bar toggles it",
+  "description": "The context window as a stacked bar above the prompt, with its breakdown, plan usage and settings one click away.",
   "author": {
     "name": "Inigo Cundin"
   },
