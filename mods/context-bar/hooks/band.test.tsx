@@ -59,13 +59,13 @@ test('draws the bar and toggles it with /context-bar', async ($, on) => {
   const menus = await $.ui.mount({ plugin: 'context-bar', surface: 'terminal', ...BAND })
   expect(await menus.find({ key: 'panel' })).toBeUndefined()
   await menus.press({ key: 'usage' })
-  expect(await menus.find({ type: 'Text', text: /resets in 2 hr 25 min/ })).toBeDefined()
+  expect(await menus.find({ type: 'Text', text: /2 hr 25 min/ })).toBeDefined()
   await menus.press({ key: 'section-limits' })
-  expect(await menus.find({ type: 'Text', text: /resets in/ })).toBeUndefined()
+  expect(await menus.find({ type: 'Text', text: /2 hr 25 min/ })).toBeUndefined()
   expect(await menus.find({ type: 'Text', text: /9%/ })).toBeDefined()
   await menus.press({ key: 'close' })
   await menus.press({ key: 'usage' })
-  expect(await menus.find({ type: 'Text', text: /resets in/ })).toBeDefined()
+  expect(await menus.find({ type: 'Text', text: /2 hr 25 min/ })).toBeDefined()
   expect(await menus.find({ type: 'Text', text: /cost \$1\.16/ })).toBeUndefined()
   await menus.press({ key: 'section-session' })
   await menus.press({ key: 'section-tokens' })
@@ -738,4 +738,41 @@ test('counts from when the first counted turn began, not when its request ended'
   expect(await ui.find({ type: 'Text', text: /^ · counted for the last 12s$/ })).toBeDefined()
   await $.turn.complete({ answer: 'ok', durationMs: 15_000, isAborted: false, reason: 'answer', turnId: 't1' })
   expect(await ui.find({ type: 'Text', text: /^ · counted for the last 15s$/ })).toBeDefined()
+})
+
+// The card has 66 cells at 80 columns: the band's and the card's borders and padding, the close button, the indent.
+test('fits the usage card\'s rows to a narrow terminal, the bars first, then the least of the detail', async ($, on) => {
+  let cost = 0.5
+  surround(on, 'dark', () => ({
+    value: {
+      ...usageWith(25).value,
+      cost: { usd: cost },
+      rateLimits: [
+        { kind: 'five_hour', percentUsed: 5, resetsAt: '2026-10-13T13:18:00.000Z' },
+        { kind: 'seven_day', percentUsed: 2, resetsAt: '2026-10-20T06:05:00.000Z' },
+      ],
+    },
+  }))
+  on('turn.step', async function* (_, e) {
+    cost += 0.25
+    const usage = { model: 'claude-opus-5-5', input_tokens: 2, output_tokens: 300, cache_read_input_tokens: 27_000, cache_creation_input_tokens: 18_700 }
+
+    return { turnId: e.turnId, index: e.index, answer: '', toolUses: [], stopReason: 'end_turn' as const, usage }
+  })
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  for await (const _ of $.turn.step({ turnId: 't1', index: 0, model: 'claude-opus-5-5', messageCount: 1 })) {
+    // drained
+  }
+  const row = async (text: RegExp) => (await ui.find({ type: 'Text', text }))?.text ?? ''
+  const ui = await $.ui.mount({ plugin: 'context-bar', surface: 'terminal', ...BAND, props: { ...BAND.props, bodyColumns: 80 } })
+  await ui.press({ key: 'usage' })
+  await ui.press({ key: 'section-agents' })
+  const rows = [
+    await row(/^session\s+[▓░]{10}\s+5%\s+resets in 4 hr 13 min$/),
+    await row(/^weekly · all models\s+[▓░]{10}\s+2%\s+resets in 6 d 21 hr$/),
+    // The models go first.
+    await row(/^main\s+[▓░]{10}\s+33%\s+\$0\.25 · 46k tokens$/),
+  ]
+  expect(rows.every(found => found.length > 0 && found.length <= 66)).toBe(true)
+  expect(new Set(rows.map(found => found.search(/[▓░]/))).size).toBe(1)
 })
