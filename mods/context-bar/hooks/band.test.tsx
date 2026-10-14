@@ -703,3 +703,29 @@ test('sums up only the rows the split has, before the first request is counted',
   expect(await ui.find({ type: 'Text', text: /^ {2}earlier 100%$/ })).toBeDefined()
   expect(await ui.find({ type: 'Text', text: /main/ })).toBeUndefined()
 })
+
+// The tally holds the first request's tokens and time, and the active time of the turn it ran in.
+test('counts from when the first counted turn began, not when its request ended', async ($, on) => {
+  const clock = surround(on, 'dark', 25, {}, 1)
+  on('turn.complete', (_, e) => ({ text: e.answer }))
+  on('turn.step', async function* (_, e) {
+    await clock.sleep(12_000)
+    const usage = { model: 'claude-opus-5-5', input_tokens: 2, output_tokens: 300, cache_read_input_tokens: 27_000, cache_creation_input_tokens: 18_700 }
+
+    return { turnId: e.turnId, index: e.index, answer: '', toolUses: [], stopReason: 'end_turn' as const, usage }
+  })
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  await clock.advance(3_000)
+  const step = (async () => {
+    for await (const _ of $.turn.step({ turnId: 't1', index: 0, model: 'claude-opus-5-5', messageCount: 1 })) {
+      // drained
+    }
+  })()
+  await clock.advance(12_000)
+  await step
+  const ui = await $.ui.mount({ plugin: 'context-bar', surface: 'terminal', ...BAND, props: { ...BAND.props, bodyColumns: 120 } })
+  await ui.press({ key: 'usage' })
+  expect(await ui.find({ type: 'Text', text: /^ · counted for the last 12s$/ })).toBeDefined()
+  await $.turn.complete({ answer: 'ok', durationMs: 15_000, isAborted: false, reason: 'answer', turnId: 't1' })
+  expect(await ui.find({ type: 'Text', text: /^ · counted for the last 15s$/ })).toBeDefined()
+})

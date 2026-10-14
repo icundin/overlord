@@ -5,6 +5,7 @@ One changelog for the collection; every entry names the artifact it concerns.
 # 1.8.2 — 2026-10-14
 
 - Context bar: A turn typed while `/compact` runs measures its growth and cost from the compacted context. Claude Code counts the compacted context a moment after `/compact` returns, and the turn started from the figures before it, so the header read `−133k · $0.50 last turn` for a turn that added 5k and cost $0.20.
+- Context bar: The tokens' `counted for the last` runs from the start of the first turn the mod counted. It ran from the end of that turn's first request, so right after the first message it read `0s` beside the request's own API time.
 
 # 1.8.1 — 2026-10-14
 

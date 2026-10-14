@@ -229,9 +229,13 @@ async function spender($: EngineInterface, agentId: string | undefined, known: S
   return listed ? { id: agentId, label: listed.description || listed.type } : null
 }
 
-async function count($: EngineInterface, change: (was: Tally) => Tally): Promise<void> {
-  const now = await $.clock.now()
-  await update($, tally, was => change(was ?? { since: now, apiMs: 0, activeMs: 0, models: {} }))
+// Counts what began at `from`, which the tally then covers.
+async function count($: EngineInterface, from: number, change: (was: Tally) => Tally): Promise<void> {
+  await update($, tally, was => {
+    const counted = change(was ?? { since: from, apiMs: 0, activeMs: 0, models: {} })
+
+    return { ...counted, since: Math.min(counted.since, from) }
+  })
 }
 
 function addTokens(
@@ -378,7 +382,8 @@ export const register: Register = on => {
   on('turn.complete', async ($, e, next) => {
     const result = await next(e)
     if (e.agentId === undefined) {
-      await count($, was => ({ ...was, activeMs: was.activeMs + e.durationMs })).catch(() => undefined)
+      const startedAt = (await $.clock.now()) - e.durationMs
+      await count($, startedAt, was => ({ ...was, activeMs: was.activeMs + e.durationMs })).catch(() => undefined)
       await refresh($).catch(() => undefined)
       const current = await read($, usage)
       await update($, growth, was => {
@@ -429,7 +434,7 @@ export const register: Register = on => {
     if (after !== null) {
       await stampLimits($, after.rateLimits).catch(() => undefined)
     }
-    await count($, was => ({
+    await count($, startedAt, was => ({
       ...was,
       apiMs: was.apiMs + ms,
       models: spent ? { ...was.models, [spent.model]: addTokens(was.models[spent.model], spent) } : was.models,
