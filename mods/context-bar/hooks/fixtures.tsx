@@ -1,4 +1,4 @@
-import type { ContextCategory, On, SessionContextBreakdown } from 'claude-code'
+import type { ContextCategory, On, SessionContextBreakdown, SessionRateLimit } from 'claude-code'
 import { mock } from 'claude-code/testing'
 
 // What the tests stand in for the engine with: a context breakdown, the config menu's rows, the band's props, and
@@ -55,7 +55,7 @@ export const BAND = {
 export const usageWith = (percentage: number, cost: number | null = null, totalTokens = BREAKDOWN.totalTokens) => ({
   value: {
     startedAt: 0,
-    rateLimits: [],
+    rateLimits: [] as SessionRateLimit[],
     ...(cost === null ? {} : { cost: { usd: cost } }),
     context: { window: 200000, tokens: 50000, percent: percentage, breakdown: { ...BREAKDOWN, percentage, totalTokens } },
   },

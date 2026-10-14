@@ -1,5 +1,5 @@
 import { cacheHit, sumTokens, totalTokens } from '../figures'
-import { compact, duration, levelColor, limitLabel, modelLabel, resetsIn } from '../format'
+import { ago, compact, duration, levelColor, limitLabel, modelLabel, resetsIn } from '../format'
 import { chunk, parts } from './kit'
 import type { Kit } from './kit'
 
@@ -13,6 +13,7 @@ export function usageCard(kit: Kit) {
   const current = view.usage
   const counted = view.tally
   const limits = current.limits
+  const limitsAge = view.limitsAt === null ? [] : [`updated ${ago(view.limitsAt, view.now)}`]
   const labels = limits.map(limit => limitLabel(limit.kind))
   const labelWidth = Math.max(0, ...labels.map(label => label.length))
   const byModel = Object.entries(counted?.models ?? {})
@@ -42,7 +43,7 @@ export function usageCard(kit: Kit) {
   return (
     <Box key="usage" flexDirection="column" rowGap={1}>
       {limits.length > 0 &&
-        section('limits', 'plan usage limits', [limits.map(limit => `${limit.percentUsed}%`).join(', ')], () =>
+        section('limits', 'plan usage limits', [limits.map(limit => `${limit.percentUsed}%`).join(', '), ...limitsAge], () =>
           limits.map((limit, i) => {
             const filled = Math.min(LIMIT_BAR, Math.round((limit.percentUsed / 100) * LIMIT_BAR))
 

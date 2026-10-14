@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 
-import { compact, duration, limitLabel, modelAlias, modelChoices, modelLabel, resetsIn, share, signed } from './format'
+import { ago, compact, duration, limitLabel, modelAlias, modelChoices, modelLabel, resetsIn, share, signed } from './format'
 
 test('shortens the model id to family and version', async () => {
   const ids = {
@@ -34,6 +34,14 @@ test('names the limits and counts down to their reset', async () => {
   expect(resetsIn('2026-10-13T11:30:00.000Z', now)).toBe('2 hr 25 min')
   expect(resetsIn('2026-10-13T09:30:00.000Z', now)).toBe('25 min')
   expect(resetsIn('2026-10-16T13:05:00.000Z', now)).toBe('3 d 4 hr')
+})
+
+test('says how long ago the limits were read', async () => {
+  const now = Date.parse('2026-10-13T09:05:00.000Z')
+  expect(ago(now - 59_000, now)).toBe('just now')
+  expect(ago(now - 14 * 60_000 - 59_000, now)).toBe('14 min ago')
+  expect(ago(now - 125 * 60_000, now)).toBe('2 hr 5 min ago')
+  expect(ago(now - (3 * 24 + 4) * 3_600_000, now)).toBe('3 d 4 hr ago')
 })
 
 test('keeps only real models among the /model choices', async () => {

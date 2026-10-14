@@ -12,6 +12,7 @@ export type View = {
   opened: Partial<Record<Section, boolean>>
   confirming: Confirmable | null
   tally: Tally | null
+  limitsAt: number | null
   now: number
   fill: number
   isLight: boolean
