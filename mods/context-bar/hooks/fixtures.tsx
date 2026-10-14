@@ -52,22 +52,25 @@ export const BAND = {
   props: { hasSurvey: false, isWorking: false, maxRows: 10, bodyColumns: 40, scroll: { offset: 0, bodyRows: 9 }, view: {} },
 } as const
 
-export const usageWith = (percentage: number, cost: number | null = null) => ({
+export const usageWith = (percentage: number, cost: number | null = null, totalTokens = BREAKDOWN.totalTokens) => ({
   value: {
     startedAt: 0,
     rateLimits: [],
     ...(cost === null ? {} : { cost: { usd: cost } }),
-    context: { window: 200000, tokens: 50000, percent: percentage, breakdown: { ...BREAKDOWN, percentage } },
+    context: { window: 200000, tokens: 50000, percent: percentage, breakdown: { ...BREAKDOWN, percentage, totalTokens } },
   },
 })
 
-// `stored` seeds the mod's $.store; null leaves the store to the test's own hooks.
-export const surround = (on: On, theme: string, percentage: number, stored: Record<string, unknown> | null = {}, cost: number | null = null) => {
+type UsageAnswer = () => ReturnType<typeof usageWith> | Promise<ReturnType<typeof usageWith>>
+
+// `usage` is the fill session.usage reports, or its answer to each read; `stored` seeds the mod's $.store, and null
+// leaves the store to the test's own hooks.
+export const surround = (on: On, theme: string, usage: number | UsageAnswer, stored: Record<string, unknown> | null = {}, cost: number | null = null) => {
   const clock = mock.clock(on, { now: Date.parse('2026-10-13T09:05:00.000Z') })
   if (stored !== null) {
     mock.store(on, stored)
   }
-  on('session.usage', () => usageWith(percentage, cost))
+  on('session.usage', typeof usage === 'number' ? () => usageWith(usage, cost) : usage)
   on('config.list', () => ({ value: configRows(theme) }))
   on('command.register', (_, e) => ({ value: { command: e.name } }))
   on('session.start', (_, e) => ({ cwd: e.cwd }))
@@ -79,3 +82,11 @@ export const surround = (on: On, theme: string, percentage: number, stored: Reco
 
   return clock
 }
+
+// A command as the person types it at the prompt.
+export const typed = (command: string, args = '') => ({
+  command,
+  args,
+  origin: { kind: 'composer' as const },
+  presentation: { isFullscreen: false, columns: 80 },
+})
