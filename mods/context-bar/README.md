@@ -60,8 +60,8 @@ claude plugin uninstall context-bar@claude-code-toolkit
   that detail first.
 - **breakdown** lists every category, the MCP tools by server, the memory files and the skills by source, and links
   to `/context` for the full detail.
-- **usage** shows the plan limits, the session's cost and time, and the tokens; with buttons to
-  compact the session or start a new one (both ask to confirm first).
+- **usage** shows the plan limits and how old they are (`38%, 12% · updated 14 min ago`), the session's cost and time,
+  and the tokens; with buttons to compact the session or start a new one (both ask to confirm first).
 - **settings** opens the settings card.
 - **`/context-bar`** hides or shows the band; it fills in again when shown.
 - Every card closes with `[x]` or by clicking its header label again. Clicking in the band gives it the keyboard;
@@ -92,6 +92,9 @@ the second runs it, and the question lapses after five seconds.
 
 - Token, time and cache figures are counted by the mod from when it loads, and again from a `/clear`,
   since Claude Code does not hand mods the session's earlier requests. The cost is the whole session's.
+- The plan limits are the account's, but a session learns new figures only when one of its own requests comes
+  back, so an idle session's go stale while other sessions use the plan; the usage card says how old they are.
+  After a `/clear` the age is left out until the next response.
 - Per-model weekly limits and the plan's name are not available to mods.
 - With Claude Code's theme on `auto` the bar is shaded as dark, since a mod cannot see the terminal's colors;
   set **Display mode** to `light` in the settings card if your terminal is light.

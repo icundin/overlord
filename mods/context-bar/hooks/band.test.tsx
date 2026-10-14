@@ -73,7 +73,8 @@ test('draws the bar and toggles it with /context-bar', async ($, on) => {
   expect(await menus.find({ type: 'Text', text: /cache hit 96%/ })).toBeDefined()
   expect(await menus.find({ type: 'Text', text: /Opus 5\.5 100%/ })).toBeDefined()
   expect(await menus.find({ type: 'Text', text: /cache read\s+1\.1M/ })).toBeDefined()
-  expect(await menus.find({ type: 'Text', text: /Opus 5\.5 · counted for the last/ })).toBeDefined()
+  expect(await menus.find({ type: 'Text', text: /^ · Opus 5\.5$/ })).toBeDefined()
+  expect(await menus.find({ type: 'Text', text: /^ · counted for the last/ })).toBeDefined()
   await menus.press({ key: 'clear' })
   expect(ran).not.toContain('/clear ')
   expect(await menus.find({ key: 'clear', text: /confirm new session/ })).toBeDefined()
@@ -541,4 +542,39 @@ test('re-reads the figures once a /compact clicked in the band ends', async ($, 
   compacted(COMPACTED)
   await clock.advance(250)
   expect(await ui.find({ type: 'Text', text: /^ 12% $/ })).toBeDefined()
+})
+
+// The limits are the account's, and a session learns new figures only when one of its own requests comes back.
+test('says how old the plan limits are, from the last response any agent got', async ($, on) => {
+  let percentUsed = 9
+  const clock = surround(on, 'dark', () => ({
+    value: { ...usageWith(25).value, rateLimits: [
+      { kind: 'five_hour', percentUsed, resetsAt: '2026-10-13T11:30:00.000Z' },
+      { kind: 'seven_day', percentUsed: 30, resetsAt: '2026-10-16T13:05:00.000Z' },
+    ] },
+  }))
+  on('turn.step', async function* (_, e) {
+    return { turnId: e.turnId, index: e.index, answer: '', toolUses: [], stopReason: 'end_turn' as const, usage: null }
+  })
+  const step = async (agentId?: string) => {
+    for await (const _ of $.turn.step({ turnId: 't1', index: 0, model: 'claude-opus-5-5', messageCount: 1, ...(agentId ? { agentId } : {}) })) {
+      // drained
+    }
+  }
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  const ui = await $.ui.mount({ plugin: 'context-bar', surface: 'terminal', ...BAND })
+  await ui.press({ key: 'usage' })
+  expect(await ui.find({ type: 'Text', text: /9%/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /ago|just now/ })).toBeUndefined()
+
+  percentUsed = 12
+  await step()
+  expect(await ui.find({ type: 'Text', text: /^ {2}12%, 30%$/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /^ · updated just now$/ })).toBeDefined()
+  // An idle session draws nothing new by itself; the age still moves on.
+  await clock.advance(14 * 60_000)
+  expect(await ui.find({ type: 'Text', text: /^ · updated 14 min ago$/ })).toBeDefined()
+
+  await step('subagent-1')
+  expect(await ui.find({ type: 'Text', text: /^ · updated just now$/ })).toBeDefined()
 })

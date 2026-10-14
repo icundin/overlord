@@ -12,6 +12,7 @@ export type View = {
   opened: Partial<Record<Section, boolean>>
   confirming: Confirmable | null
   tally: Tally | null
+  limitsAt: number | null
   now: number
   fill: number
   isLight: boolean
@@ -74,7 +75,8 @@ export function cycle<T extends string>(options: readonly T[], value: T): T {
 // The pieces the cards share. A Button inverts under the pointer, so every label is grey: inverted, it is a grey
 // background, not a white one.
 export function parts({ ui: { Box, Button, Text }, view, act }: Kit) {
-  // A collapsible section: the title and a short summary, the body below while open.
+  // A collapsible section: the title and a short summary, the body below while open. The summary's parts are
+  // separated by ` · `, as in the header; a part that lists several things joins them with `, `.
   const section = (key: Section, title: string, summary: string[], body: () => RenderChildren) => {
     const isOpen = view.opened[key] ?? DEFAULT_OPEN[key]
 
@@ -86,7 +88,7 @@ export function parts({ ui: { Box, Button, Text }, view, act }: Kit) {
           </Text>
           {summary.map((part, i) => (
             <Text key={`summary-${i}`} color="inactive" bold={i === 0}>
-              {'  '}
+              {i === 0 ? '  ' : ' · '}
               {part}
             </Text>
           ))}

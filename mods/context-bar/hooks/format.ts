@@ -46,7 +46,17 @@ export function duration(ms: number): string {
 
 // Relative, so it never depends on the time zone the mod runs in: `2 hr 25 min`, `3 d 4 hr`.
 export function resetsIn(resetsAt: string, now: number): string {
-  const minutes = Math.max(0, Math.round((Date.parse(resetsAt) - now) / 60_000))
+  return span(Math.max(0, Math.round((Date.parse(resetsAt) - now) / 60_000)))
+}
+
+// `just now`, `14 min ago`, `2 hr 5 min ago`.
+export function ago(at: number, now: number): string {
+  const minutes = Math.floor((now - at) / 60_000)
+
+  return minutes < 1 ? 'just now' : `${span(minutes)} ago`
+}
+
+function span(minutes: number): string {
   const hours = Math.floor(minutes / 60)
   const days = Math.floor(hours / 24)
 

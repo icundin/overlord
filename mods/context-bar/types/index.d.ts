@@ -71,6 +71,8 @@ declare module 'claude-code' {
   interface PluginState {
     'context-bar': {
       usage: Usage | null
+      // When a response last came back, which is when the session last learned the plan limits; null until one does.
+      limitsAt: number | null
       isHidden: boolean
       effort: string | null
       panel: Panel | null

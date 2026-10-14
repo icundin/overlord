@@ -1,7 +1,7 @@
 import { atom, read, update } from 'claude-code'
-import type { EngineInterface, Register, Timer } from 'claude-code'
+import type { EngineInterface, Register, SessionRateLimit, Timer } from 'claude-code'
 
-import type { BarSettings, Confirmable, Panel, Section, Tally, Tokens, Usage } from '../types'
+import type { BarSettings, Confirmable, Limit, Panel, Section, Tally, Tokens, Usage } from '../types'
 import { byServer } from './figures'
 import { modelChoices } from './format'
 import { distinctColors, themed } from './themes'
@@ -9,6 +9,7 @@ import { DEFAULT_OPEN, DEFAULT_SETTINGS } from './defaults'
 import { band } from './view/band'
 
 const usage = atom({ plugin: 'context-bar', key: 'usage' } as const, null)
+const limitsAt = atom({ plugin: 'context-bar', key: 'limitsAt' } as const, null)
 const isHidden = atom({ plugin: 'context-bar', key: 'isHidden' } as const, false)
 const effort = atom({ plugin: 'context-bar', key: 'effort' } as const, null)
 const panel = atom({ plugin: 'context-bar', key: 'panel' } as const, null)
@@ -57,6 +58,10 @@ async function changeSetting($: EngineInterface, change: Partial<BarSettings>): 
   await $.store.set('settings', next)
 }
 
+function toLimits(rateLimits: SessionRateLimit[]): Limit[] {
+  return rateLimits.map(({ kind, percentUsed, resetsAt }) => ({ kind, percentUsed, resetsAt: resetsAt ?? null }))
+}
+
 async function refresh($: EngineInterface): Promise<void> {
   const { context, rateLimits, cost } = await $.session.usage({ breakdown: 'summary' })
   const { breakdown } = context
@@ -77,9 +82,32 @@ async function refresh($: EngineInterface): Promise<void> {
     mcpServers: byServer(breakdown.mcpTools),
     memoryFiles: breakdown.memoryFiles.map(({ path, type, tokens }) => ({ path, type, tokens })),
     skills: (breakdown.skills?.skillFrontmatter ?? []).map(({ name, source, pluginName, tokens }) => ({ name, source, pluginName, tokens })),
-    limits: rateLimits.map(({ kind, percentUsed, resetsAt }) => ({ kind, percentUsed, resetsAt: resetsAt ?? null })),
+    limits: toLimits(rateLimits),
   }
   await update($, usage, () => next)
+}
+
+// The plan limits a response just brought, read with the moment they came. The plain read costs nothing.
+async function stampLimits($: EngineInterface): Promise<void> {
+  const { rateLimits } = await $.session.usage()
+  const now = await $.clock.now()
+  await update($, usage, was => (was === null ? null : { ...was, limits: toLimits(rateLimits) }))
+  await update($, limitsAt, () => now)
+}
+
+const TICK_MS = 60_000
+let ticking: Timer | null = null
+
+// An idle band draws nothing new by itself, so the usage card's ages and countdowns are redrawn each minute.
+function tick($: EngineInterface): void {
+  ticking?.cancel()
+  ticking = $.clock.every(TICK_MS, () => {
+    void read($, panel).then(open => {
+      if (open === 'usage') {
+        $.ui.invalidate('ui.render')
+      }
+    })
+  })
 }
 
 // The theme and the /model choices, from the config menu's own rows.
@@ -266,6 +294,7 @@ async function setUp($: EngineInterface): Promise<void> {
     }
     await readConfig($).catch(() => undefined)
     await refresh($).catch(() => undefined)
+    tick($)
   } finally {
     settingUp = false
   }
@@ -353,6 +382,7 @@ export const register: Register = on => {
     }
     const result = yield* next(e)
     const ms = (await $.clock.now()) - startedAt
+    await stampLimits($).catch(() => undefined)
     const { usage: spent } = result
     await count($, was => ({
       ...was,
@@ -399,6 +429,7 @@ export const register: Register = on => {
         opened: await read($, sections),
         confirming: await read($, confirming),
         tally: await read($, tally),
+        limitsAt: await read($, limitsAt),
         now: await $.clock.now(),
         fill: await read($, fill),
         isLight: isLightShading,
