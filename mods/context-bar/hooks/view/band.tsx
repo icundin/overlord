@@ -4,7 +4,7 @@ import { alerts, hasUsage, turnsUntil } from '../figures'
 import { compact, dollars, levelColor, modelLabel, share, signed } from '../format'
 import { longestFitting, reveal, segments } from '../layout'
 import { breakdownCard } from './breakdown'
-import { CLOSE_WIDTH, parts, swatchOf } from './kit'
+import { CLOSE_WIDTH, filled, parts, swatchOf } from './kit'
 import type { Actions, Kit, View } from './kit'
 import { menuCard } from './menu'
 import { settingsCard } from './settings'
@@ -18,7 +18,6 @@ export function band(ui: ElementTable<'terminal'>, view: View, act: Actions) {
   // The card's border and padding, and the close button.
   const kit: Kit = { ui, view, act, inner, card: inner - 4 - CLOSE_WIDTH, shadeBehind: view.isLight ? 'white' : 'black' }
   const { headerButton, dot } = parts(kit)
-  const { shadeBehind } = kit
   const isUsageShown = hasUsage(current)
   const isAutoCompact = current.autoCompactThreshold !== null
   const bar = segments(current.rows, inner)
@@ -131,11 +130,13 @@ export function band(ui: ElementTable<'terminal'>, view: View, act: Actions) {
           }
 
           if (seg.kind === 'used') {
-            // On hover the segment's own color fills the gaps in the shade: the full color
+            // On hover a shaded segment's own color fills the gaps in the shade, and a solid one turns lighter
             // (dimColor turns colors grey on some terminals).
+            const cells = filled(kit, seg.color)
+
             return [
-              <Text key={seg.name} color={seg.color} backgroundColor={shadeBehind} hover={{ scope, backgroundColor: seg.color }}>
-                {'▓'.repeat(seg.cells)}
+              <Text key={seg.name} {...cells.style} hover={{ scope, ...cells.hover }}>
+                {cells.glyph.repeat(seg.cells)}
               </Text>,
             ]
           }

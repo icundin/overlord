@@ -2,6 +2,10 @@
 
 One changelog for the collection; every entry names the artifact it concerns.
 
+## 1.9.0 — 2026-10-14
+
+- Context bar: A **Bar style** setting draws the bars in solid blocks instead of shades, kept like the other settings; a hovered solid segment turns a lighter shade of its color. The shades need black or white behind them, which the mod picks from Claude Code's theme since it cannot see the terminal's colors, so a dark theme on a light terminal (Claude Code's default theme in Terminal.app's default profile) drew a black strip along the bar; solid blocks need nothing behind them. Shaded stays the default, and **Display mode**, which only sets what sits behind the shades, shows only while the bars are shaded.
+
 ## 1.8.3 — 2026-10-14
 
 - Repository: One sentence describes the context bar wherever it is listed: its manifest, the marketplace, the root README and its own README. Each said something different, so `/plugin`, the marketplace and the READMEs described the same mod four ways.

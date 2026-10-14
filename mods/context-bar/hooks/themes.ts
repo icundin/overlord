@@ -121,3 +121,13 @@ export function themed(rows: Row[], theme: 'default' | ThemeName | 'custom', cus
 
   return rows.map(row => (row.kind === 'used' ? { ...row, color: colorOf(row) ?? row.color } : row))
 }
+
+// A hovered solid segment's color: a hex color 35% of the way to white; null for a theme key, which has no hex.
+export function lighter(color: string): string | null {
+  if (!/^#[0-9A-F]{6}$/i.test(color)) {
+    return null
+  }
+  const channels = [1, 3, 5].map(at => parseInt(color.slice(at, at + 2), 16))
+
+  return `#${channels.map(c => Math.round(c + (255 - c) * 0.35).toString(16).padStart(2, '0')).join('').toUpperCase()}`
+}

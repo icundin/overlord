@@ -5,7 +5,7 @@ import { ago, compact, dollars, duration, levelColor, limitLabel, modelLabel, re
 import { MAIN, spendGroups } from '../spend'
 import type { SpendGroup } from '../spend'
 import { longestFitting } from '../layout'
-import { chunk, parts } from './kit'
+import { chunk, filled, parts } from './kit'
 import type { Kit } from './kit'
 
 const BAR_CELLS = 20
@@ -92,14 +92,15 @@ export function usageCard(kit: Kit) {
   const detail = (forms: string[]) => longestFitting(forms, room - barCells)
   // A bar filled to `percent`, the percentage, and the detail after it.
   const gauge = (percent: number, color: string, detail: string) => {
-    const filled = Math.min(barCells, Math.round((percent / 100) * barCells))
+    const count = Math.min(barCells, Math.round((percent / 100) * barCells))
+    const cells = filled(kit, color)
 
     return [
-      <Text key="filled" color={color} backgroundColor={kit.shadeBehind}>
-        {'▓'.repeat(filled)}
+      <Text key="filled" {...cells.style}>
+        {cells.glyph.repeat(count)}
       </Text>,
       <Text key="empty" color="subtle">
-        {'░'.repeat(barCells - filled)}
+        {'░'.repeat(barCells - count)}
       </Text>,
       '  ',
       <Text key="percent" bold>

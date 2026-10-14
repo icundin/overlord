@@ -92,7 +92,8 @@ the second runs it, and the question lapses after five seconds.
 | Warnings: when the context passes (%) | 80 | any whole number 0–100, 0 is off; suggests `/compact` |
 | Warnings: when a plan limit passes (%) | 90 | any whole number 0–100, 0 is off |
 | Warnings: when the session cost passes ($) | 50 | any amount, cents optional, 0 is off |
-| Display mode | auto | auto (follows Claude Code's theme), dark, light |
+| Bar style | shaded | shaded (shade blocks on black or white), solid (full blocks, nothing behind them) |
+| Display mode | auto | auto (follows Claude Code's theme), dark, light; shown for shaded bars only |
 | Category theme | default | default (the desktop app's hues, in Claude Code's own agent colors), monokai, dracula, nord, catppuccin, github, gruvbox, tokyo night, custom: a hex color per category, `#RRGGBB` or `#RGB`; empty goes back to the default |
 
 ## Limits
@@ -107,7 +108,8 @@ the second runs it, and the question lapses after five seconds.
   one of them; the shares still add up to the total.
 - Per-model weekly limits and the plan's name are not available to mods.
 - With Claude Code's theme on `auto` the bar is shaded as dark, since a mod cannot see the terminal's colors;
-  set **Display mode** to `light` in the settings card if your terminal is light.
+  if your terminal is light, set **Display mode** to `light` in the settings card, or **Bar style** to `solid`,
+  which looks the same on any background.
 
 ## Developing
 

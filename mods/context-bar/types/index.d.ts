@@ -55,7 +55,8 @@ export type Spend = { earlier: number; other: number; read: number; agents: Agen
 export type Tally = { since: number; apiMs: number; activeMs: number; models: Record<string, Tokens> }
 
 // The settings card's values, kept in $.store so they carry over to new sessions. A percentage of 0 is off.
-// `displayMode` puts the bar's shades on black or white; `auto` follows Claude Code's theme. `categoryTheme`
+// `barStyle` draws the bars in shade glyphs or full blocks; `displayMode` puts the shades on black or white, and `auto`
+// follows Claude Code's theme. `categoryTheme`
 // colors the categories: `default` (the desktop app's hues), a named theme (the mod's CATEGORY_THEMES), or
 // `custom`, where `customColors` maps a category's name to a color.
 export type BarSettings = {
@@ -64,6 +65,7 @@ export type BarSettings = {
   limitWarnPercent: number
   // US dollars; 0 is off.
   costWarnUsd: number
+  barStyle: 'shaded' | 'solid'
   displayMode: 'auto' | 'dark' | 'light'
   categoryTheme: 'default' | 'monokai' | 'dracula' | 'nord' | 'catppuccin' | 'github' | 'gruvbox' | 'tokyo-night' | 'custom'
   customColors: Record<string, string>
