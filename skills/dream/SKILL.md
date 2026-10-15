@@ -1,22 +1,22 @@
 ---
 name: dream
-description: Nightly memory consolidation ("dreaming") routine. Use whenever the user types /dream, mentions dreaming, consolidating memory, reviewing sessions, applying dream proposals (e.g. "/dream apply 1,3" or "/dream ignore 2"), or revoking an applied memory ("/dream forget <slug>"). Reads the last 24h of session transcripts, compares them against stored memory, and proposes memory updates as a numbered list. Also use when invoked non-interactively (headless/cron) with instructions to write a dream report.
+description: Nightly memory consolidation ("dreaming") routine. Use whenever the user types /overlord:dream (or /dream), mentions dreaming, consolidating memory, reviewing sessions, applying dream proposals (e.g. "/overlord:dream apply 1,3" or "/overlord:dream ignore 2"), or revoking an applied memory ("/overlord:dream forget <slug>"). Reads the last 24h of session transcripts, compares them against stored memory, and proposes memory updates as a numbered list. Also use when invoked non-interactively (headless/cron) with instructions to write a dream report.
 model: sonnet
 allowed-tools: Read, Grep, Glob, Bash, Write, Edit
 ---
 
-# /dream — nightly memory consolidation
+# /overlord:dream — nightly memory consolidation
 
 Review recent sessions, compare against memory, propose changes. Memory only
 changes with the user's approval, except the safe fixes below.
 
 ## Modes
-- **Interactive**: a human is present (normal `/dream`).
+- **Interactive**: a human is present (normal `/overlord:dream`).
 - **Non-interactive**: invoked headlessly (cron/routine, or the prompt says
   "non-interactive"). Apply nothing beyond safe fixes; write the outputs
   listed under "Completion checklist".
-- **Apply / Ignore**: the user sent `/dream apply ...` and/or `... ignore ...`.
-- **Forget**: the user sent `/dream forget <slug>` — revoke applied facts.
+- **Apply / Ignore**: the user sent `/overlord:dream apply ...` and/or `... ignore ...`.
+- **Forget**: the user sent `/overlord:dream forget <slug>` — revoke applied facts.
 
 ## Step 1 — Memory
 The store is `~/.claude/memory/`: one small markdown file per fact, living in
@@ -32,10 +32,12 @@ older rules encountered there must not influence tonight's judgment.
 
 `find ~/.claude/projects -name '*.jsonl' -mtime -1 2>/dev/null`
 ALWAYS exclude the current session's own transcript and subagent/sidechain
-files. Extract user turns with the bundled extractor, invoked exactly so:
+files. Extract user turns with the bundled extractor, invoked exactly so
+(`<skill folder>`, here and below, is this skill's base directory, as Claude
+Code states it when the skill loads):
 
 ```bash
-python3 ~/.claude/skills/dream/scripts/extract.py --max-chars 4000 <file1.jsonl> <file2.jsonl> ...
+python3 <skill folder>/scripts/extract.py --max-chars 4000 <file1.jsonl> <file2.jsonl> ...
 ```
 
 
@@ -161,7 +163,7 @@ existing. Example item:
 ```
 
 End interactive output with:
-`Reply "/dream apply 1,3 ignore 2", "/dream apply all", or tell me what to change.`
+`Reply "/overlord:dream apply 1,3 ignore 2", "/overlord:dream apply all", or tell me what to change.`
 
 ## Safe auto-fixes (the ONLY unapproved changes)
 Typos in memory text Claude itself wrote; MEMORY.md index repairs (missing or
@@ -171,7 +173,7 @@ proposal, not a move). List any under "Auto-applied safe fixes". Everything
 else waits for approval. NEVER delete or rewrite a memory without approval;
 if unsure, propose.
 
-## Ignore (`/dream ignore 2,4` or appended to apply)
+## Ignore (`/overlord:dream ignore 2,4` or appended to apply)
 Ignore is FINAL: append `- <date>: <file-slug> — <one-line summary>` (e.g.
 `- 2026-08-05: wants-red-test-before-every-fix — every fix ships with a test
 seen failing first.`) to `~/.claude/memory/ignored.md`, never propose it
@@ -179,7 +181,7 @@ again, never store it as memory. The veto binds that fact, not its topic:
 a materially different claim on the same theme is a fresh candidate — when
 in doubt, propose it, citing the ignored neighbor in `detail:`.
 
-## Apply (`/dream apply 1,3` / `all`)
+## Apply (`/overlord:dream apply 1,3` / `all`)
 1. Use the most recent proposal list (this conversation or dream-report.md).
 2. Apply only the selected ids. ADD: create file + index line. UPDATE: edit.
    DELETE/MERGE: do it + update index.
@@ -194,7 +196,7 @@ in doubt, propose it, citing the ignored neighbor in `detail:`.
    `"resolved":true,"outcome_at":"..."` — the template then renders a
    read-only record (no buttons, no command bar).
 
-## Forget (`/dream forget <slug>[,<slug>]`)
+## Forget (`/overlord:dream forget <slug>[,<slug>]`)
 The ONLY path that deletes a fact, and it runs solely on the user's explicit
 command — never proposed, never self-initiated. The slug is the fact's file
 name without `.md`. For each slug, in order: read the fact's summary, delete
@@ -206,7 +208,7 @@ Archives are never edited: the chronology keeps the fact's full life —
 proposed, applied, forgotten.
 
 ## HTML report (always alongside dream-report.md)
-Fill `~/.claude/skills/dream/assets/report-template.html`: replace
+Fill `<skill folder>/assets/report-template.html`: replace
 `__META_JSON__` and `__PROPOSALS_JSON__` with the Step 4 data (valid JSON,
 escape quotes/newlines; ids MUST match the markdown). Write to
 `~/.claude/memory/dream-report.html` and mention it in your summary.
@@ -216,7 +218,7 @@ on proposals and stays absent. Only the newest night can await review: apply
 reads the most recent list, so an older undecided night is `missed` — its
 proposals already carried forward or expired.
 If the template is missing, say so at the top of dream-report.md — never skip
-silently. The page is review-only: clicks build a `/dream apply ... ignore ...`
+silently. The page is review-only: clicks build a `/overlord:dream apply ... ignore ...`
 command; it cannot modify memory.
 
 Archive: copy the `.md` and `.html` to
@@ -226,7 +228,7 @@ earlier dates are never touched.
 
 ## After every run
 Regenerate the memory page — one fixed command, exactly so:
-`python3 ~/.claude/skills/dream/scripts/build_memory_page.py`
+`python3 <skill folder>/scripts/build_memory_page.py`
 It rebuilds `~/.claude/memory/memory.html` (current facts + ignored +
 night-by-night chronology) from disk. If it fails, report the error in
 your summary and move on — NEVER build or edit memory.html by hand.

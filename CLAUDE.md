@@ -7,8 +7,10 @@ with room for agents and other extensions, each type in a top-level folder.
 This is **source, not the installation**: editing here changes nothing until
 the user installs it again.
 
-- `skills/` mirrors its place under `~/.claude`; the running copies live in
-  `~/.claude/skills/` and are updated by copying files over.
+- The repository root is the `overlord` plugin (`.claude-plugin/plugin.json`):
+  its skills live in `skills/`, are invoked as `overlord:<skill>`, install with
+  `/plugin install overlord@overlord` and update with `claude plugin update`.
+  A change to a skill bumps the plugin's version, or the update never arrives.
 - `mods/` holds mods (plugins with a hooks module), published through
   `.claude-plugin/marketplace.json` and installed with `/plugin install`; an
   installed mod updates with `claude plugin update`.

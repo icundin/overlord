@@ -6,6 +6,11 @@
   },
   "plugins": [
     {
+      "name": "overlord",
+      "source": "./",
+      "description": "Claude Code skills: /overlord:dream, nightly memory consolidation that changes nothing without your approval."
+    },
+    {
       "name": "context-bar",
       "source": "./mods/context-bar",
       "description": "The context window as a stacked bar above the prompt, with its breakdown, plan usage and settings one click away."
