@@ -2,6 +2,10 @@
 
 One changelog for the collection; every entry names the artifact it concerns.
 
+## 1.10.1 — 2026-10-15
+
+- Repository: The marketplace describes itself with the README's own opening sentence; it still had the template's "Open-source resources for building and extending Claude.", a drift the 1.8.3 alignment of descriptions had missed.
+
 ## 1.10.0 — 2026-10-15
 
 - Repository: The repository is a plugin of its own, `overlord`, whose skills install from the marketplace like the mods (`/plugin install overlord --marketplace icundin/overlord`) and update with `claude plugin update`; each skill is `overlord:<skill>`. Skills were installed by copying their folder into `~/.claude/skills/` and updated by copying it again, so an installed copy could drift from the repository unnoticed.
