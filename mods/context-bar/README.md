@@ -31,7 +31,7 @@ on.
 Optional, to try it from a local clone of this repository before it is published:
 
 ```
-/plugin install context-bar --marketplace ~/Code/claude-code-toolkit
+/plugin install context-bar --marketplace /path/to/overlord
 ```
 
 ## Update and uninstall

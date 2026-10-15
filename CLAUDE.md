@@ -14,6 +14,9 @@ the user installs it again.
 - `mods/` holds mods (plugins with a hooks module), published through
   `.claude-plugin/marketplace.json` and installed with `/plugin install`; an
   installed mod updates with `claude plugin update`.
+- Each plugin keeps its own version (`overlord` in `.claude-plugin/plugin.json`,
+  each mod in its own manifest), bumped when that plugin changes. It is not the
+  changelog's version, which numbers the collection's releases and tags.
 
 ## For AI agents developing artifacts here
 
