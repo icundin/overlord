@@ -4,15 +4,15 @@
 
 A personal toolkit for [Claude Code](https://docs.claude.com/en/docs/claude-code) —
 skills and mods today; agents and other extensions as they earn their place.
-`skills/` mirrors its place under `~/.claude`; `mods/` holds mods (plugins with a
-hooks module) this repository publishes as a marketplace. Every artifact documents
-itself in its own README.
+The repository is itself a plugin, `overlord`, whose skills live in `skills/`;
+`mods/` holds mods (plugins with a hooks module). Both install from this
+repository's marketplace, and every artifact documents itself in its own README.
 
 ## Skills
 
 | Skill | What it does |
 |---|---|
-| [/dream](./skills/dream/) | Nightly memory consolidation — reads your recent sessions, proposes memory changes with your own words as evidence. Nothing is written without your approval. |
+| [/overlord:dream](./skills/dream/) | Nightly memory consolidation — reads your recent sessions, proposes memory changes with your own words as evidence. Nothing is written without your approval. |
 
 ## Mods
 
@@ -22,9 +22,13 @@ itself in its own README.
 
 ## Installing
 
-Each artifact's README has its install steps: skills are copied into
-`~/.claude/skills/`, mods install from this repository's marketplace with
-`/plugin install`.
+Everything installs from this repository's marketplace with `/plugin install`:
+`overlord` for the skills, and each mod by its own name. Each artifact's README
+has its steps. The skills, at the Claude Code prompt:
+
+```
+/plugin install overlord --marketplace icundin/overlord
+```
 
 ## Contributing
 
