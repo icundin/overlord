@@ -1,4 +1,4 @@
-# /dream — nightly memory consolidation
+# /overlord:dream — nightly memory consolidation
 
 Modeled on Anthropic's dreaming feature, inverted on one axis — **if unsure,
 propose, don't act**: nothing is ever written to memory without your explicit
@@ -25,7 +25,7 @@ opinion. You review, it remembers.
 - **HTML review report**: proposals render as an interactive page — keyboard
   triage (↑↓ / A / I / S / U), live progress, and a command builder that
   unlocks only when every card is decided. Decisions become one paste:
-  `/dream apply 1,3 ignore 2`. After applying, both the report and its dated
+  `/overlord:dream apply 1,3 ignore 2`. After applying, both the report and its dated
   archive re-render as a read-only record — your verdicts beside the model's
   guesses.
 - **Dated archives**: every night's questions and your answers are kept in
@@ -42,7 +42,7 @@ opinion. You review, it remembers.
   more than a day is marked `deep dream`, with its window on the card. Built by a
   deterministic script from what's on disk — never written by the model by
   hand.
-- **Forgetting is a first-class verb**: `/dream forget <slug>` revokes a
+- **Forgetting is a first-class verb**: `/overlord:dream forget <slug>` revokes a
   fact that time proved a bad call — deletes the file, removes its index
   line, and records the revocation in `ignored.md` so it is never proposed
   again. Every fact card on memory.html carries a button that copies the
@@ -62,7 +62,15 @@ opinion. You review, it remembers.
 
 ## Install
 
-1. Copy this folder to `~/.claude/skills/dream/`.
+1. Install the `overlord` plugin, which carries this skill, from the repository's marketplace. At the
+   Claude Code prompt:
+
+   ```
+   /plugin install overlord --marketplace icundin/overlord
+   ```
+
+   Answer `y` to add the marketplace and pick the user scope. The skill is `/overlord:dream`; typing
+   `/dream` finds it in the list. It updates with `claude plugin update overlord@overlord`.
 2. Create the memory store and wire it into every session — in
    `~/.claude/CLAUDE.md`:
 
@@ -71,7 +79,7 @@ opinion. You review, it remembers.
    @~/.claude/memory/MEMORY.md
    The memory store (~/.claude/memory/) is READ-ONLY for normal sessions: never
    create, edit, or delete anything in it on your own initiative. Memory changes
-   happen only through the /dream skill's proposal flow, or when I explicitly ask
+   happen only through the /overlord:dream skill's proposal flow, or when I explicitly ask
    ("add this to memory"). If something in this session seems worth remembering,
    say so out loud — the nightly dream will find it and propose it with evidence.
    ```
@@ -90,25 +98,25 @@ opinion. You review, it remembers.
 
    | Routine | Schedule | Instructions |
    |---|---|---|
-   | Daily dream | cron `5 8 * * 2-5` | Run the dream skill in NON-INTERACTIVE mode: read `~/.claude/skills/dream/SKILL.md` and follow it fully — HTML report, dated archives, opening the finished report in the browser. Apply nothing to memory except the safe fixes the skill defines. |
+   | Daily dream | cron `5 8 * * 2-5` | Run the overlord:dream skill in NON-INTERACTIVE mode and follow it fully — HTML report, dated archives, opening the finished report in the browser. Apply nothing to memory except the safe fixes the skill defines. |
    | Weekly deep dream | Weekly · Monday 08:05 | Same, but: run it as a DEEP DREAM with the skill's deep-dream defaults. |
 
    Use **Auto** mode: an unattended run needs to write its report, archives,
    and (once you approve) memory files, and nobody is there to click through
    the prompts. Everything it writes stays inside `~/.claude/memory`.
 
-   No scheduler? Just type `/dream` in any session and approve as it goes.
+   No scheduler? Just type `/overlord:dream` in any session and approve as it goes.
 
 ## Usage
 
 ```
-/dream                          review last 24h, propose changes
-/dream apply 1,3 ignore 2       apply / permanently dismiss by id
-/dream apply all
-/dream forget <slug>            revoke an applied fact (memory.html copies this for you)
+/overlord:dream                       review last 24h, propose changes
+/overlord:dream apply 1,3 ignore 2    apply / permanently dismiss by id
+/overlord:dream apply all
+/overlord:dream forget <slug>         revoke an applied fact (memory.html copies this for you)
 ```
 
-Deep dream, any time: *"Run the dream skill as a DEEP DREAM (7-day window)."*
+Deep dream, any time: *"Run the overlord:dream skill as a DEEP DREAM (7-day window)."*
 The prompt may override the window ("deep dream, 14 days").
 
 ## Security

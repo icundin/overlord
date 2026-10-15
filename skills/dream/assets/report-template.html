@@ -348,9 +348,9 @@ function sync(){
   const no=PROPOSALS.filter(p=>state[p.id]==='ignored').map(p=>p.id);
   const cmd=document.getElementById('cmd');
   let t='';
-  if(ok.length===PROPOSALS.length) t='/dream apply all';
-  else if(ok.length) t='/dream apply '+ok.join(',');
-  if(no.length) t=(t?t+' ':'/dream ')+'ignore '+no.join(',');
+  if(ok.length===PROPOSALS.length) t='/overlord:dream apply all';
+  else if(ok.length) t='/overlord:dream apply '+ok.join(',');
+  if(no.length) t=(t?t+' ':'/overlord:dream ')+'ignore '+no.join(',');
   if(t){cmd.className='cmd';cmd.innerHTML='<span class="p">$</span> '+t;cmd.dataset.copy=t}
   else{cmd.className='cmd empty';cmd.innerHTML='<span class="p">$</span> approve or reject items to build your command';delete cmd.dataset.copy}
   const undecided=PROPOSALS.filter(p=>!state[p.id]).length;

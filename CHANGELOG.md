@@ -5,6 +5,7 @@ One changelog for the collection; every entry names the artifact it concerns.
 ## 1.10.0 — 2026-10-15
 
 - Repository: The repository is a plugin of its own, `overlord`, whose skills install from the marketplace like the mods (`/plugin install overlord --marketplace icundin/overlord`) and update with `claude plugin update`; each skill is `overlord:<skill>`. Skills were installed by copying their folder into `~/.claude/skills/` and updated by copying it again, so an installed copy could drift from the repository unnoticed.
+- Dream: Invoked as `/overlord:dream` (typing `/dream` finds it), and finds its scripts and report template in its own folder wherever the plugin installs it, instead of a fixed `~/.claude/skills/dream/`. The report's and the memory page's copy buttons write the full name, `/overlord:dream …`, since a pasted command never passes through the list that completes `/dream`.
 
 ## 1.9.1 — 2026-10-15
 
