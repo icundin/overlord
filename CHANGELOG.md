@@ -1,6 +1,10 @@
-# claude-code-toolkit Changelog
+# overlord Changelog
 
 One changelog for the collection; every entry names the artifact it concerns.
+
+## 1.9.1 — 2026-10-15
+
+- Repository: Renamed from `claude-code-toolkit` to `overlord`, the repository and its marketplace alike: mods install as `context-bar@overlord`, and the skills, once packaged as the repository's own plugin, as `overlord:<skill>` rather than `<skill>:<skill>`. The old GitHub URL redirects; an existing install re-adds the marketplace under its new name.
 
 ## 1.9.0 — 2026-10-14
 
