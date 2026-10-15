@@ -1,4 +1,4 @@
-# claude-code-toolkit
+# overlord
 
 > If unsure, propose — don't act.
 

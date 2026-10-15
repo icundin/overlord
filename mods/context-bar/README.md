@@ -22,7 +22,7 @@ A Claude Code mod (a plugin with a hooks module): the context window as a stacke
 At the Claude Code prompt:
 
 ```
-/plugin install context-bar --marketplace icundin/claude-code-toolkit
+/plugin install context-bar --marketplace icundin/overlord
 ```
 
 Answer `y` to add the marketplace, then pick a scope (user, for every session). The band shows from the next prompt
@@ -39,14 +39,14 @@ Optional, to try it from a local clone of this repository before it is published
 From a shell:
 
 ```bash
-claude plugin marketplace update claude-code-toolkit
-claude plugin update context-bar@claude-code-toolkit
+claude plugin marketplace update overlord
+claude plugin update context-bar@overlord
 ```
 
 Then run `/reload-plugins` in a running session, or start a new one, to apply it.
 
 ```bash
-claude plugin uninstall context-bar@claude-code-toolkit
+claude plugin uninstall context-bar@overlord
 ```
 
 ## Using it
