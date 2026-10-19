@@ -185,8 +185,9 @@ export function band(ui: ElementTable<'terminal'>, view: View, act: Actions) {
       )}
       {warnings.length > 0 && (
         <Box key="warnings">
+          {/* The emoji form (U+FE0F): counted two cells wide, as a terminal that draws the emoji draws it. */}
           <Text key="mark" color="warning">
-            ⚠{' '}
+            {'⚠️ '}
           </Text>
           {warnings.flatMap((warning, i) => {
             const separator =
