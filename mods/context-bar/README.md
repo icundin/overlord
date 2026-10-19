@@ -16,6 +16,9 @@ A Claude Code mod (a plugin with a hooks module): the context window as a stacke
   proportional font, where the bar's cells, shades and hover cards don't line up.
 - A terminal that reports the mouse, for the band's buttons and hover cards. Inside tmux that takes
   `set -g mouse on` in `~/.tmux.conf`.
+- Tested on macOS (Ghostty, Terminal.app) and on Windows through WSL, in Windows Terminal. Native Windows
+  (PowerShell or cmd) and other terminals, such as herdr, aren't tested yet:
+  [reports welcome](https://github.com/icundin/overlord/issues/17).
 
 ## Install
 
