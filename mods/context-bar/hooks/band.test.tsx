@@ -838,3 +838,12 @@ test('draws the bars solid when the bar style is set so, and keeps the choice', 
   await ui.press({ key: 'usage' })
   expect(await ui.find({ type: 'Text', text: /^█{10}$/ })).toBeDefined()
 })
+
+// The emoji form (U+FE0F) is counted two cells wide, as terminals that draw an emoji draw it; the plain symbol is
+// counted one, so on Windows Terminal it covered the space after it.
+test('marks the warning line with the emoji form of the warning sign', async ($, on) => {
+  surround(on, 'dark', 85)
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  const ui = await $.ui.mount({ plugin: 'context-bar', surface: 'terminal', ...BAND })
+  expect(await ui.find({ type: 'Text', text: /^⚠️ $/ })).toBeDefined()
+})
