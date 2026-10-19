@@ -2,6 +2,10 @@
 
 One changelog for the collection; every entry names the artifact it concerns.
 
+## 1.10.3 — 2026-10-19
+
+- Context bar: The README says where the mod has been tested (macOS in Ghostty and Terminal.app, Windows through WSL in Windows Terminal) and where it hasn't (native Windows, other terminals such as herdr), with a link for reports. The mod is published for anyone, and a reader on an untested setup should know before installing rather than find out.
+
 ## 1.10.2 — 2026-10-19
 
 - Context bar: The warning line's sign is written in its emoji form (⚠ followed by U+FE0F), which a terminal that draws an emoji gives its two cells. Windows Terminal drew the plain sign as an emoji yet moved on by one cell, so the sign covered the space after it and sat against the warning's text.
