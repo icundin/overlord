@@ -2,6 +2,10 @@
 
 One changelog for the collection; every entry names the artifact it concerns.
 
+## 1.10.2 — 2026-10-19
+
+- Context bar: The warning line's sign is written in its emoji form (⚠ followed by U+FE0F), which a terminal that draws an emoji gives its two cells. Windows Terminal drew the plain sign as an emoji yet moved on by one cell, so the sign covered the space after it and sat against the warning's text.
+
 ## 1.10.1 — 2026-10-15
 
 - Repository: The marketplace describes itself with the README's own opening sentence; it still had the template's "Open-source resources for building and extending Claude.", a drift the 1.8.3 alignment of descriptions had missed.
