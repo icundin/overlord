@@ -1,4 +1,4 @@
-import type { Choices, Facts, Group, Hue, ItemKey, Window } from '../types'
+import type { Choices, Facts, Git, Group, Hue, ItemKey, Window } from '../types'
 import { ansi, colorOf } from './themes'
 
 // Items that stand together, and how one joins the one before it: the git state as a prompt shows it (`main ↑2 ●`),
@@ -105,14 +105,14 @@ export function pieces(choices: Choices, facts: Facts): Piece[] {
 }
 
 // `+2 ~3 ?1`: files staged, modified and untracked, those that are none left out.
-function fileCounts({ staged, modified, untracked }: { staged: number; modified: number; untracked: number }): string | null {
+function fileCounts({ staged, modified, untracked }: Git): string | null {
   const parts = [`+${staged}`, `~${modified}`, `?${untracked}`].filter((_, i) => [staged, modified, untracked][i] !== 0)
 
   return parts.length === 0 ? null : parts.join(' ')
 }
 
-// Each window's kind as Claude Code names it, and its name in the line.
-const WINDOWS: Record<Window, { kind: string; name: string }> = {
+// Each plan window's kind as Claude Code names it, and its name in the line.
+const WINDOW_NAMES: Record<Window, { kind: string; name: string }> = {
   session: { kind: 'five_hour', name: '5h' },
   weekly: { kind: 'seven_day', name: '7d' },
   spend: { kind: 'spend_limit', name: 'spend' },
@@ -121,7 +121,7 @@ const WINDOWS: Record<Window, { kind: string; name: string }> = {
 // A plan window and its share used, with how long until it resets where the person asked for it; null without a
 // reading of it.
 function limitText(facts: Facts, choices: Choices, window: Window): string | null {
-  const { kind, name } = WINDOWS[window]
+  const { kind, name } = WINDOW_NAMES[window]
   const limit = facts.limits.find(one => one.kind === kind)
   if (limit === undefined) {
     return null
