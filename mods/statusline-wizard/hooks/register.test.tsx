@@ -394,3 +394,29 @@ test('takes a custom color per item shown, says when it is not one, and goes bac
   expect(await colorsOf(ui, 'main')).toEqual(['#16A34A'])
   await ui.unmount()
 })
+
+test('draws choices drafted by an older version, which a reload keeps, with what they lack at its default', async ($, on) => {
+  surround(on)
+  // A draft from 0.1.0: no countdowns, no theme, no colors.
+  const old = { items: ['branch', 'model'], icons: false, interval: 2 }
+  on('state.get', (_, e, next) => (e.key === 'draft' ? { value: { value: old, version: 1 } } : next(e)))
+  await $.session.start(START)
+  const ui = await $.ui.mount({ plugin: 'statusline-wizard', surface: 'terminal', ...PANE })
+
+  expect(await ui.find({ key: 'theme', text: 'none ›' })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: 'main' })).toBeDefined()
+  await ui.unmount()
+})
+
+test('keeps every label in one column, a color row indented with its swatch as context-bar draws one', async ($, on) => {
+  surround(on, { stored: { choices: { ...SAVED, items: ['branch', 'ahead', 'session'], theme: 'tokyo-night' } } })
+  await $.session.start(START)
+  await $.command.run(typed('statusline-wizard'))
+  const ui = await $.ui.mount({ plugin: 'statusline-wizard', surface: 'terminal', ...PANE })
+  await ui.press({ key: 'theme' })
+  const labels = [...(await ui.findAll({ type: 'Text', text: /^(branch|↑ not pushed|refresh|theme) +$/ }))].map(one => one.text)
+  const colorRows = [...(await ui.findAll({ type: 'Text', text: /^ {2}■ / }))].map(one => one.text)
+  expect(colorRows.map(text => text.slice(0, 6))).toEqual(['  ■ br', '  ■ ↑ ', '  ■ se'])
+  expect(new Set([...labels, ...colorRows].map(text => text.length)).size).toBe(1)
+  await ui.unmount()
+})

@@ -45,7 +45,6 @@ const GROUPS: { key: Group; title: string }[] = [
   { key: 'agent', title: 'Agent' },
 ]
 
-const LABEL_WIDTH = Math.max('refresh'.length, ...ITEMS.map(item => item.label.length))
 
 // A pictograph takes two cells, everything else one.
 const cells = (char: string) => (/\p{Extended_Pictographic}/u.test(char) ? 2 : 1)
@@ -82,6 +81,13 @@ export function pane(ui: ElementTable<'terminal'>, view: View, act: Actions) {
   const { Box, Button, Input, Text } = ui
   const { draft, pending } = view
   const inner = view.width - 4
+  const isCustom = draft.theme === 'custom'
+  // One column of labels for every row, as context-bar's settings card: a color row's indent and swatch take four
+  // cells ahead of its label.
+  const labelWidth = Math.max(
+    ...['refresh', 'theme', ...ITEMS.map(item => item.label)].map(label => label.length),
+    ...(isCustom ? ITEMS.filter(item => draft.items.includes(item.key)).map(item => item.label.length + 4) : []),
+  )
 
   // A collapsible section: the title, the body below while open.
   const section = (key: Section, title: string, body: RenderChildren[]) => {
@@ -105,7 +111,7 @@ export function pane(ui: ElementTable<'terminal'>, view: View, act: Actions) {
   // A setting's row: its label, and its value, which moves on when clicked.
   const row = (key: string, label: string, value: string, onPress: () => unknown) => (
     <Box key={`row-${key}`} columnGap={4}>
-      <Text>{label.padEnd(LABEL_WIDTH)}</Text>
+      <Text>{label.padEnd(labelWidth)}</Text>
       <Button key={key} plain label={value} onPress={onPress}>
         <Text color="inactive">{value}</Text>
       </Button>
@@ -133,12 +139,13 @@ export function pane(ui: ElementTable<'terminal'>, view: View, act: Actions) {
   const rows = wrap(pieces(draft, SAMPLE), inner)
   // With the custom theme, a color field per item shown, its color beside its name.
   const colorRows =
-    draft.theme !== 'custom'
+    !isCustom
       ? []
       : ITEMS.filter(item => draft.items.includes(item.key)).map(item => (
           <Box key={`color-${item.key}`} columnGap={4}>
             <Text>
-              <Text color={colorOf(draft, item.key, item.group) ?? UNCOLORED}>■</Text> {item.label.padEnd(LABEL_WIDTH - 2)}
+              {'  '}
+              <Text color={colorOf(draft, item.key, item.group) ?? UNCOLORED}>■</Text> {item.label.padEnd(labelWidth - 4)}
             </Text>
             <Input
               key={`input-${item.key}-${view.fieldRevision}`}
