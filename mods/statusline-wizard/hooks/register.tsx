@@ -37,6 +37,7 @@ const isInstalled = atom({ plugin: 'statusline-wizard', key: 'isInstalled' } as 
 const saved = atom({ plugin: 'statusline-wizard', key: 'saved' } as const, null)
 const opened = atom({ plugin: 'statusline-wizard', key: 'opened' } as const, {})
 const fieldRevision = atom({ plugin: 'statusline-wizard', key: 'fieldRevision' } as const, 0)
+const isSetUp = atom({ plugin: 'statusline-wizard', key: 'isSetUp' } as const, false)
 
 const TICK_MS = 5000
 const PR_MS = 60_000
@@ -151,8 +152,12 @@ async function readTime($: EngineInterface): Promise<void> {
 }
 
 // Re-reads what changes outside the session's own events (the time, the working copy, a save made in another
-// session) and publishes.
+// session) and publishes. A /clear empties the session's state and raises no session.start, so the tick sets it up
+// again when it finds it so.
 async function tick($: EngineInterface): Promise<void> {
+  if (!(await read($, isSetUp))) {
+    return setUp($)
+  }
   await readTime($).catch(() => undefined)
   const items = await wanted($)
   await readGit($, items).catch(() => undefined)
@@ -163,6 +168,8 @@ async function tick($: EngineInterface): Promise<void> {
 // Reads every fact afresh: the session's state, which a reload keeps, may hold facts of an older version's shape.
 async function setUp($: EngineInterface): Promise<void> {
   await update($, facts, () => EMPTY)
+  await update($, isSetUp, () => true)
+  isEffortReported = false
   await readIdentity($).catch(() => undefined)
   await readUsage($).catch(() => undefined)
   await readSavedEffort($).catch(() => undefined)
