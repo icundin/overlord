@@ -1,11 +1,13 @@
 import { expect, test } from 'claude-code/testing'
 
-import { cycledWindow, FIRST_DRAFT, nextInterval, readChoices, toggled } from './choices'
+import { cycledWindow, FIRST_DRAFT, parseInterval, readChoices, toggled } from './choices'
 
 test('reads stored choices, dropping what this version does not know', async () => {
   const plain = { resets: [], theme: 'none', colors: {} }
   expect(readChoices({ items: ['cost', 'gone', 'user'], icons: true, interval: 5 })).toEqual({ items: ['user', 'cost'], icons: true, interval: 5, ...plain })
-  expect(readChoices({ items: [], icons: 'yes', interval: 7 })).toEqual({ items: [], icons: false, interval: FIRST_DRAFT.interval, ...plain })
+  expect(readChoices({ items: [], icons: 'yes', interval: 7 })).toEqual({ items: [], icons: false, interval: 7, ...plain })
+  // An interval Claude Code would not take reads as the first draft's.
+  expect([0, 1.5, -3, '5'].map(interval => readChoices({ items: [], icons: false, interval })?.interval)).toEqual([2, 2, 2, 2])
   // A theme this version does not know reads as none, and only colors it can read are kept.
   const colored = readChoices({ items: ['branch'], icons: false, interval: 2, theme: 'dracula', colors: { branch: '#FF0000', repo: 'red', gone: '#00FF00' } })
   expect([colored?.theme, colored?.colors]).toEqual(['dracula', { branch: '#FF0000' }])
@@ -31,6 +33,11 @@ test('moves a plan window from off to on, then with its reset, then off', async 
   expect([again.items, again.resets]).toEqual([[], []])
 })
 
-test('moves the refresh interval on, back to the first after the last', async () => {
-  expect([nextInterval(1), nextInterval(5), nextInterval(10)]).toEqual([2, 10, 1])
+test('reads a refresh interval typed as whole seconds, one or more, as Claude Code takes it', async () => {
+  expect([parseInterval('5'), parseInterval(' 30 '), parseInterval('120'), parseInterval('1'), parseInterval('30s'), parseInterval('10 s')]).toEqual([
+    5, 30, 120, 1, 30, 10,
+  ])
+  expect([parseInterval('0'), parseInterval('1.5'), parseInterval('2m'), parseInterval(''), parseInterval('-4'), parseInterval('s')]).toEqual([
+    null, null, null, null, null, null,
+  ])
 })

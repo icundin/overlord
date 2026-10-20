@@ -28,7 +28,8 @@ export type Actions = {
   // A plan window: off, on, on with its reset countdown.
   cycleWindow: (window: Window) => unknown
   toggleIcons: () => unknown
-  nextInterval: () => unknown
+  // The refresh interval as typed, in seconds.
+  setRefresh: (text: string) => unknown
   nextTheme: () => unknown
   // A custom color as typed, empty for the default theme's.
   setColor: (key: ItemKey, text: string) => unknown
@@ -84,7 +85,7 @@ export function pane(ui: ElementTable<'terminal'>, view: View, act: Actions) {
   // One column of labels for every row, as context-bar's settings card: a color row's indent and swatch take four
   // cells ahead of its label.
   const labelWidth = Math.max(
-    ...['refresh', 'theme', ...ITEMS.map(item => item.label)].map(label => label.length),
+    ...['refresh (s)', 'theme', ...ITEMS.map(item => item.label)].map(label => label.length),
     ...(isCustom ? ITEMS.filter(item => draft.items.includes(item.key)).map(item => item.label.length + 4) : []),
   )
 
@@ -116,6 +117,14 @@ export function pane(ui: ElementTable<'terminal'>, view: View, act: Actions) {
       </Button>
     </Box>
   )
+  // A setting typed in: its label, and a field that takes what is typed on Enter. A field keeps what it shows until it
+  // is drawn anew, so its key moves on with each submit, drawing it again with the value kept.
+  const field = (key: string, label: string | RenderChildren, value: string, placeholder: string, submit: (text: string) => unknown) => (
+    <Box key={`field-${key}`} columnGap={4}>
+      {typeof label === 'string' ? <Text>{label.padEnd(labelWidth)}</Text> : label}
+      <Input key={`input-${key}-${view.fieldRevision}`} value={value} placeholder={placeholder} submitLabel="set" onSubmit={submit} />
+    </Box>
+  )
   // An action button: a grey chip, or a red one while it waits for its second press.
   const chip = (key: string, label: string, onPress: () => unknown, isArmed = false) => (
     <Button key={key} plain label={label} onPress={onPress}>
@@ -137,24 +146,20 @@ export function pane(ui: ElementTable<'terminal'>, view: View, act: Actions) {
   )
   const rows = wrap(pieces(draft, SAMPLE), inner)
   // With the custom theme, a color field per item shown, its color beside its name.
-  const colorRows =
-    !isCustom
-      ? []
-      : ITEMS.filter(item => draft.items.includes(item.key)).map(item => (
-          <Box key={`color-${item.key}`} columnGap={4}>
-            <Text>
-              {'  '}
-              <Text color={colorOf(draft, item.key, item.hue) ?? UNCOLORED}>■</Text> {item.label.padEnd(labelWidth - 4)}
-            </Text>
-            <Input
-              key={`input-${item.key}-${view.fieldRevision}`}
-              value={draft.colors[item.key] ?? ''}
-              placeholder={THEMES.default[item.hue]}
-              submitLabel="set"
-              onSubmit={text => act.setColor(item.key, text)}
-            />
-          </Box>
-        ))
+  const colorRows = !isCustom
+    ? []
+    : ITEMS.filter(item => draft.items.includes(item.key)).map(item =>
+        field(
+          item.key,
+          <Text>
+            {'  '}
+            <Text color={colorOf(draft, item.key, item.hue) ?? UNCOLORED}>■</Text> {item.label.padEnd(labelWidth - 4)}
+          </Text>,
+          draft.colors[item.key] ?? '',
+          THEMES.default[item.hue],
+          text => act.setColor(item.key, text),
+        ),
+      )
   // What the armed action will do, said once in words.
   const warning =
     pending?.action === 'save'
@@ -185,7 +190,7 @@ export function pane(ui: ElementTable<'terminal'>, view: View, act: Actions) {
           )}
           {section('appearance', 'Appearance', [
             row('icons', 'icons', draft.icons ? 'on ›' : 'off ›', () => act.toggleIcons()),
-            row('interval', 'refresh', `every ${draft.interval}s ›`, () => act.nextInterval()),
+            field('interval', 'refresh (s)', String(draft.interval), 'seconds', text => act.setRefresh(text)),
             row('theme', 'theme', `${THEME_LABELS[draft.theme] ?? draft.theme} ›`, () => act.nextTheme()),
             ...colorRows,
           ])}
