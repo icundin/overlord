@@ -2,6 +2,11 @@
 
 One changelog for the collection; every entry names the artifact it concerns.
 
+## 1.13.2 — 2026-10-20
+
+- Statusline wizard: A red **confirm save** or **confirm remove** goes back to normal after five seconds without the second press, as context-bar's buttons do. It stayed armed until another click, so a press made long after could still write the settings.
+- Statusline wizard: The save question says "in your user settings" instead of the settings file's full path, which made a long line and said nothing the README doesn't.
+
 ## 1.13.1 — 2026-10-20
 
 - Statusline wizard: The line is whole again within five seconds of a `/clear`. A `/clear` empties the mod's session state and raises no `session.start`, where user@host, the home folder and the repository were read, so they stayed missing (the folder unshortened) for the rest of the session. The mod's own five-second tick now finds the state emptied and reads everything again, rather than a `classic.SessionStart` hook, which doesn't run where an organization manages Claude Code.

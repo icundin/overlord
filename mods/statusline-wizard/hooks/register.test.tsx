@@ -147,7 +147,7 @@ test('opens the pane, previews the choices, and saves after showing the change',
   await ui.press({ key: 'save' })
   expect(world.files.get(SETTINGS)).toBe('{\n  "model": "opus"\n}\n')
   expect(await ui.find({ key: 'save', text: / confirm save / })).toBeDefined()
-  expect(await ui.find({ type: 'Text', text: 'Press again to set this as your status line in ~/.claude/settings.json.' })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: 'Press again to set this as your status line in your user settings.' })).toBeDefined()
   await ui.press({ key: 'save' })
   await ui.unmount()
 
@@ -231,6 +231,23 @@ test('keeps the status line it first replaced, however often it saves', async ($
   await ui.unmount()
 
   expect(JSON.parse(world.files.get(SETTINGS) ?? '').statusLine).toEqual(old)
+})
+
+test('lets the question lapse after five seconds without a second press', async ($, on) => {
+  const world = surround(on)
+  await $.session.start(START)
+  await $.command.run(typed('statusline-wizard'))
+  const ui = await $.ui.mount({ plugin: 'statusline-wizard', surface: 'terminal', ...PANE })
+  await ui.press({ key: 'save' })
+  await world.clock.advance(4999)
+  expect(await ui.find({ key: 'save', text: / confirm save / })).toBeDefined()
+  await world.clock.advance(1)
+  expect(await ui.find({ key: 'save', text: /^ save $/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /^Press again/ })).toBeUndefined()
+  await ui.press({ key: 'save' })
+  await ui.unmount()
+
+  expect(world.files.size).toBe(0)
 })
 
 test('changes nothing on close, nor when a second press does not come', async ($, on) => {

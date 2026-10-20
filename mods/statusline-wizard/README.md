@@ -105,7 +105,8 @@ Then:
   so, and the second writes it. The file as it was is kept beside it as `settings.json.statusline-wizard.bak`, and
   the status line it replaced is kept to restore.
 - **remove**, once the line is the wizard's, puts back the status line you had before, or none, on a second press.
-- **close** (or Esc) closes the pane; choices not saved yet are dropped. Any other click disarms a red button.
+- **close** (or Esc) closes the pane; choices not saved yet are dropped. Any other click, or five seconds without
+  the second press, disarms a red button.
 
 The pane stays open after a save or a remove, so you can watch the status line change and keep adjusting. A dot
 beside **Settings** marks choices not saved yet.
