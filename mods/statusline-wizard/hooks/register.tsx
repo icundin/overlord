@@ -1,7 +1,7 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register, Timer } from 'claude-code'
 
-import type { Choices, Facts, ItemKey, Section } from '../types'
+import type { Choices, Facts, ItemKey, Pending, Section } from '../types'
 import { cycledWindow, FIRST_DRAFT, parseInterval, readChoices, toggled } from './choices'
 import { parsePullRequest, parseStatus, repoName } from './git'
 import { clockText, line } from './line'
@@ -41,12 +41,14 @@ const isSetUp = atom({ plugin: 'statusline-wizard', key: 'isSetUp' } as const, f
 
 const TICK_MS = 5000
 const PR_MS = 60_000
+const CONFIRM_MS = 5000
 const GIT_ITEMS: ItemKey[] = ['branch', 'ahead', 'behind', 'dirty', 'counts']
 
 let ticking: Timer | null = null
 let prReadAt = -Infinity
 let shownLine: string | null = null
 let isEffortReported = false
+let confirmExpiry: Timer | null = null
 
 // The choices as $.store keeps them, or null when none were saved or they no longer read as choices.
 async function savedChoices($: EngineInterface): Promise<Choices | null> {
@@ -249,6 +251,13 @@ async function keepChoices($: EngineInterface, choices: Choices): Promise<void> 
   await publish($)
 }
 
+// Arms a save or a remove for a second press; five seconds without one disarm it, as context-bar's buttons do.
+async function arm($: EngineInterface, waiting: Pending): Promise<void> {
+  confirmExpiry?.cancel()
+  await update($, pending, () => waiting)
+  confirmExpiry = $.clock.after(CONFIRM_MS, () => void update($, pending, () => null))
+}
+
 // Saves the draft: straight away where the settings entry stays as it is, else on a second press. The pane stays
 // open, so the line can be watched as it changes.
 async function save($: EngineInterface): Promise<void> {
@@ -268,7 +277,7 @@ async function save($: EngineInterface): Promise<void> {
 
     return
   }
-  await update($, pending, () => ({ action: 'save' as const, after }))
+  await arm($, { action: 'save', after })
 }
 
 async function remove($: EngineInterface): Promise<void> {
@@ -280,7 +289,7 @@ async function remove($: EngineInterface): Promise<void> {
     return
   }
   const previous = await $.store.get('previous')
-  await update($, pending, () => ({ action: 'remove' as const, after: previous ?? null }))
+  await arm($, { action: 'remove', after: previous ?? null })
 }
 
 // Writes the change the person said yes to, keeping the file as it was beside it.
