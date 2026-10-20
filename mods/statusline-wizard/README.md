@@ -86,8 +86,8 @@ In **Settings**, click a value to change it:
   `5h 12% (2h 13m)`.
 
   An item with nothing to show (no repository, no pull request, a count of zero) is left out of the line.
-- **Appearance**: icons on or off, how often Claude Code redraws the line besides its own updates (every 1, 2, 3, 5
-  or 10 seconds), and the **theme**:
+- **Appearance**: icons on or off, how often Claude Code redraws the line besides its own updates (**refresh**: type
+  a whole number of seconds, 1 or more, and press Enter), and the **theme**:
   - **none** leaves the line uncolored, in Claude Code's own grey;
   - **default**, **monokai**, **dracula**, **nord**, **catppuccin**, **github**, **gruvbox** and **tokyo night**, the
     palettes context-bar has, and **material**, [Material Theme](https://material-theme.com)'s dark palette (the same

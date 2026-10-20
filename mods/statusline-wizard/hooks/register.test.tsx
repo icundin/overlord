@@ -142,8 +142,7 @@ test('opens the pane, previews the choices, and saves after showing the change',
   await ui.press({ key: 'item-user' })
   await ui.press({ key: 'icons' })
   expect(await ui.find({ type: 'Text', text: '📁 ~/Code/project  🌿 main ↑2 ●  🤖 Opus 5.5  📊 5%' })).toBeDefined()
-  await ui.press({ key: 'interval' })
-  await ui.press({ key: 'interval' })
+  await ui.input({ key: 'input-interval-0', text: '5' })
 
   await ui.press({ key: 'save' })
   expect(world.files.get(SETTINGS)).toBe('{\n  "model": "opus"\n}\n')
@@ -223,7 +222,7 @@ test('keeps the status line it first replaced, however often it saves', async ($
   const ui = await $.ui.mount({ plugin: 'statusline-wizard', surface: 'terminal', ...PANE })
   await ui.press({ key: 'save' })
   await ui.press({ key: 'save' })
-  await ui.press({ key: 'interval' })
+  await ui.input({ key: 'input-interval-0', text: '3' })
   await ui.press({ key: 'save' })
   await ui.press({ key: 'save' })
   expect(JSON.parse(world.files.get(SETTINGS) ?? '').statusLine).toEqual(entryFor('bash', 3))
@@ -446,4 +445,17 @@ test('starts every session from no facts, so those kept from an older version ne
   await $.session.start(START)
 
   expect(world.lines.at(-1)).toBe('?1')
+})
+
+test('takes the refresh interval as typed, and says so when it is not whole seconds', async ($, on) => {
+  const world = surround(on)
+  await $.session.start(START)
+  await $.command.run(typed('statusline-wizard'))
+  const ui = await $.ui.mount({ plugin: 'statusline-wizard', surface: 'terminal', ...PANE })
+  await ui.input({ key: 'input-interval-0', text: '30' })
+  expect((await ui.find({ key: 'input-interval-1' }))?.props).toMatchObject({ value: '30' })
+  await ui.input({ key: 'input-interval-1', text: 'often' })
+  expect(world.toasts.at(-1)).toMatch(/whole number of seconds/)
+  expect((await ui.find({ key: 'input-interval-2' }))?.props).toMatchObject({ value: '30' })
+  await ui.unmount()
 })
