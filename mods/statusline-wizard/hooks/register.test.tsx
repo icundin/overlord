@@ -447,6 +447,34 @@ test('starts every session from no facts, so those kept from an older version ne
   expect(world.lines.at(-1)).toBe('?1')
 })
 
+test('reads every fact again after a /clear, which starts the session state over', async ($, on) => {
+  const world = surround(on, { stored: { choices: { ...SAVED, items: ['user', 'folder', 'repo', 'model'] } } })
+  // The session's state, held here as the host holds it, so a /clear can empty it.
+  let cells = new Map<string, { value: unknown; version: number }>()
+  const cellOf = (key: string) => cells.get(key) ?? { value: undefined, version: 0 }
+  on('state.get', (_, e, next) => (e.plugin === 'statusline-wizard' ? { value: { ...cellOf(e.key) } } : next(e)))
+  on('state.set', (_, e, next) => {
+    if (e.plugin !== 'statusline-wizard') {
+      return next(e)
+    }
+    const cell = cellOf(e.key)
+    if (e.ifVersion !== undefined && e.ifVersion !== cell.version) {
+      return { value: { isSet: false as const, version: cell.version } }
+    }
+    cells.set(e.key, { value: e.value, version: cell.version + 1 })
+
+    return { value: { isSet: true as const, version: cell.version + 1 } }
+  })
+  await $.session.start(START)
+  const full = world.lines.at(-1)
+  expect(full).toBe('me@mac  ~/Code/overlord  icundin/overlord  Opus 5.5')
+  // A /clear: the new session's state holds nothing, and no session.start fires.
+  cells = new Map()
+  await world.clock.advance(5000)
+
+  expect(world.lines.at(-1)).toBe(full)
+})
+
 test('takes the refresh interval as typed, and says so when it is not whole seconds', async ($, on) => {
   const world = surround(on)
   await $.session.start(START)

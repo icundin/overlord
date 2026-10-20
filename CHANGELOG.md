@@ -2,6 +2,10 @@
 
 One changelog for the collection; every entry names the artifact it concerns.
 
+## 1.13.1 — 2026-10-20
+
+- Statusline wizard: The line is whole again within five seconds of a `/clear`. A `/clear` empties the mod's session state and raises no `session.start`, where user@host, the home folder and the repository were read, so they stayed missing (the folder unshortened) for the rest of the session. The mod's own five-second tick now finds the state emptied and reads everything again, rather than a `classic.SessionStart` hook, which doesn't run where an organization manages Claude Code.
+
 ## 1.13.0 — 2026-10-20
 
 - Statusline wizard: The refresh interval is typed into a field, **refresh (s)**, as `30` or `30s`: any whole number of seconds from 1, the range Claude Code's `refreshInterval` takes. A click moved it through 1, 2, 3, 5 and 10 seconds, which was slower to set and left out every other value.

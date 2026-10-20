@@ -127,6 +127,7 @@ once a minute and only while its item is on, and the figures after each turn.
 
 - The line is empty until the mod has drawn it, for a moment as a session starts, and stays empty in a session
   where the mod is not loaded or is disabled.
+- After a `/clear` the line can lack some items for up to five seconds, until the mod reads them again.
 - Until the session's first request the effort is the one `/effort` saved, and the context is Claude Code's local
   estimate: Claude Code tells mods neither figure before then.
 - The session name is not available to mods, so it is not an item.
