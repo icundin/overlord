@@ -19,6 +19,8 @@ export type World = {
   context?: { percent: number | null; estimate: number }
   // The settings as merged over every source.
   settings?: Record<string, unknown>
+  // Whether reading the session's figures fails.
+  isUsageFailing?: boolean
 }
 
 // The kit resolves a path that is not absolute here against the working folder, a Windows one among them; the files
@@ -80,6 +82,9 @@ export const surround = (on: On, world: World = {}) => {
   on('settings.read', () => ({ value: world.settings ?? {} }))
   // Read at each call, so a test can move the figures on; the local estimate counts 8k tokens.
   on('session.usage', (_, e) => {
+    if (world.isUsageFailing) {
+      throw new Error('usage unavailable')
+    }
     const { percent, estimate } = world.context ?? { percent: 5, estimate: 5 }
 
     return {

@@ -160,11 +160,13 @@ async function tick($: EngineInterface): Promise<void> {
   await publish($)
 }
 
+// Reads every fact afresh: the session's state, which a reload keeps, may hold facts of an older version's shape.
 async function setUp($: EngineInterface): Promise<void> {
+  await update($, facts, () => EMPTY)
   await readIdentity($).catch(() => undefined)
   await readUsage($).catch(() => undefined)
   await readSavedEffort($).catch(() => undefined)
-  await tick($)
+  await tick($).catch(() => undefined)
   ticking?.cancel()
   ticking = $.clock.every(TICK_MS, () => void tick($).catch(() => undefined))
 }
