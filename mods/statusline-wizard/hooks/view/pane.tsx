@@ -1,12 +1,13 @@
 import type { ElementTable, RenderChildren } from 'claude-code'
 
-import type { Choices, Facts, Group, ItemKey, Pending, Section } from '../../types'
+import type { Choices, Group, ItemKey, Pending, Section } from '../../types'
 import { ITEMS, pieces, shortPath } from '../line'
+import { SAMPLE } from '../sample'
 
 // Everything the pane draws, read by the render hook.
 export type View = {
   draft: Choices
-  facts: Facts
+  home: string | null
   pending: Pending | null
   isInstalled: boolean
   // The pane holds choices not saved yet.
@@ -57,7 +58,7 @@ export function wrap(parts: string[], room: number): string[] {
 }
 
 // Two cards in context-bar's style: the settings, in collapsible sections of label and value rows with the actions
-// below, and the preview.
+// below, and the preview, drawn from examples so every item chosen shows.
 export function pane(ui: ElementTable<'terminal'>, view: View, act: Actions) {
   const { Box, Button, Text } = ui
   const { draft, pending } = view
@@ -110,11 +111,11 @@ export function pane(ui: ElementTable<'terminal'>, view: View, act: Actions) {
       {body}
     </Box>
   )
-  const rows = wrap(pieces(draft, view.facts), inner)
+  const rows = wrap(pieces(draft, SAMPLE), inner)
   // What the armed action will do, said once in words.
   const warning =
     pending?.action === 'save'
-      ? `Press again to set this as your status line in ${shortPath(view.settingsPath, view.facts.home)}.`
+      ? `Press again to set this as your status line in ${shortPath(view.settingsPath, view.home)}.`
       : pending?.action === 'remove'
         ? 'Press again to put back the status line you had before.'
         : null

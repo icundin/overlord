@@ -4,7 +4,7 @@ One changelog for the collection; every entry names the artifact it concerns.
 
 ## 1.11.0 — 2026-10-20
 
-- Statusline wizard: New mod. `/statusline-wizard` opens a pane to pick what the status line shows (user@host, folder, a clock; branch, commits ahead and behind, uncommitted changes and the files staged, modified and untracked, repository, pull request; model, effort, context in percent and tokens, plan usage with its reset countdown, cost), icons on or off and how often it refreshes, with a live preview. Save sets the `statusLine` entry on a second press, and Remove puts back the one it replaced. Until now a personal status line meant writing a script by hand, and no plugin can set the line itself. Each session's mod draws its own line into an env var that the saved command only prints, so there is no script and no `jq`, and the one command works on macOS, Linux and Windows (Git Bash or PowerShell).
+- Statusline wizard: New mod. `/statusline-wizard` opens a pane to pick what the status line shows (user@host, folder, a clock; branch, commits ahead and behind, uncommitted changes and the files staged, modified and untracked, repository, pull request; model, effort, context in percent and tokens, plan usage with its reset countdown, cost), icons on or off and how often it refreshes, with a preview drawn from example values. Save sets the `statusLine` entry on a second press, and Remove puts back the one it replaced. Until now a personal status line meant writing a script by hand, and no plugin can set the line itself. Each session's mod draws its own line into an env var that the saved command only prints, so there is no script and no `jq`, and the one command works on macOS, Linux and Windows (Git Bash or PowerShell).
 
 ## 1.10.3 — 2026-10-19
 

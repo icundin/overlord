@@ -50,11 +50,9 @@ async function savedChoices($: EngineInterface): Promise<Choices | null> {
   return readChoices(await $.store.get('choices'))
 }
 
-// Every item either the saved choices or the open pane's draft shows.
+// Every item the saved line shows.
 async function wanted($: EngineInterface): Promise<Set<ItemKey>> {
-  const [kept, editing] = [await savedChoices($), await read($, draft)]
-
-  return new Set([...(kept?.items ?? []), ...(editing?.items ?? [])])
+  return new Set((await savedChoices($))?.items ?? [])
 }
 
 async function home($: EngineInterface): Promise<string | null> {
@@ -313,23 +311,13 @@ async function open($: EngineInterface): Promise<void> {
   await update($, pending, () => null)
   const current = await currentSettings($)
   await update($, isInstalled, () => isOurs(current?.statusLine))
-  const items = new Set(choices.items)
-  await readUsage($).catch(() => undefined)
-  await readSavedEffort($).catch(() => undefined)
-  await readGit($, items).catch(() => undefined)
-  await readPullRequest($, items).catch(() => undefined)
   await $.ui.open({ id: PANE, title: 'Status line', focus: true, closeOnEscape: true })
 }
 
 // Any change disarms a waiting save or remove, so the change it showed is never stale.
 async function changeDraft($: EngineInterface, change: (was: Choices) => Choices): Promise<void> {
   await update($, pending, () => null)
-  const next = await update($, draft, was => (was === null ? null : change(was)))
-  if (next !== null) {
-    const items = new Set(next.items)
-    await readGit($, items).catch(() => undefined)
-    await readPullRequest($, items).catch(() => undefined)
-  }
+  await update($, draft, was => (was === null ? null : change(was)))
 }
 
 async function toggleSection($: EngineInterface, key: Section): Promise<void> {
@@ -382,7 +370,7 @@ export const register: Register = on => {
       $.ui.resolve(e),
       {
         draft: editing,
-        facts: await read($, facts),
+        home: (await read($, facts)).home,
         pending: await read($, pending),
         isInstalled: await read($, isInstalled),
         isUnsaved: !same(await read($, saved), editing),
