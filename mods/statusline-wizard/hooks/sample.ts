@@ -16,6 +16,7 @@ export const SAMPLE: Facts = {
   limits: [
     { kind: 'five_hour', percentUsed: 12, resetsAt: '2026-10-20T11:13:00.000Z' },
     { kind: 'seven_day', percentUsed: 8, resetsAt: '2026-10-22T04:00:00.000Z' },
+    { kind: 'spend_limit', percentUsed: 40, resetsAt: '2026-11-01T00:00:00.000Z' },
   ],
   cost: 0.17,
   now: Date.parse('2026-10-20T09:00:00.000Z'),

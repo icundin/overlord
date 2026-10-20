@@ -1,6 +1,7 @@
 import type { ElementTable, RenderChildren } from 'claude-code'
 
-import type { Choices, Group, ItemKey, Pending, Section } from '../../types'
+import type { Choices, Group, ItemKey, Pending, Section, Window } from '../../types'
+import { isWindow } from '../choices'
 import { ITEMS, pieces, shortPath } from '../line'
 import { SAMPLE } from '../sample'
 
@@ -20,6 +21,8 @@ export type View = {
 // What the pane's controls do; the render hook binds each to the engine.
 export type Actions = {
   toggleItem: (key: ItemKey) => unknown
+  // A plan window: off, on, on with its reset countdown.
+  cycleWindow: (window: Window) => unknown
   toggleIcons: () => unknown
   nextInterval: () => unknown
   toggleSection: (key: Section) => unknown
@@ -56,6 +59,9 @@ export function wrap(parts: string[], room: number): string[] {
 
   return rows
 }
+
+const windowValue = (choices: Choices, window: Window) =>
+  !choices.items.includes(window) ? 'off' : choices.resets.includes(window) ? 'with reset' : 'on'
 
 // Two cards in context-bar's style: the settings, in collapsible sections of label and value rows with the actions
 // below, and the preview, drawn from examples so every item chosen shows.
@@ -131,9 +137,13 @@ export function pane(ui: ElementTable<'terminal'>, view: View, act: Actions) {
             section(
               group.key,
               group.title,
-              ITEMS.filter(item => item.group === group.key).map(item =>
-                row(`item-${item.key}`, item.label, draft.items.includes(item.key) ? 'on' : 'off', () => act.toggleItem(item.key)),
-              ),
+              ITEMS.filter(item => item.group === group.key).map(item => {
+                const key = item.key
+
+                return isWindow(key)
+                  ? row(`item-${key}`, item.label, `${windowValue(draft, key)} ›`, () => act.cycleWindow(key))
+                  : row(`item-${key}`, item.label, draft.items.includes(key) ? 'on' : 'off', () => act.toggleItem(key))
+              }),
             ),
           )}
           {section('appearance', 'Appearance', [

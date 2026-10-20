@@ -76,12 +76,14 @@ In **Settings**, click a value to change it:
   | tokens | `45k / 1M`, the context in tokens | 📊 |
   | session usage | `5h 12%`, the plan's five-hour window | ⏳ |
   | weekly usage | `7d 8%`, its seven-day window | ⏳ |
-  | gateway spend | `spend 40%`, behind a gateway with a spend limit | ⏳ |
-  | usage resets | `(2h 13m)` after each window shown: how long until it resets | ⏳ |
+  | gateway spend | `spend 40%`, the spend limit of an organisation's Claude gateway; never on a subscription | ⏳ |
   | cost | `$0.17` | 💰 |
 
   Items that share an icon stand together, and the first one shown wears it: `🌿 main ↑2 ↓1 ● +2 ~3 ?1`,
   `🤖 Opus 5.5 (high)`, `📊 5% · 45k / 1M`, `⏳ 5h 12% (2h 13m) · 7d 8% (1d 19h)`.
+
+  Each plan window moves on from **off** to **on** to **with reset**, which adds how long until it resets:
+  `5h 12% (2h 13m)`.
 
   An item with nothing to show (no repository, no pull request, a count of zero) is left out of the line.
 - **Appearance**: icons on or off, and how often Claude Code redraws the line besides its own updates (every 1, 2,
