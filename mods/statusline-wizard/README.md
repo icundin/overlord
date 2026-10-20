@@ -60,6 +60,7 @@ In **Settings**, click a value to change it:
 
   | Item | Shows | Icon |
   |---|---|---|
+  | clock | `09:41`, your own time zone's | 🕐 |
   | user@host | `inigo@mac` | 👤 |
   | folder | `~/Code/overlord` | 📁 |
   | branch | `main` | 🌿 |
@@ -76,10 +77,9 @@ In **Settings**, click a value to change it:
   | plan usage | `5h 12% · 7d 8%`, on a subscription | ⏳ |
   | plan resets | `(2h 13m)` after each plan window: how long until it resets | |
   | cost | `$0.17` | 💰 |
-  | clock | `09:41`, your own time zone's | 🕐 |
 
   The git items stand together (`main ↑2 ↓1 ● +2 ~3 ?1`), and so do context and tokens (`ctx 5% · 45k / 1M`),
-  the first one shown wearing the icon. The clock is in **System** and comes last in the line.
+  the first one shown wearing the icon.
 
   An item with nothing to show (no repository, no pull request, a count of zero) is left out of the line.
 - **Appearance**: icons on or off, and how often Claude Code redraws the line besides its own updates (every 1, 2,

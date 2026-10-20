@@ -27,6 +27,7 @@ const FACTS: Facts = {
 }
 
 const ALL: ItemKey[] = [
+  'clock',
   'user',
   'folder',
   'branch',
@@ -43,22 +44,21 @@ const ALL: ItemKey[] = [
   'limits',
   'resets',
   'cost',
-  'clock',
 ]
 
 const with_ = (items: ItemKey[], icons = false): Choices => ({ items, icons, interval: 2 })
 
 test('draws every item in its order, without icons', async () => {
   expect(line(with_(ALL), FACTS)).toBe(
-    'inigo@mac  ~/Code/overlord  main ↑2 ↓1 ● +2 ~3 ?1  icundin/overlord  PR #26 approved  Opus 5.5  high  ctx 5% · 45k / 1M  ' +
-      '5h 12% (2h 13m) · 7d 8% (1d 19h)  $0.17  09:41',
+    '09:41  inigo@mac  ~/Code/overlord  main ↑2 ↓1 ● +2 ~3 ?1  icundin/overlord  PR #26 approved  Opus 5.5  high  ctx 5% · 45k / 1M  ' +
+      '5h 12% (2h 13m) · 7d 8% (1d 19h)  $0.17',
   )
 })
 
 test('draws every item with its icon, an item joined to the one before it without one', async () => {
   expect(line(with_(ALL, true), FACTS)).toBe(
-    '👤 inigo@mac  📁 ~/Code/overlord  🌿 main ↑2 ↓1 ● +2 ~3 ?1  📦 icundin/overlord  🔀 PR #26 approved  🤖 Opus 5.5  🧠 high  ' +
-      '📊 5% · 45k / 1M  ⏳ 5h 12% (2h 13m) · 7d 8% (1d 19h)  💰 $0.17  🕐 09:41',
+    '🕐 09:41  👤 inigo@mac  📁 ~/Code/overlord  🌿 main ↑2 ↓1 ● +2 ~3 ?1  📦 icundin/overlord  🔀 PR #26 approved  🤖 Opus 5.5  🧠 high  ' +
+      '📊 5% · 45k / 1M  ⏳ 5h 12% (2h 13m) · 7d 8% (1d 19h)  💰 $0.17',
   )
 })
 
