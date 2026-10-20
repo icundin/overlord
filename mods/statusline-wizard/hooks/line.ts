@@ -23,6 +23,7 @@ const CONTEXT = { group: 'agent', icon: '📊', word: 'ctx', cluster: 'context' 
 
 // Every item in the order the line shows them.
 export const ITEMS: Item[] = [
+  { key: 'clock', group: 'system', label: 'clock', icon: '🕐', text: f => f.time },
   { key: 'user', group: 'system', label: 'user@host', icon: '👤', text: f => (f.user && f.host ? `${f.user}@${f.host}` : (f.user ?? f.host)) },
   { key: 'folder', group: 'system', label: 'folder', icon: '📁', text: f => (f.cwd === null ? null : shortPath(f.cwd, f.home)) },
   { key: 'branch', ...GIT, label: 'branch', text: f => f.git?.branch ?? null },
@@ -58,7 +59,6 @@ export const ITEMS: Item[] = [
   // Shown inside plan usage, after each window.
   { key: 'resets', group: 'agent', label: 'plan resets', icon: '⏳', text: () => null },
   { key: 'cost', group: 'agent', label: 'cost', icon: '💰', text: f => (f.cost === null ? null : dollars(f.cost)) },
-  { key: 'clock', group: 'system', label: 'clock', icon: '🕐', text: f => f.time },
 ]
 
 export function line(choices: Choices, facts: Facts): string {

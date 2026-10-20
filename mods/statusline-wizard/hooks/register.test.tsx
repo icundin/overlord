@@ -72,10 +72,10 @@ test('draws the tokens, the plan windows counting down, and the clock as it move
   const world = surround(on, { stored: { choices: { ...SAVED, items: ['tokens', 'limits', 'resets', 'clock'] } } })
   await $.session.start(START)
   const at = (ms: number) => clockText(new Date(Date.parse('2026-10-19T09:00:00.000Z') + ms))
-  expect(world.lines.at(-1)).toBe(`ctx 10k / 200k  5h 12% (3h)  ${at(0)}`)
+  expect(world.lines.at(-1)).toBe(`${at(0)}  ctx 10k / 200k  5h 12% (3h)`)
   await world.clock.advance(60_000)
 
-  expect(world.lines.at(-1)).toBe(`ctx 10k / 200k  5h 12% (2h 59m)  ${at(60_000)}`)
+  expect(world.lines.at(-1)).toBe(`${at(60_000)}  ctx 10k / 200k  5h 12% (2h 59m)`)
 })
 
 test('counts the estimated tokens until Claude Code reports them', async ($, on) => {
