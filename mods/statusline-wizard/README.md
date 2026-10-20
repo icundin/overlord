@@ -51,8 +51,8 @@ claude plugin uninstall statusline-wizard@overlord
 
 ## Using it
 
-`/statusline-wizard` opens two cards: **Settings**, and below it **Preview**, the line as your choices draw it in
-this session.
+`/statusline-wizard` opens two cards: **Settings**, and below it **Preview**, the line your choices draw, from example
+values so every item you turn on shows. Your own values show in the status line once you save.
 
 In **Settings**, click a value to change it:
 
@@ -129,7 +129,8 @@ looks in the same places and writes the matching command. This is untested on Wi
 
 1. Install the mod as above and run `/statusline-wizard`.
 2. Turn a few items on, and icons, then press **save** twice.
-3. Within a few seconds the status line under the prompt shows what the preview showed, icons included.
+3. Within a few seconds the status line under the prompt shows the items the preview showed, with your own values,
+   icons included.
 4. In `%USERPROFILE%\.claude\settings.json`, `statusLine.command` is `echo "$STATUSLINE_WIZARD_LINE"` with Git for
    Windows installed, and `$env:STATUSLINE_WIZARD_LINE` without it.
 5. Run `/statusline-wizard` again and press **remove** twice: the previous status line comes back.

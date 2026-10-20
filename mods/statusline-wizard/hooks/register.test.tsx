@@ -131,11 +131,11 @@ test('opens the pane, previews the choices, and saves after showing the change',
   expect(world.opened).toEqual(['statusline-wizard'])
 
   const ui = await $.ui.mount({ plugin: 'statusline-wizard', surface: 'terminal', ...PANE })
-  expect(await ui.find({ type: 'Text', text: 'me@mac  ~/Code/overlord  main ↑2 ●  Opus 5.5  ctx 5%' })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: 'you@host  ~/Code/project  main ↑2 ●  Opus 5.5  ctx 5%' })).toBeDefined()
   expect(await ui.find({ key: 'remove' })).toBeUndefined()
   await ui.press({ key: 'item-user' })
   await ui.press({ key: 'icons' })
-  expect(await ui.find({ type: 'Text', text: '📁 ~/Code/overlord  🌿 main ↑2 ●  🤖 Opus 5.5  📊 5%' })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: '📁 ~/Code/project  🌿 main ↑2 ●  🤖 Opus 5.5  📊 5%' })).toBeDefined()
   await ui.press({ key: 'interval' })
   await ui.press({ key: 'interval' })
 
@@ -152,6 +152,19 @@ test('opens the pane, previews the choices, and saves after showing the change',
   expect(world.lines.at(-1)).toBe('📁 ~/Code/overlord  🌿 main ↑2 ●  🤖 Opus 5.5  📊 5%')
   expect(world.opened).toEqual(['statusline-wizard'])
   expect(world.toasts).toContain('Status line saved')
+})
+
+test('previews every item chosen from examples, whatever the session has to show', async ($, on) => {
+  surround(on, { commands: { 'git --no-optional-locks': '# branch.head main\n# branch.ab +0 -0\n' } })
+  await $.session.start(START)
+  await $.command.run(typed('statusline-wizard'))
+  const ui = await $.ui.mount({ plugin: 'statusline-wizard', surface: 'terminal', ...PANE })
+  for (const key of ['behind', 'counts', 'pr']) {
+    await ui.press({ key: `item-${key}` })
+  }
+
+  expect(await ui.find({ type: 'Text', text: 'you@host  ~/Code/project  main ↑2 ↓1 ● +2 ~3 ?1  PR #26 approved  Opus 5.5  ctx 5%' })).toBeDefined()
+  await ui.unmount()
 })
 
 test('saves new choices without asking when the settings entry stays the same', async ($, on) => {
