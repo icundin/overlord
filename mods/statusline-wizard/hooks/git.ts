@@ -10,9 +10,21 @@ export function parseStatus(output: string): Git | null {
   }
   const oid = header('oid')
   const branch = head === '(detached)' && oid !== undefined ? oid.slice(0, 7) : head
-  const ahead = Number(/^\+(\d+)/.exec(header('ab') ?? '')?.[1] ?? 0)
+  const [, ahead = 0, behind = 0] = (/^\+(\d+) -(\d+)/.exec(header('ab') ?? '') ?? []).map(Number)
+  // An entry is `1 XY …` (changed), `2 XY …` (renamed or copied), `u XY …` (unmerged) or `? path` (untracked); X is
+  // the index side, Y the working tree's, `.` for no change.
+  const entries = lines.filter(one => !one.startsWith('#'))
+  const changed = entries.filter(one => /^[12u] /.test(one))
 
-  return { branch, ahead, isDirty: lines.some(one => !one.startsWith('#')) }
+  return {
+    branch,
+    ahead,
+    behind,
+    isDirty: entries.length > 0,
+    staged: changed.filter(one => !one.startsWith('u') && one[2] !== '.').length,
+    modified: changed.filter(one => one.startsWith('u') || one[3] !== '.').length,
+    untracked: entries.filter(one => one.startsWith('? ')).length,
+  }
 }
 
 // `owner/name` from the origin remote's URL, in its scp, https or ssh form; null for a local path or none.
