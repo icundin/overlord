@@ -69,7 +69,7 @@ test('shows the saved effort until the first request says which one the session 
 })
 
 test('draws the tokens, the plan windows counting down, and the clock as it moves on', async ($, on) => {
-  const world = surround(on, { stored: { choices: { ...SAVED, items: ['tokens', 'session', 'resets', 'clock'] } } })
+  const world = surround(on, { stored: { choices: { ...SAVED, items: ['tokens', 'session', 'clock'], resets: ['session'] } } })
   await $.session.start(START)
   const at = (ms: number) => clockText(new Date(Date.parse('2026-10-19T09:00:00.000Z') + ms))
   expect(world.lines.at(-1)).toBe(`${at(0)}  ctx 10k / 200k  5h 12% (3h)`)
@@ -148,7 +148,7 @@ test('opens the pane, previews the choices, and saves after showing the change',
 
   expect(JSON.parse(world.files.get(SETTINGS) ?? '')).toEqual({ model: 'opus', statusLine: entryFor('bash', 5) })
   expect(world.files.get(`${SETTINGS}.statusline-wizard.bak`)).toBe('{\n  "model": "opus"\n}\n')
-  expect(world.store.get('choices')).toEqual({ items: ['folder', 'branch', 'ahead', 'dirty', 'model', 'context'], icons: true, interval: 5 })
+  expect(world.store.get('choices')).toEqual({ items: ['folder', 'branch', 'ahead', 'dirty', 'model', 'context'], resets: [], icons: true, interval: 5 })
   expect(world.lines.at(-1)).toBe('📁 ~/Code/overlord  🌿 main ↑2 ●  🤖 Opus 5.5  📊 5%')
   expect(world.opened).toEqual(['statusline-wizard'])
   expect(world.toasts).toContain('Status line saved')
@@ -327,5 +327,22 @@ test('reads an item turned off and on again as no change', async ($, on) => {
   await ui.press({ key: 'item-folder' })
   await ui.press({ key: 'item-folder' })
   expect(await ui.find({ type: 'Text', text: ' •' })).toBeUndefined()
+  await ui.unmount()
+})
+
+test('moves a plan window through off, on and with its reset, the preview following', async ($, on) => {
+  surround(on)
+  await $.session.start(START)
+  await $.command.run(typed('statusline-wizard'))
+  const ui = await $.ui.mount({ plugin: 'statusline-wizard', surface: 'terminal', ...PANE })
+  expect(await ui.find({ key: 'item-weekly', text: 'off ›' })).toBeDefined()
+  await ui.press({ key: 'item-weekly' })
+  expect(await ui.find({ key: 'item-weekly', text: 'on ›' })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /  7d 8%$/ })).toBeDefined()
+  await ui.press({ key: 'item-weekly' })
+  expect(await ui.find({ key: 'item-weekly', text: 'with reset ›' })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /  7d 8% \(1d 19h\)$/ })).toBeDefined()
+  await ui.press({ key: 'item-weekly' })
+  expect(await ui.find({ key: 'item-weekly', text: 'off ›' })).toBeDefined()
   await ui.unmount()
 })

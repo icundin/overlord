@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 
-import type { Choices, Facts, ItemKey } from '../types'
+import type { Choices, Facts, ItemKey, Window } from '../types'
 import { clockText, compact, countdown, dollars, line, modelLabel, shortPath } from './line'
 
 const NOW = Date.parse('2026-10-20T09:00:00.000Z')
@@ -44,11 +44,10 @@ const ALL: ItemKey[] = [
   'session',
   'weekly',
   'spend',
-  'resets',
   'cost',
 ]
 
-const with_ = (items: ItemKey[], icons = false): Choices => ({ items, icons, interval: 2 })
+const with_ = (items: ItemKey[], icons = false, resets: Window[] = ['session', 'weekly']): Choices => ({ items, resets, icons, interval: 2 })
 
 test('draws every item in its order, without icons', async () => {
   expect(line(with_(ALL), FACTS)).toBe(
@@ -88,16 +87,15 @@ test('draws an item joined to another on its own, with its own icon, when that o
 })
 
 test('shows each plan window on its own, one icon for those shown together', async () => {
-  expect(line(with_(['session', 'weekly']), FACTS)).toBe('5h 12% · 7d 8%')
-  expect(line(with_(['weekly'], true), FACTS)).toBe('⏳ 7d 8%')
-  expect(line(with_(['session', 'weekly'], true), { ...FACTS, limits: [FACTS.limits[1]!] })).toBe('⏳ 7d 8%')
+  expect(line(with_(['session', 'weekly'], false, []), FACTS)).toBe('5h 12% · 7d 8%')
+  expect(line(with_(['weekly'], true, []), FACTS)).toBe('⏳ 7d 8%')
+  expect(line(with_(['session', 'weekly'], true, []), { ...FACTS, limits: [FACTS.limits[1]!] })).toBe('⏳ 7d 8%')
 })
 
-test('counts the plan windows down only while their item is on, and only until they reset', async () => {
-  expect(line(with_(['resets']), FACTS)).toBe('')
-  expect(line(with_(['weekly', 'resets']), FACTS)).toBe('7d 8% (1d 19h)')
+test('counts down only the windows asked to, and only until they reset', async () => {
+  expect(line(with_(['session', 'weekly'], false, ['weekly']), FACTS)).toBe('5h 12% · 7d 8% (1d 19h)')
   const passed: Facts = { ...FACTS, limits: [{ kind: 'five_hour', percentUsed: 12, resetsAt: '2026-10-20T08:00:00.000Z' }] }
-  expect(line(with_(['session', 'resets']), passed)).toBe('5h 12%')
+  expect(line(with_(['session'], false, ['session']), passed)).toBe('5h 12%')
 })
 
 test('shows the model and its effort together, one icon for both, either one alone', async () => {

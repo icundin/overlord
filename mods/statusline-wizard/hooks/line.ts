@@ -1,4 +1,4 @@
-import type { Choices, Facts, Group, ItemKey } from '../types'
+import type { Choices, Facts, Group, ItemKey, Window } from '../types'
 
 // Items that stand together, and how one joins the one before it: the git state as a prompt shows it (`main ↑2 ●`),
 // the model and its effort (`Opus 5.5 (high)`), the context and its tokens (`5% · 45k / 1M`), the plan windows
@@ -56,11 +56,9 @@ export const ITEMS: Item[] = [
     label: 'tokens',
     text: f => (f.tokens === null ? null : `${compact(f.tokens.used)} / ${compact(f.tokens.window)}`),
   },
-  { key: 'session', ...LIMITS, label: 'session usage', text: (f, choices) => limitText(f, choices, 'five_hour') },
-  { key: 'weekly', ...LIMITS, label: 'weekly usage', text: (f, choices) => limitText(f, choices, 'seven_day') },
-  { key: 'spend', ...LIMITS, label: 'gateway spend', text: (f, choices) => limitText(f, choices, 'spend_limit') },
-  // Shown inside each plan window shown.
-  { key: 'resets', ...LIMITS, label: 'usage resets', text: () => null },
+  { key: 'session', ...LIMITS, label: 'session usage', text: (f, choices) => limitText(f, choices, 'session') },
+  { key: 'weekly', ...LIMITS, label: 'weekly usage', text: (f, choices) => limitText(f, choices, 'weekly') },
+  { key: 'spend', ...LIMITS, label: 'gateway spend', text: (f, choices) => limitText(f, choices, 'spend') },
   { key: 'cost', group: 'agent', label: 'cost', icon: '💰', text: f => (f.cost === null ? null : dollars(f.cost)) },
 ]
 
@@ -96,18 +94,24 @@ function fileCounts({ staged, modified, untracked }: { staged: number; modified:
   return parts.length === 0 ? null : parts.join(' ')
 }
 
-const LIMIT_NAMES: Record<string, string> = { five_hour: '5h', seven_day: '7d', spend_limit: 'spend' }
+// Each window's kind as Claude Code names it, and its name in the line.
+const WINDOWS: Record<Window, { kind: string; name: string }> = {
+  session: { kind: 'five_hour', name: '5h' },
+  weekly: { kind: 'seven_day', name: '7d' },
+  spend: { kind: 'spend_limit', name: 'spend' },
+}
 
-// The plan window `kind` and its share used, with how long until it resets while that item is on; null without a
+// A plan window and its share used, with how long until it resets where the person asked for it; null without a
 // reading of it.
-function limitText(facts: Facts, choices: Choices, kind: string): string | null {
+function limitText(facts: Facts, choices: Choices, window: Window): string | null {
+  const { kind, name } = WINDOWS[window]
   const limit = facts.limits.find(one => one.kind === kind)
   if (limit === undefined) {
     return null
   }
-  const left = choices.items.includes('resets') && facts.now !== null ? countdown(limit.resetsAt, facts.now) : null
+  const left = choices.resets.includes(window) && facts.now !== null ? countdown(limit.resetsAt, facts.now) : null
 
-  return `${LIMIT_NAMES[kind] ?? kind} ${Math.round(limit.percentUsed)}%${left === null ? '' : ` (${left})`}`
+  return `${name} ${Math.round(limit.percentUsed)}%${left === null ? '' : ` (${left})`}`
 }
 
 const MINUTE = 60_000

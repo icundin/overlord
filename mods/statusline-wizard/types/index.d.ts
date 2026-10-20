@@ -17,11 +17,14 @@ export type ItemKey =
   | 'session'
   | 'weekly'
   | 'spend'
-  | 'resets'
   | 'cost'
 
-// What the person picked: the items shown, whether each wears its icon, and how often Claude Code re-runs the command.
-export type Choices = { items: ItemKey[]; icons: boolean; interval: number }
+// A plan window the line can show: the five-hour session, the seven-day week, a gateway's spend limit.
+export type Window = 'session' | 'weekly' | 'spend'
+
+// What the person picked: the items shown, the windows shown with how long until they reset, whether each item wears
+// its icon, and how often Claude Code re-runs the command.
+export type Choices = { items: ItemKey[]; resets: Window[]; icons: boolean; interval: number }
 
 // The working copy's state, from one `git status --porcelain=v2 --branch`: the commits ahead of and behind its
 // upstream, and the files staged, modified and untracked.

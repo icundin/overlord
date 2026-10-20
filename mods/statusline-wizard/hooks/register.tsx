@@ -2,7 +2,7 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register, Timer } from 'claude-code'
 
 import type { Choices, Facts, ItemKey, Section } from '../types'
-import { FIRST_DRAFT, nextInterval, readChoices, toggled } from './choices'
+import { cycledWindow, FIRST_DRAFT, nextInterval, readChoices, toggled } from './choices'
 import { parsePullRequest, parseStatus, repoName } from './git'
 import { clockText, line } from './line'
 import { entryFor, isOurs, statusLineOf, withStatusLine } from './settings'
@@ -380,6 +380,7 @@ export const register: Register = on => {
       },
       {
         toggleItem: key => changeDraft($, was => ({ ...was, items: toggled(was.items, key) })),
+        cycleWindow: window => changeDraft($, was => cycledWindow(was, window)),
         toggleIcons: () => changeDraft($, was => ({ ...was, icons: !was.icons })),
         nextInterval: () => changeDraft($, was => ({ ...was, interval: nextInterval(was.interval) })),
         toggleSection: key => toggleSection($, key),
