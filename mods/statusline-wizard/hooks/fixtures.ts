@@ -77,21 +77,25 @@ export const surround = (on: On, world: World = {}) => {
   on('session.cwd', () => ({ value: `${HOME}/Code/overlord` }))
   on('session.model', () => ({ value: 'claude-opus-5-5' }))
   on('session.repo', () => ({ value: { root: `${HOME}/Code/overlord`, remote: 'git@github.com:icundin/overlord.git', internal: false, name: null } }))
-  const { percent, estimate } = world.context ?? { percent: 5, estimate: 5 }
   on('settings.read', () => ({ value: world.settings ?? {} }))
-  on('session.usage', (_, e) => ({
-    value: {
-      startedAt: 0,
-      context: {
-        window: 200000,
-        ...(percent === null ? {} : { tokens: 10000, percent }),
-        // Only the fields the mod reads; the rest of the breakdown is the engine's.
-        ...(e?.breakdown ? { breakdown: { percentage: estimate } as never } : {}),
+  // Read at each call, so a test can move the figures on; the local estimate counts 8k tokens.
+  on('session.usage', (_, e) => {
+    const { percent, estimate } = world.context ?? { percent: 5, estimate: 5 }
+
+    return {
+      value: {
+        startedAt: 0,
+        context: {
+          window: 200000,
+          ...(percent === null ? {} : { tokens: 10000, percent }),
+          // Only the fields the mod reads; the rest of the breakdown is the engine's.
+          ...(e?.breakdown ? { breakdown: { percentage: estimate, totalTokens: 8000 } as never } : {}),
+        },
+        rateLimits: [{ kind: 'five_hour', percentUsed: 12, resetsAt: '2026-10-19T12:00:00.000Z' }],
+        cost: { usd: 0.17 },
       },
-      rateLimits: [{ kind: 'five_hour', percentUsed: 12, resetsAt: '2026-10-19T12:00:00.000Z' }],
-      cost: { usd: 0.17 },
-    },
-  }))
+    }
+  })
   on('command.register', (_, e) => ({ value: { command: e.name } }))
   on('session.start', (_, e) => ({ cwd: e.cwd }))
   on('ui.open', (_, e) => {

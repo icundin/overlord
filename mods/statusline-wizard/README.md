@@ -63,17 +63,25 @@ In **Settings**, click a value to change it:
   | user@host | `inigo@mac` | 👤 |
   | folder | `~/Code/overlord` | 📁 |
   | branch | `main` | 🌿 |
-  | ↑ not pushed | `↑2`, only when there are some | |
-  | ● changes | `●`, only when there are some | |
+  | ↑ not pushed | `↑2`, commits ahead of the upstream | 🌿 |
+  | ↓ not pulled | `↓1`, commits behind it, as of the last fetch | 🌿 |
+  | ● changes | `●` | 🌿 |
+  | file counts | `+2 ~3 ?1`: files staged, modified, untracked | 🌿 |
   | repository | `icundin/overlord`, from the `origin` remote | 📦 |
   | pull request | `PR #26 approved`, the branch's open one | 🔀 |
   | model | `Opus 5.5` | 🤖 |
   | effort | `high` | 🧠 |
   | context | `ctx 5%` (`📊 5%` with icons) | 📊 |
+  | tokens | `45k / 1M`, the context in tokens | 📊 |
   | plan usage | `5h 12% · 7d 8%`, on a subscription | ⏳ |
+  | plan resets | `(2h 13m)` after each plan window: how long until it resets | |
   | cost | `$0.17` | 💰 |
+  | clock | `09:41`, your own time zone's | 🕐 |
 
-  An item with nothing to show (no repository, no pull request) is left out of the line.
+  The git items stand together (`main ↑2 ↓1 ● +2 ~3 ?1`), and so do context and tokens (`ctx 5% · 45k / 1M`),
+  the first one shown wearing the icon. The clock is in **System** and comes last in the line.
+
+  An item with nothing to show (no repository, no pull request, a count of zero) is left out of the line.
 - **Appearance**: icons on or off, and how often Claude Code redraws the line besides its own updates (every 1, 2,
   3, 5 or 10 seconds).
 
@@ -98,9 +106,9 @@ your settings only prints that variable: `echo "$STATUSLINE_WIZARD_LINE"`, or `$
 Claude Code runs commands in PowerShell. Claude Code re-runs it at the interval you picked, and every run sees the
 mod's latest line. So there is no script and no `jq`, and the same command serves every session.
 
-The mod reads the git state every five seconds (`git --no-optional-locks status`, which never takes the lock your
-own git commands need), the pull request at most once a minute and only while its item is on, and the figures after
-each turn.
+The mod reads the git state and the time every five seconds (`git --no-optional-locks status`, which never takes the
+lock your own git commands need, so a clock or a countdown is at most five seconds late), the pull request at most
+once a minute and only while its item is on, and the figures after each turn.
 
 ## Limits
 

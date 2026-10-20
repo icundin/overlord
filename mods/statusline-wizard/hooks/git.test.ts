@@ -2,17 +2,33 @@ import { expect, test } from 'claude-code/testing'
 
 import { parsePullRequest, parseStatus, repoName } from './git'
 
+const CLEAN = { ahead: 0, behind: 0, isDirty: false, staged: 0, modified: 0, untracked: 0 }
+
 test('reads the branch, the commits ahead and the changes from porcelain v2', async () => {
   const status = ['# branch.oid 70c9af3e', '# branch.head main', '# branch.upstream origin/main', '# branch.ab +2 -1', '1 .M N... 100644 100644 100644 a b CHANGELOG.md', ''].join('\n')
-  expect(parseStatus(status)).toEqual({ branch: 'main', ahead: 2, isDirty: true })
+  expect(parseStatus(status)).toEqual({ branch: 'main', ahead: 2, behind: 1, isDirty: true, staged: 0, modified: 1, untracked: 0 })
 })
 
 test('reads a clean branch with no upstream', async () => {
-  expect(parseStatus('# branch.oid 70c9af3e\n# branch.head feat/x\n')).toEqual({ branch: 'feat/x', ahead: 0, isDirty: false })
+  expect(parseStatus('# branch.oid 70c9af3e\n# branch.head feat/x\n')).toEqual({ branch: 'feat/x', ...CLEAN })
 })
 
 test('names a detached head by its short commit', async () => {
-  expect(parseStatus('# branch.oid 70c9af3e1234\n# branch.head (detached)\n')).toEqual({ branch: '70c9af3', ahead: 0, isDirty: false })
+  expect(parseStatus('# branch.oid 70c9af3e1234\n# branch.head (detached)\n')).toEqual({ branch: '70c9af3', ...CLEAN })
+})
+
+test('counts the files staged, modified and untracked, a file changed on both sides in both', async () => {
+  const status = [
+    '# branch.head main',
+    '1 M. N... 100644 100644 100644 a b staged.ts',
+    '1 .M N... 100644 100644 100644 a b modified.ts',
+    '1 MM N... 100644 100644 100644 a b both.ts',
+    '2 R. N... 100644 100644 100644 a b R100 new.ts\told.ts',
+    'u UU N... 100644 100644 100644 100644 a b c conflict.ts',
+    '? notes.txt',
+    '? draft.md',
+  ].join('\n')
+  expect(parseStatus(status)).toMatchObject({ isDirty: true, staged: 3, modified: 3, untracked: 2 })
 })
 
 test('counts an untracked file as a change', async () => {
@@ -20,7 +36,7 @@ test('counts an untracked file as a change', async () => {
 })
 
 test('reads a repository with no commit yet', async () => {
-  expect(parseStatus('# branch.oid (initial)\n# branch.head main\n')).toEqual({ branch: 'main', ahead: 0, isDirty: false })
+  expect(parseStatus('# branch.oid (initial)\n# branch.head main\n')).toEqual({ branch: 'main', ...CLEAN })
 })
 
 test('reads nothing from output that is not a status', async () => {

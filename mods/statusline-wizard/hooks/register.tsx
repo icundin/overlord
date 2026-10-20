@@ -4,7 +4,7 @@ import type { EngineInterface, Register, Timer } from 'claude-code'
 import type { Choices, Facts, ItemKey, Section } from '../types'
 import { FIRST_DRAFT, nextInterval, readChoices, toggled } from './choices'
 import { parsePullRequest, parseStatus, repoName } from './git'
-import { line } from './line'
+import { clockText, line } from './line'
 import { entryFor, isOurs, statusLineOf, withStatusLine } from './settings'
 import type { Shell } from './settings'
 import { pane } from './view/pane'
@@ -22,8 +22,11 @@ const EMPTY: Facts = {
   model: null,
   effort: null,
   context: null,
+  tokens: null,
   limits: [],
   cost: null,
+  now: null,
+  time: null,
 }
 
 const facts = atom({ plugin: 'statusline-wizard', key: 'facts' } as const, EMPTY)
@@ -35,7 +38,7 @@ const opened = atom({ plugin: 'statusline-wizard', key: 'opened' } as const, {})
 
 const TICK_MS = 5000
 const PR_MS = 60_000
-const GIT_ITEMS: ItemKey[] = ['branch', 'ahead', 'dirty']
+const GIT_ITEMS: ItemKey[] = ['branch', 'ahead', 'behind', 'dirty', 'counts']
 
 let ticking: Timer | null = null
 let prReadAt = -Infinity
@@ -73,12 +76,15 @@ async function readIdentity($: EngineInterface): Promise<void> {
 async function readUsage($: EngineInterface): Promise<void> {
   const { context, rateLimits, cost } = await $.session.usage()
   const model = await $.session.model()
-  const percent = context.percent ?? (await $.session.usage({ breakdown: 'summary' })).context.breakdown?.percentage ?? null
+  const estimate = context.percent === undefined ? (await $.session.usage({ breakdown: 'summary' })).context.breakdown : undefined
+  const percent = context.percent ?? estimate?.percentage ?? null
+  const used = context.tokens ?? estimate?.totalTokens ?? null
   await update($, facts, was => ({
     ...was,
     model,
     context: percent === null ? null : Math.round(percent),
-    limits: rateLimits.map(({ kind, percentUsed }) => ({ kind, percentUsed })),
+    tokens: used === null ? null : { used, window: context.window },
+    limits: rateLimits.map(({ kind, percentUsed, resetsAt }) => ({ kind, percentUsed, resetsAt: resetsAt ?? null })),
     cost: cost?.usd ?? null,
   }))
 }
@@ -132,9 +138,16 @@ async function publish($: EngineInterface): Promise<void> {
   }
 }
 
-// Re-reads what changes outside the session's own events (the working copy, a save made in another session) and
-// publishes.
+// The time, for the clock and the plan windows' countdown.
+async function readTime($: EngineInterface): Promise<void> {
+  const now = await $.clock.now()
+  await update($, facts, was => ({ ...was, now, time: clockText(new Date(now)) }))
+}
+
+// Re-reads what changes outside the session's own events (the time, the working copy, a save made in another
+// session) and publishes.
 async function tick($: EngineInterface): Promise<void> {
+  await readTime($).catch(() => undefined)
   const items = await wanted($)
   await readGit($, items).catch(() => undefined)
   await readPullRequest($, items).catch(() => undefined)

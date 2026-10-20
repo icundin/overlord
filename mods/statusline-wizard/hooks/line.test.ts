@@ -1,62 +1,127 @@
 import { expect, test } from 'claude-code/testing'
 
-import type { Facts } from '../types'
-import { dollars, line, modelLabel, shortPath } from './line'
+import type { Choices, Facts, ItemKey } from '../types'
+import { clockText, compact, countdown, dollars, line, modelLabel, shortPath } from './line'
+
+const NOW = Date.parse('2026-10-20T09:00:00.000Z')
 
 const FACTS: Facts = {
   user: 'inigo',
   host: 'mac',
   home: '/Users/inigo',
   cwd: '/Users/inigo/Code/overlord',
-  git: { branch: 'main', ahead: 2, isDirty: true },
+  git: { branch: 'main', ahead: 2, behind: 1, isDirty: true, staged: 2, modified: 3, untracked: 1 },
   repo: 'icundin/overlord',
   pr: { number: 26, review: 'approved' },
   model: 'claude-opus-5-5',
   effort: 'high',
   context: 5,
+  tokens: { used: 45_000, window: 1_000_000 },
   limits: [
-    { kind: 'five_hour', percentUsed: 12 },
-    { kind: 'seven_day', percentUsed: 8 },
+    { kind: 'five_hour', percentUsed: 12, resetsAt: '2026-10-20T11:13:00.000Z' },
+    { kind: 'seven_day', percentUsed: 8, resetsAt: '2026-10-22T04:00:00.000Z' },
   ],
   cost: 0.1673,
+  now: NOW,
+  time: '09:41',
 }
 
-const ALL = ['user', 'folder', 'branch', 'ahead', 'dirty', 'repo', 'pr', 'model', 'effort', 'context', 'limits', 'cost'] as const
+const ALL: ItemKey[] = [
+  'user',
+  'folder',
+  'branch',
+  'ahead',
+  'behind',
+  'dirty',
+  'counts',
+  'repo',
+  'pr',
+  'model',
+  'effort',
+  'context',
+  'tokens',
+  'limits',
+  'resets',
+  'cost',
+  'clock',
+]
+
+const with_ = (items: ItemKey[], icons = false): Choices => ({ items, icons, interval: 2 })
 
 test('draws every item in its order, without icons', async () => {
-  expect(line({ items: [...ALL], icons: false, interval: 2 }, FACTS)).toBe(
-    'inigo@mac  ~/Code/overlord  main ↑2 ●  icundin/overlord  PR #26 approved  Opus 5.5  high  ctx 5%  5h 12% · 7d 8%  $0.17',
+  expect(line(with_(ALL), FACTS)).toBe(
+    'inigo@mac  ~/Code/overlord  main ↑2 ↓1 ● +2 ~3 ?1  icundin/overlord  PR #26 approved  Opus 5.5  high  ctx 5% · 45k / 1M  ' +
+      '5h 12% (2h 13m) · 7d 8% (1d 19h)  $0.17  09:41',
   )
 })
 
-test('draws every item with its icon', async () => {
-  expect(line({ items: [...ALL], icons: true, interval: 2 }, FACTS)).toBe(
-    '👤 inigo@mac  📁 ~/Code/overlord  🌿 main ↑2 ●  📦 icundin/overlord  🔀 PR #26 approved  🤖 Opus 5.5  🧠 high  📊 5%  ⏳ 5h 12% · 7d 8%  💰 $0.17',
+test('draws every item with its icon, an item joined to the one before it without one', async () => {
+  expect(line(with_(ALL, true), FACTS)).toBe(
+    '👤 inigo@mac  📁 ~/Code/overlord  🌿 main ↑2 ↓1 ● +2 ~3 ?1  📦 icundin/overlord  🔀 PR #26 approved  🤖 Opus 5.5  🧠 high  ' +
+      '📊 5% · 45k / 1M  ⏳ 5h 12% (2h 13m) · 7d 8% (1d 19h)  💰 $0.17  🕐 09:41',
   )
 })
 
 test('keeps the order of the items, not of the choice', async () => {
-  expect(line({ items: ['cost', 'model'], icons: false, interval: 2 }, FACTS)).toBe('Opus 5.5  $0.17')
+  expect(line(with_(['cost', 'model']), FACTS)).toBe('Opus 5.5  $0.17')
 })
 
 test('leaves out what the session has no reading of', async () => {
-  const bare: Facts = { ...FACTS, git: null, repo: null, pr: null, effort: null, context: null, limits: [], cost: null }
-  expect(line({ items: [...ALL], icons: false, interval: 2 }, bare)).toBe('inigo@mac  ~/Code/overlord  Opus 5.5')
+  const bare: Facts = { ...FACTS, git: null, repo: null, pr: null, effort: null, context: null, tokens: null, limits: [], cost: null, time: null }
+  expect(line(with_(ALL), bare)).toBe('inigo@mac  ~/Code/overlord  Opus 5.5')
 })
 
-test('shows the unpushed commits and changes only when there are some', async () => {
-  const clean: Facts = { ...FACTS, git: { branch: 'main', ahead: 0, isDirty: false } }
-  expect(line({ items: ['branch', 'ahead', 'dirty'], icons: false, interval: 2 }, clean)).toBe('main')
-  expect(line({ items: ['ahead', 'dirty', 'model'], icons: false, interval: 2 }, FACTS)).toBe('↑2 ●  Opus 5.5')
+test('shows the commits and files only when there are some, the counts only those not zero', async () => {
+  const clean: Facts = { ...FACTS, git: { branch: 'main', ahead: 0, behind: 0, isDirty: false, staged: 0, modified: 0, untracked: 0 } }
+  expect(line(with_(['branch', 'ahead', 'behind', 'dirty', 'counts']), clean)).toBe('main')
+  const some: Facts = { ...FACTS, git: { branch: 'main', ahead: 0, behind: 0, isDirty: true, staged: 0, modified: 4, untracked: 0 } }
+  expect(line(with_(['branch', 'counts']), some)).toBe('main ~4')
+  expect(line(with_(['ahead', 'dirty', 'model']), FACTS)).toBe('↑2 ●  Opus 5.5')
+})
+
+test('draws an item joined to another on its own, with its own icon, when that one is off', async () => {
+  expect(line(with_(['tokens'], true), FACTS)).toBe('📊 45k / 1M')
+  expect(line(with_(['counts'], true), FACTS)).toBe('🌿 +2 ~3 ?1')
+  expect(line(with_(['tokens']), FACTS)).toBe('ctx 45k / 1M')
+})
+
+test('counts the plan windows down only while their item is on, and only until they reset', async () => {
+  expect(line(with_(['limits']), FACTS)).toBe('5h 12% · 7d 8%')
+  expect(line(with_(['resets']), FACTS)).toBe('')
+  const passed: Facts = { ...FACTS, limits: [{ kind: 'five_hour', percentUsed: 12, resetsAt: '2026-10-20T08:00:00.000Z' }] }
+  expect(line(with_(['limits', 'resets']), passed)).toBe('5h 12%')
 })
 
 test('names a pull request without a review state by its number', async () => {
-  expect(line({ items: ['pr'], icons: false, interval: 2 }, { ...FACTS, pr: { number: 7, review: null } })).toBe('PR #7')
+  expect(line(with_(['pr']), { ...FACTS, pr: { number: 7, review: null } })).toBe('PR #7')
 })
 
 test('names a gateway spend limit', async () => {
-  const facts: Facts = { ...FACTS, limits: [{ kind: 'spend_limit', percentUsed: 40.4 }] }
-  expect(line({ items: ['limits'], icons: false, interval: 2 }, facts)).toBe('spend 40%')
+  expect(line(with_(['limits']), { ...FACTS, limits: [{ kind: 'spend_limit', percentUsed: 40.4, resetsAt: null }] })).toBe('spend 40%')
+})
+
+test('says how long until a reset, in its two largest units', async () => {
+  expect(countdown('2026-10-20T09:25:00.000Z', NOW)).toBe('25m')
+  expect(countdown('2026-10-20T11:13:00.000Z', NOW)).toBe('2h 13m')
+  expect(countdown('2026-10-20T11:00:00.000Z', NOW)).toBe('2h')
+  expect(countdown('2026-10-22T04:00:00.000Z', NOW)).toBe('1d 19h')
+  expect(countdown('2026-10-20T08:00:00.000Z', NOW)).toBeNull()
+  expect(countdown(null, NOW)).toBeNull()
+})
+
+test('writes token counts short', async () => {
+  expect([compact(840), compact(3400), compact(45_000), compact(212_400), compact(1_000_000), compact(1_500_000)]).toEqual([
+    '840',
+    '3.4k',
+    '45k',
+    '212k',
+    '1M',
+    '1.5M',
+  ])
+})
+
+test('tells the time on the 24-hour clock', async () => {
+  expect([clockText(new Date(2026, 9, 20, 9, 41)), clockText(new Date(2026, 9, 20, 23, 5))]).toEqual(['09:41', '23:05'])
 })
 
 test('shortens the home folder to ~', async () => {
