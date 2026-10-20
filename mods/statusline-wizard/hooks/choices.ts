@@ -2,9 +2,6 @@ import type { Choices, ItemKey, Window } from '../types'
 import { ITEMS } from './line'
 import { parseColor, THEME_CHOICES } from './themes'
 
-// How often Claude Code may re-run the command, in seconds.
-export const INTERVALS = [1, 2, 3, 5, 10] as const
-
 // What the pane starts from before anything is saved; nothing reaches the line until the person saves.
 export const FIRST_DRAFT: Choices = {
   items: ['user', 'folder', 'branch', 'ahead', 'dirty', 'model', 'context'],
@@ -33,7 +30,7 @@ export function readChoices(stored: unknown): Choices | null {
     items: ITEMS.filter(item => items.has(item.key)).map(item => item.key),
     resets: WINDOWS.filter(window => resets.has(window) && items.has(window)),
     icons: kept.icons === true,
-    interval: INTERVALS.find(seconds => seconds === kept.interval) ?? FIRST_DRAFT.interval,
+    interval: isInterval(kept.interval) ? kept.interval : FIRST_DRAFT.interval,
     theme: THEME_CHOICES.find(theme => theme === kept.theme) ?? 'none',
     colors: Object.fromEntries(
       ITEMS.flatMap(({ key }) => {
@@ -69,6 +66,12 @@ export function cycledWindow(choices: Choices, window: Window): Choices {
   }
 }
 
-export function nextInterval(seconds: number): number {
-  return INTERVALS[(INTERVALS.findIndex(one => one === seconds) + 1) % INTERVALS.length] ?? FIRST_DRAFT.interval
+// How often Claude Code may re-run the command, as its `refreshInterval` takes it: whole seconds, one or more.
+const isInterval = (seconds: unknown): seconds is number => Number.isInteger(seconds) && (seconds as number) >= 1
+
+// A refresh interval typed into its field, or null for what Claude Code would not take.
+export function parseInterval(text: string): number | null {
+  const seconds = /^\d+$/.test(text.trim()) ? Number(text.trim()) : null
+
+  return isInterval(seconds) ? seconds : null
 }

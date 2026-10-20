@@ -2,7 +2,7 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register, Timer } from 'claude-code'
 
 import type { Choices, Facts, ItemKey, Section } from '../types'
-import { cycledWindow, FIRST_DRAFT, nextInterval, readChoices, toggled } from './choices'
+import { cycledWindow, FIRST_DRAFT, parseInterval, readChoices, toggled } from './choices'
 import { parsePullRequest, parseStatus, repoName } from './git'
 import { clockText, line } from './line'
 import { entryFor, isOurs, statusLineOf, withStatusLine } from './settings'
@@ -347,6 +347,18 @@ async function setColor($: EngineInterface, key: ItemKey, text: string): Promise
   })
 }
 
+// The refresh interval as typed: whole seconds, one or more, as Claude Code takes it; anything else is said and kept out.
+async function setRefresh($: EngineInterface, text: string): Promise<void> {
+  const seconds = parseInterval(text)
+  await update($, fieldRevision, was => was + 1)
+  if (seconds === null) {
+    $.ui.toast('Type a whole number of seconds, 1 or more.')
+
+    return
+  }
+  await changeDraft($, was => ({ ...was, interval: seconds }))
+}
+
 async function toggleSection($: EngineInterface, key: Section): Promise<void> {
   await update($, pending, () => null)
   await update($, opened, was => ({ ...was, [key]: !(was[key] ?? true) }))
@@ -410,7 +422,7 @@ export const register: Register = on => {
         toggleItem: key => changeDraft($, was => ({ ...was, items: toggled(was.items, key) })),
         cycleWindow: window => changeDraft($, was => cycledWindow(was, window)),
         toggleIcons: () => changeDraft($, was => ({ ...was, icons: !was.icons })),
-        nextInterval: () => changeDraft($, was => ({ ...was, interval: nextInterval(was.interval) })),
+        setRefresh: text => setRefresh($, text),
         nextTheme: () => changeDraft($, was => ({ ...was, theme: nextTheme(was.theme) })),
         setColor: (key, text) => setColor($, key, text),
         toggleSection: key => toggleSection($, key),

@@ -2,6 +2,10 @@
 
 One changelog for the collection; every entry names the artifact it concerns.
 
+## 1.13.0 — 2026-10-20
+
+- Statusline wizard: The refresh interval is typed into a field, any whole number of seconds from 1, the range Claude Code's `refreshInterval` takes. A click moved it through 1, 2, 3, 5 and 10 seconds, which was slower to set and left out every other value.
+
 ## 1.12.0 — 2026-10-20
 
 - Statusline wizard: Themes for the line, in the pane's Appearance section: none (the uncolored line, as before), the palettes context-bar has (default, monokai, dracula, nord, catppuccin, github, gruvbox, tokyo night) and Material Theme's dark palette (material), each giving every kind of item one of its seven colors, or custom, a hex color per item, an empty field going back to the default's. The preview draws the same colors. Claude Code passes a status line's color codes through undimmed, so the line can be told apart at a glance, and a theme kept the same across the two mods.
