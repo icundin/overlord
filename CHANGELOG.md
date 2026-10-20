@@ -2,6 +2,10 @@
 
 One changelog for the collection; every entry names the artifact it concerns.
 
+## 1.12.0 — 2026-10-20
+
+- Statusline wizard: Themes for the line, in the pane's Appearance section: none (the uncolored line, as before), the palettes context-bar has (default, monokai, dracula, nord, catppuccin, github, gruvbox, tokyo night), each coloring a section in one color, or custom, a hex color per item, an empty field going back to the default's. The preview draws the same colors. Claude Code passes a status line's color codes through undimmed, so the line can be told apart at a glance, and a theme kept the same across the two mods.
+
 ## 1.11.0 — 2026-10-20
 
 - Statusline wizard: New mod. `/statusline-wizard` opens a pane to pick what the status line shows (a clock, user@host, folder; repository, branch, commits ahead and behind, uncommitted changes and the files staged, modified and untracked, pull request; model and effort, context in percent and tokens, the plan's session and weekly usage with their reset countdown, cost), icons on or off and how often it refreshes, with a preview drawn from example values. Save sets the `statusLine` entry on a second press, and Remove puts back the one it replaced. Until now a personal status line meant writing a script by hand, and no plugin can set the line itself. Each session's mod draws its own line into an env var that the saved command only prints, so there is no script and no `jq`, and the one command works on macOS, Linux and Windows (Git Bash or PowerShell).

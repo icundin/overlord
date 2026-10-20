@@ -1,4 +1,5 @@
 import type { Choices, Facts, Group, ItemKey, Window } from '../types'
+import { ansi, colorOf } from './themes'
 
 // Items that stand together, and how one joins the one before it: the git state as a prompt shows it (`main ↑2 ●`),
 // the model and its effort (`Opus 5.5 (high)`), the context and its tokens (`5% · 45k / 1M`), the plan windows
@@ -62,25 +63,38 @@ export const ITEMS: Item[] = [
   { key: 'cost', group: 'agent', label: 'cost', icon: '💰', text: f => (f.cost === null ? null : dollars(f.cost)) },
 ]
 
+// One item's part of the line, in its color; null for the line's own.
+export type Segment = { text: string; color: string | null }
+
+// A piece of the line: one item, or a cluster's items together.
+export type Piece = Segment[]
+
+// The line as the command prints it, each item in its color.
 export function line(choices: Choices, facts: Facts): string {
-  return pieces(choices, facts).join('  ')
+  return pieces(choices, facts)
+    .map(piece => piece.map(({ text, color }) => ansi(text, color)).join(''))
+    .join('  ')
 }
 
+export const plain = (piece: Piece) => piece.map(segment => segment.text).join('')
+
 // The line's pieces in order, two spaces apart in the line: one per item, a cluster's items one piece together.
-export function pieces(choices: Choices, facts: Facts): string[] {
-  const out: string[] = []
+export function pieces(choices: Choices, facts: Facts): Piece[] {
+  const out: Piece[] = []
   let cluster: Cluster | null = null
   for (const item of ITEMS) {
     const text = choices.items.includes(item.key) ? item.text(facts, choices) : null
     if (text === null) {
       continue
     }
-    if (item.cluster !== undefined && item.cluster === cluster && out.length > 0) {
-      out[out.length - 1] += JOINERS[item.cluster](text)
+    const color = colorOf(choices, item.key, item.group)
+    const last = out.at(-1)
+    if (item.cluster !== undefined && item.cluster === cluster && last !== undefined) {
+      last.push({ text: JOINERS[item.cluster](text), color })
       continue
     }
     const mark = choices.icons ? item.icon : item.word
-    out.push(mark ? `${mark} ${text}` : text)
+    out.push([{ text: mark ? `${mark} ${text}` : text, color }])
     cluster = item.cluster ?? null
   }
 

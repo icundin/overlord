@@ -86,8 +86,14 @@ In **Settings**, click a value to change it:
   `5h 12% (2h 13m)`.
 
   An item with nothing to show (no repository, no pull request, a count of zero) is left out of the line.
-- **Appearance**: icons on or off, and how often Claude Code redraws the line besides its own updates (every 1, 2,
-  3, 5 or 10 seconds).
+- **Appearance**: icons on or off, how often Claude Code redraws the line besides its own updates (every 1, 2, 3, 5
+  or 10 seconds), and the **theme**:
+  - **none** leaves the line uncolored, in Claude Code's own grey;
+  - **default**, **monokai**, **dracula**, **nord**, **catppuccin**, **github**, **gruvbox** and **tokyo night**, the
+    palettes context-bar has, give each section one color: System the palette's blue, Git its green, Agent its
+    orange;
+  - **custom** shows a field per item turned on, beside a swatch of its color: type a hex color (`#FF6188` or
+    `#F68`) and press Enter; an empty field goes back to the default theme's color.
 
 Then:
 

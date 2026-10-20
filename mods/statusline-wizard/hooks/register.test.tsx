@@ -6,6 +6,12 @@ import { entryFor } from './settings'
 
 const SAVED = { items: ['folder', 'branch', 'ahead', 'dirty', 'model', 'cost'], icons: false, interval: 2 }
 
+type Mounted = { findAll: (query: { type: 'Text'; text: string }) => Promise<{ props: { color?: unknown } }[]> }
+
+// The colors the preview draws `text` in: the segment's own, the row around it having none.
+const colorsOf = async (ui: Mounted, text: string) =>
+  (await ui.findAll({ type: 'Text', text })).map(one => one.props.color).filter(color => color !== undefined)
+
 test('keeps the saved line in the env var the command prints', async ($, on) => {
   const world = surround(on, { stored: { choices: SAVED } })
   await $.session.start(START)
@@ -148,7 +154,14 @@ test('opens the pane, previews the choices, and saves after showing the change',
 
   expect(JSON.parse(world.files.get(SETTINGS) ?? '')).toEqual({ model: 'opus', statusLine: entryFor('bash', 5) })
   expect(world.files.get(`${SETTINGS}.statusline-wizard.bak`)).toBe('{\n  "model": "opus"\n}\n')
-  expect(world.store.get('choices')).toEqual({ items: ['folder', 'branch', 'ahead', 'dirty', 'model', 'context'], resets: [], icons: true, interval: 5 })
+  expect(world.store.get('choices')).toEqual({
+    items: ['folder', 'branch', 'ahead', 'dirty', 'model', 'context'],
+    resets: [],
+    icons: true,
+    interval: 5,
+    theme: 'none',
+    colors: {},
+  })
   expect(world.lines.at(-1)).toBe('📁 ~/Code/overlord  🌿 main ↑2 ●  🤖 Opus 5.5  📊 5%')
   expect(world.opened).toEqual(['statusline-wizard'])
   expect(world.toasts).toContain('Status line saved')
@@ -344,5 +357,40 @@ test('moves a plan window through off, on and with its reset, the preview follow
   expect(await ui.find({ type: 'Text', text: /  7d 8% \(1d 19h\)$/ })).toBeDefined()
   await ui.press({ key: 'item-weekly' })
   expect(await ui.find({ key: 'item-weekly', text: 'off ›' })).toBeDefined()
+  await ui.unmount()
+})
+
+test('moves the theme on, previews it, and saves the line in its colors', async ($, on) => {
+  const world = surround(on, { stored: { choices: { ...SAVED, items: ['branch'] } }, files: { [SETTINGS]: JSON.stringify({ statusLine: entryFor('bash', 2) }) } })
+  await $.session.start(START)
+  await $.command.run(typed('statusline-wizard'))
+  const ui = await $.ui.mount({ plugin: 'statusline-wizard', surface: 'terminal', ...PANE })
+  expect(await ui.find({ key: 'theme', text: 'none ›' })).toBeDefined()
+  expect(await colorsOf(ui, 'main')).toEqual(['inactive'])
+  await ui.press({ key: 'theme' })
+  expect(await ui.find({ key: 'theme', text: 'default ›' })).toBeDefined()
+  expect(await colorsOf(ui, 'main')).toEqual(['#16A34A'])
+  await ui.press({ key: 'save' })
+  await ui.unmount()
+
+  expect(world.lines.at(-1)).toBe('\u001b[38;2;22;163;74mmain\u001b[39m')
+})
+
+test('takes a custom color per item shown, says when it is not one, and goes back to the default when emptied', async ($, on) => {
+  const world = surround(on, { stored: { choices: { ...SAVED, items: ['branch', 'model'], theme: 'tokyo-night' } } })
+  await $.session.start(START)
+  await $.command.run(typed('statusline-wizard'))
+  const ui = await $.ui.mount({ plugin: 'statusline-wizard', surface: 'terminal', ...PANE })
+  expect(await ui.find({ key: 'input-branch-0' })).toBeUndefined()
+  await ui.press({ key: 'theme' })
+  expect(await ui.find({ key: 'theme', text: 'custom ›' })).toBeDefined()
+  expect(await ui.find({ key: 'input-folder-0' })).toBeUndefined()
+  await ui.input({ key: 'input-branch-0', text: 'f00' })
+  expect(await colorsOf(ui, 'main')).toEqual(['#FF0000'])
+  await ui.input({ key: 'input-model-1', text: 'red' })
+  expect(world.toasts.at(-1)).toMatch(/hex color/)
+  expect(await colorsOf(ui, 'Opus 5.5')).toEqual(['#D97757'])
+  await ui.input({ key: 'input-branch-2', text: '' })
+  expect(await colorsOf(ui, 'main')).toEqual(['#16A34A'])
   await ui.unmount()
 })
