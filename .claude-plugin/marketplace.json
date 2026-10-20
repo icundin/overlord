@@ -14,6 +14,11 @@
       "name": "context-bar",
       "source": "./mods/context-bar",
       "description": "The context window as a stacked bar above the prompt, with its breakdown, plan usage and settings one click away."
+    },
+    {
+      "name": "statusline-wizard",
+      "source": "./mods/statusline-wizard",
+      "description": "A personal status line from the items you tick in a pane, with no script to write."
     }
   ]
 }
