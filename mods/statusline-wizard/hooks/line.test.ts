@@ -82,6 +82,15 @@ test('colors each item in its theme color, its icon and joiner with it, the spac
   )
 })
 
+test('colors each kind of item its own color of the theme', async () => {
+  const themed: Choices = { ...with_(['branch', 'pr', 'context', 'session', 'cost'], false, []), theme: 'material' }
+  const hex = (color: string) => `${ESC}[38;2;${[1, 3, 5].map(at => parseInt(color.slice(at, at + 2), 16)).join(';')}m`
+  expect(line(themed, FACTS)).toBe(
+    `${hex('#C3E88D')}main${ESC}[39m  ${hex('#C792EA')}PR #26 approved${ESC}[39m  ${hex('#89DDFF')}ctx 5%${ESC}[39m  ` +
+      `${hex('#FFCB6B')}5h 12%${ESC}[39m  ${hex('#F07178')}$0.17${ESC}[39m`,
+  )
+})
+
 test('colors an item its own custom color', async () => {
   const custom: Choices = { ...with_(['branch', 'ahead']), theme: 'custom', colors: { ahead: '#FF0000' } }
   expect(line(custom, FACTS)).toBe(`${ESC}[38;2;22;163;74mmain${ESC}[39m${ESC}[38;2;255;0;0m ↑2${ESC}[39m`)

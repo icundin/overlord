@@ -90,8 +90,11 @@ In **Settings**, click a value to change it:
   or 10 seconds), and the **theme**:
   - **none** leaves the line uncolored, in Claude Code's own grey;
   - **default**, **monokai**, **dracula**, **nord**, **catppuccin**, **github**, **gruvbox** and **tokyo night**, the
-    palettes context-bar has, give each section one color: System the palette's blue, Git its green, Agent its
-    orange;
+    palettes context-bar has, and **material**, [Material Theme](https://material-theme.com)'s dark palette (the same
+    in Oceanic, Darker, Palenight and Deep Ocean), give each kind of item one of the palette's colors: the system
+    items its blue, the git ones its green, the pull request its purple, the model its orange, the context its cyan,
+    the plan usage its yellow, the cost its pink (each the color context-bar gives messages, MCP tools, MCP server
+    instructions, system tools, system prompt, skills and memory files);
   - **custom** shows a field per item turned on, beside a swatch of its color: type a hex color (`#FF6188` or
     `#F68`) and press Enter; an empty field goes back to the default theme's color.
 
