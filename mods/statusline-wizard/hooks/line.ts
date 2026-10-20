@@ -1,10 +1,16 @@
-import type { Choices, Facts, Group, ItemKey, Limit } from '../types'
+import type { Choices, Facts, Group, ItemKey } from '../types'
 
-// Items that stand together, the joiner between them: the git state as a prompt shows it (`main ↑2 ●`), the context
-// and its tokens (`5% · 45k / 1M`). The first one shown wears the cluster's mark.
-type Cluster = 'git' | 'context'
+// Items that stand together, and how one joins the one before it: the git state as a prompt shows it (`main ↑2 ●`),
+// the model and its effort (`Opus 5.5 (high)`), the context and its tokens (`5% · 45k / 1M`), the plan windows
+// (`5h 12% · 7d 8%`). The first one shown wears the cluster's mark.
+type Cluster = 'git' | 'model' | 'context' | 'limits'
 
-const JOINERS: Record<Cluster, string> = { git: ' ', context: ' · ' }
+const JOINERS: Record<Cluster, (text: string) => string> = {
+  git: text => ` ${text}`,
+  model: text => ` (${text})`,
+  context: text => ` · ${text}`,
+  limits: text => ` · ${text}`,
+}
 
 // One item: the pane's section and label for it, what marks it in the line (its icon, or with icons off a word, if
 // any), and its text, or null with nothing to show.
@@ -19,19 +25,21 @@ type Item = {
 }
 
 const GIT = { group: 'git', icon: '🌿', cluster: 'git' } as const
+const MODEL = { group: 'agent', icon: '🤖', cluster: 'model' } as const
 const CONTEXT = { group: 'agent', icon: '📊', word: 'ctx', cluster: 'context' } as const
+const LIMITS = { group: 'agent', icon: '⏳', cluster: 'limits' } as const
 
 // Every item in the order the line shows them.
 export const ITEMS: Item[] = [
   { key: 'clock', group: 'system', label: 'clock', icon: '🕐', text: f => f.time },
   { key: 'user', group: 'system', label: 'user@host', icon: '👤', text: f => (f.user && f.host ? `${f.user}@${f.host}` : (f.user ?? f.host)) },
   { key: 'folder', group: 'system', label: 'folder', icon: '📁', text: f => (f.cwd === null ? null : shortPath(f.cwd, f.home)) },
+  { key: 'repo', group: 'git', label: 'repository', icon: '📦', text: f => f.repo },
   { key: 'branch', ...GIT, label: 'branch', text: f => f.git?.branch ?? null },
   { key: 'ahead', ...GIT, label: '↑ not pushed', text: f => (f.git && f.git.ahead > 0 ? `↑${f.git.ahead}` : null) },
   { key: 'behind', ...GIT, label: '↓ not pulled', text: f => (f.git && f.git.behind > 0 ? `↓${f.git.behind}` : null) },
   { key: 'dirty', ...GIT, label: '● changes', text: f => (f.git?.isDirty ? '●' : null) },
   { key: 'counts', ...GIT, label: 'file counts', text: f => (f.git === null ? null : fileCounts(f.git)) },
-  { key: 'repo', group: 'git', label: 'repository', icon: '📦', text: f => f.repo },
   {
     key: 'pr',
     group: 'git',
@@ -39,8 +47,8 @@ export const ITEMS: Item[] = [
     icon: '🔀',
     text: f => (f.pr === null ? null : [`PR #${f.pr.number}`, f.pr.review].filter(Boolean).join(' ')),
   },
-  { key: 'model', group: 'agent', label: 'model', icon: '🤖', text: f => (f.model === null ? null : modelLabel(f.model)) },
-  { key: 'effort', group: 'agent', label: 'effort', icon: '🧠', text: f => f.effort },
+  { key: 'model', ...MODEL, label: 'model', text: f => (f.model === null ? null : modelLabel(f.model)) },
+  { key: 'effort', ...MODEL, label: 'effort', text: f => f.effort },
   { key: 'context', ...CONTEXT, label: 'context', text: f => (f.context === null ? null : `${f.context}%`) },
   {
     key: 'tokens',
@@ -48,16 +56,11 @@ export const ITEMS: Item[] = [
     label: 'tokens',
     text: f => (f.tokens === null ? null : `${compact(f.tokens.used)} / ${compact(f.tokens.window)}`),
   },
-  {
-    key: 'limits',
-    group: 'agent',
-    label: 'plan usage',
-    icon: '⏳',
-    text: (f, choices) =>
-      f.limits.length === 0 ? null : f.limits.map(limit => limitText(limit, choices.items.includes('resets') ? f.now : null)).join(' · '),
-  },
-  // Shown inside plan usage, after each window.
-  { key: 'resets', group: 'agent', label: 'plan resets', icon: '⏳', text: () => null },
+  { key: 'session', ...LIMITS, label: 'session usage', text: (f, choices) => limitText(f, choices, 'five_hour') },
+  { key: 'weekly', ...LIMITS, label: 'weekly usage', text: (f, choices) => limitText(f, choices, 'seven_day') },
+  { key: 'spend', ...LIMITS, label: 'gateway spend', text: (f, choices) => limitText(f, choices, 'spend_limit') },
+  // Shown inside each plan window shown.
+  { key: 'resets', ...LIMITS, label: 'usage resets', text: () => null },
   { key: 'cost', group: 'agent', label: 'cost', icon: '💰', text: f => (f.cost === null ? null : dollars(f.cost)) },
 ]
 
@@ -75,7 +78,7 @@ export function pieces(choices: Choices, facts: Facts): string[] {
       continue
     }
     if (item.cluster !== undefined && item.cluster === cluster && out.length > 0) {
-      out[out.length - 1] += `${JOINERS[item.cluster]}${text}`
+      out[out.length - 1] += JOINERS[item.cluster](text)
       continue
     }
     const mark = choices.icons ? item.icon : item.word
@@ -95,11 +98,16 @@ function fileCounts({ staged, modified, untracked }: { staged: number; modified:
 
 const LIMIT_NAMES: Record<string, string> = { five_hour: '5h', seven_day: '7d', spend_limit: 'spend' }
 
-// A plan window and its share used, with how long until it resets when `now` is given.
-function limitText({ kind, percentUsed, resetsAt }: Limit, now: number | null): string {
-  const left = now === null ? null : countdown(resetsAt, now)
+// The plan window `kind` and its share used, with how long until it resets while that item is on; null without a
+// reading of it.
+function limitText(facts: Facts, choices: Choices, kind: string): string | null {
+  const limit = facts.limits.find(one => one.kind === kind)
+  if (limit === undefined) {
+    return null
+  }
+  const left = choices.items.includes('resets') && facts.now !== null ? countdown(limit.resetsAt, facts.now) : null
 
-  return `${LIMIT_NAMES[kind] ?? kind} ${Math.round(percentUsed)}%${left === null ? '' : ` (${left})`}`
+  return `${LIMIT_NAMES[kind] ?? kind} ${Math.round(limit.percentUsed)}%${left === null ? '' : ` (${left})`}`
 }
 
 const MINUTE = 60_000

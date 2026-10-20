@@ -1,22 +1,24 @@
 // One item the line can show, in the order the line shows them.
 export type ItemKey =
+  | 'clock'
   | 'user'
   | 'folder'
+  | 'repo'
   | 'branch'
   | 'ahead'
   | 'behind'
   | 'dirty'
   | 'counts'
-  | 'repo'
   | 'pr'
   | 'model'
   | 'effort'
   | 'context'
   | 'tokens'
-  | 'limits'
+  | 'session'
+  | 'weekly'
+  | 'spend'
   | 'resets'
   | 'cost'
-  | 'clock'
 
 // What the person picked: the items shown, whether each wears its icon, and how often Claude Code re-runs the command.
 export type Choices = { items: ItemKey[]; icons: boolean; interval: number }

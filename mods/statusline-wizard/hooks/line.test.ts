@@ -30,18 +30,20 @@ const ALL: ItemKey[] = [
   'clock',
   'user',
   'folder',
+  'repo',
   'branch',
   'ahead',
   'behind',
   'dirty',
   'counts',
-  'repo',
   'pr',
   'model',
   'effort',
   'context',
   'tokens',
-  'limits',
+  'session',
+  'weekly',
+  'spend',
   'resets',
   'cost',
 ]
@@ -50,14 +52,14 @@ const with_ = (items: ItemKey[], icons = false): Choices => ({ items, icons, int
 
 test('draws every item in its order, without icons', async () => {
   expect(line(with_(ALL), FACTS)).toBe(
-    '09:41  inigo@mac  ~/Code/overlord  main ↑2 ↓1 ● +2 ~3 ?1  icundin/overlord  PR #26 approved  Opus 5.5  high  ctx 5% · 45k / 1M  ' +
+    '09:41  inigo@mac  ~/Code/overlord  icundin/overlord  main ↑2 ↓1 ● +2 ~3 ?1  PR #26 approved  Opus 5.5 (high)  ctx 5% · 45k / 1M  ' +
       '5h 12% (2h 13m) · 7d 8% (1d 19h)  $0.17',
   )
 })
 
 test('draws every item with its icon, an item joined to the one before it without one', async () => {
   expect(line(with_(ALL, true), FACTS)).toBe(
-    '🕐 09:41  👤 inigo@mac  📁 ~/Code/overlord  🌿 main ↑2 ↓1 ● +2 ~3 ?1  📦 icundin/overlord  🔀 PR #26 approved  🤖 Opus 5.5  🧠 high  ' +
+    '🕐 09:41  👤 inigo@mac  📁 ~/Code/overlord  📦 icundin/overlord  🌿 main ↑2 ↓1 ● +2 ~3 ?1  🔀 PR #26 approved  🤖 Opus 5.5 (high)  ' +
       '📊 5% · 45k / 1M  ⏳ 5h 12% (2h 13m) · 7d 8% (1d 19h)  💰 $0.17',
   )
 })
@@ -85,11 +87,23 @@ test('draws an item joined to another on its own, with its own icon, when that o
   expect(line(with_(['tokens']), FACTS)).toBe('ctx 45k / 1M')
 })
 
+test('shows each plan window on its own, one icon for those shown together', async () => {
+  expect(line(with_(['session', 'weekly']), FACTS)).toBe('5h 12% · 7d 8%')
+  expect(line(with_(['weekly'], true), FACTS)).toBe('⏳ 7d 8%')
+  expect(line(with_(['session', 'weekly'], true), { ...FACTS, limits: [FACTS.limits[1]!] })).toBe('⏳ 7d 8%')
+})
+
 test('counts the plan windows down only while their item is on, and only until they reset', async () => {
-  expect(line(with_(['limits']), FACTS)).toBe('5h 12% · 7d 8%')
   expect(line(with_(['resets']), FACTS)).toBe('')
+  expect(line(with_(['weekly', 'resets']), FACTS)).toBe('7d 8% (1d 19h)')
   const passed: Facts = { ...FACTS, limits: [{ kind: 'five_hour', percentUsed: 12, resetsAt: '2026-10-20T08:00:00.000Z' }] }
-  expect(line(with_(['limits', 'resets']), passed)).toBe('5h 12%')
+  expect(line(with_(['session', 'resets']), passed)).toBe('5h 12%')
+})
+
+test('shows the model and its effort together, one icon for both, either one alone', async () => {
+  expect(line(with_(['model', 'effort'], true), FACTS)).toBe('🤖 Opus 5.5 (high)')
+  expect(line(with_(['effort'], true), FACTS)).toBe('🤖 high')
+  expect(line(with_(['model', 'effort']), { ...FACTS, effort: null })).toBe('Opus 5.5')
 })
 
 test('names a pull request without a review state by its number', async () => {
@@ -97,7 +111,7 @@ test('names a pull request without a review state by its number', async () => {
 })
 
 test('names a gateway spend limit', async () => {
-  expect(line(with_(['limits']), { ...FACTS, limits: [{ kind: 'spend_limit', percentUsed: 40.4, resetsAt: null }] })).toBe('spend 40%')
+  expect(line(with_(['spend']), { ...FACTS, limits: [{ kind: 'spend_limit', percentUsed: 40.4, resetsAt: null }] })).toBe('spend 40%')
 })
 
 test('says how long until a reset, in its two largest units', async () => {

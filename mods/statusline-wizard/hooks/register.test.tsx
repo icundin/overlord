@@ -42,7 +42,7 @@ test('shows the effort of the main loop once a request is sent', async ($, on) =
     // drained
   }
 
-  expect(world.lines.at(-1)).toBe('Sonnet 5.5  high')
+  expect(world.lines.at(-1)).toBe('Sonnet 5.5 (high)')
 })
 
 test('shows the local estimate of the context until Claude Code reports it', async ($, on) => {
@@ -69,7 +69,7 @@ test('shows the saved effort until the first request says which one the session 
 })
 
 test('draws the tokens, the plan windows counting down, and the clock as it moves on', async ($, on) => {
-  const world = surround(on, { stored: { choices: { ...SAVED, items: ['tokens', 'limits', 'resets', 'clock'] } } })
+  const world = surround(on, { stored: { choices: { ...SAVED, items: ['tokens', 'session', 'resets', 'clock'] } } })
   await $.session.start(START)
   const at = (ms: number) => clockText(new Date(Date.parse('2026-10-19T09:00:00.000Z') + ms))
   expect(world.lines.at(-1)).toBe(`${at(0)}  ctx 10k / 200k  5h 12% (3h)`)

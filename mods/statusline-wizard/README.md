@@ -4,7 +4,7 @@ A Claude Code mod (a plugin with a hooks module): a personal status line from th
 script to write.
 
 ```
-👤 inigo@mac  📁 ~/Code/overlord  🌿 main ↑2 ●  🤖 Opus 5.5  🧠 high  📊 5%  ⏳ 5h 12% · 7d 8%  💰 $0.17
+🕐 09:41  👤 inigo@mac  📁 ~/Code/overlord  📦 icundin/overlord  🌿 main ↑2 ●  🤖 Opus 5.5 (high)  📊 5%  ⏳ 5h 12% · 7d 8%  💰 $0.17
 ```
 
 ## Requirements
@@ -63,23 +63,25 @@ In **Settings**, click a value to change it:
   | clock | `09:41`, your own time zone's | 🕐 |
   | user@host | `inigo@mac` | 👤 |
   | folder | `~/Code/overlord` | 📁 |
+  | repository | `icundin/overlord`, from the `origin` remote | 📦 |
   | branch | `main` | 🌿 |
   | ↑ not pushed | `↑2`, commits ahead of the upstream | 🌿 |
   | ↓ not pulled | `↓1`, commits behind it, as of the last fetch | 🌿 |
   | ● changes | `●` | 🌿 |
   | file counts | `+2 ~3 ?1`: files staged, modified, untracked | 🌿 |
-  | repository | `icundin/overlord`, from the `origin` remote | 📦 |
   | pull request | `PR #26 approved`, the branch's open one | 🔀 |
   | model | `Opus 5.5` | 🤖 |
-  | effort | `high` | 🧠 |
+  | effort | `(high)` after the model | 🤖 |
   | context | `ctx 5%` (`📊 5%` with icons) | 📊 |
   | tokens | `45k / 1M`, the context in tokens | 📊 |
-  | plan usage | `5h 12% · 7d 8%`, on a subscription | ⏳ |
-  | plan resets | `(2h 13m)` after each plan window: how long until it resets | |
+  | session usage | `5h 12%`, the plan's five-hour window | ⏳ |
+  | weekly usage | `7d 8%`, its seven-day window | ⏳ |
+  | gateway spend | `spend 40%`, behind a gateway with a spend limit | ⏳ |
+  | usage resets | `(2h 13m)` after each window shown: how long until it resets | ⏳ |
   | cost | `$0.17` | 💰 |
 
-  The git items stand together (`main ↑2 ↓1 ● +2 ~3 ?1`), and so do context and tokens (`ctx 5% · 45k / 1M`),
-  the first one shown wearing the icon.
+  Items that share an icon stand together, and the first one shown wears it: `🌿 main ↑2 ↓1 ● +2 ~3 ?1`,
+  `🤖 Opus 5.5 (high)`, `📊 5% · 45k / 1M`, `⏳ 5h 12% (2h 13m) · 7d 8% (1d 19h)`.
 
   An item with nothing to show (no repository, no pull request, a count of zero) is left out of the line.
 - **Appearance**: icons on or off, and how often Claude Code redraws the line besides its own updates (every 1, 2,
