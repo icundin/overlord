@@ -1,4 +1,5 @@
-import type { Choices, Facts, Group, ItemKey, Window } from '../types'
+import type { Choices, Facts, Git, Group, Hue, ItemKey, Window } from '../types'
+import { ansi, colorOf } from './themes'
 
 // Items that stand together, and how one joins the one before it: the git state as a prompt shows it (`main ↑2 ●`),
 // the model and its effort (`Opus 5.5 (high)`), the context and its tokens (`5% · 45k / 1M`), the plan windows
@@ -12,11 +13,12 @@ const JOINERS: Record<Cluster, (text: string) => string> = {
   limits: text => ` · ${text}`,
 }
 
-// One item: the pane's section and label for it, what marks it in the line (its icon, or with icons off a word, if
-// any), and its text, or null with nothing to show.
+// One item: the pane's section and label for it, the kind of item a theme colors it as, what marks it in the line
+// (its icon, or with icons off a word, if any), and its text, or null with nothing to show.
 type Item = {
   key: ItemKey
   group: Group
+  hue: Hue
   label: string
   icon: string
   word?: string
@@ -24,17 +26,18 @@ type Item = {
   text: (facts: Facts, choices: Choices) => string | null
 }
 
-const GIT = { group: 'git', icon: '🌿', cluster: 'git' } as const
-const MODEL = { group: 'agent', icon: '🤖', cluster: 'model' } as const
-const CONTEXT = { group: 'agent', icon: '📊', word: 'ctx', cluster: 'context' } as const
-const LIMITS = { group: 'agent', icon: '⏳', cluster: 'limits' } as const
+const SYSTEM = { group: 'system', hue: 'system' } as const
+const GIT = { group: 'git', hue: 'git', icon: '🌿', cluster: 'git' } as const
+const MODEL = { group: 'agent', hue: 'model', icon: '🤖', cluster: 'model' } as const
+const CONTEXT = { group: 'agent', hue: 'context', icon: '📊', word: 'ctx', cluster: 'context' } as const
+const LIMITS = { group: 'agent', hue: 'usage', icon: '⏳', cluster: 'limits' } as const
 
 // Every item in the order the line shows them.
 export const ITEMS: Item[] = [
-  { key: 'clock', group: 'system', label: 'clock', icon: '🕐', text: f => f.time },
-  { key: 'user', group: 'system', label: 'user@host', icon: '👤', text: f => (f.user && f.host ? `${f.user}@${f.host}` : (f.user ?? f.host)) },
-  { key: 'folder', group: 'system', label: 'folder', icon: '📁', text: f => (f.cwd === null ? null : shortPath(f.cwd, f.home)) },
-  { key: 'repo', group: 'git', label: 'repository', icon: '📦', text: f => f.repo },
+  { key: 'clock', ...SYSTEM, label: 'clock', icon: '🕐', text: f => f.time },
+  { key: 'user', ...SYSTEM, label: 'user@host', icon: '👤', text: f => (f.user && f.host ? `${f.user}@${f.host}` : (f.user ?? f.host)) },
+  { key: 'folder', ...SYSTEM, label: 'folder', icon: '📁', text: f => (f.cwd === null ? null : shortPath(f.cwd, f.home)) },
+  { key: 'repo', group: 'git', hue: 'git', label: 'repository', icon: '📦', text: f => f.repo },
   { key: 'branch', ...GIT, label: 'branch', text: f => f.git?.branch ?? null },
   { key: 'ahead', ...GIT, label: '↑ not pushed', text: f => (f.git && f.git.ahead > 0 ? `↑${f.git.ahead}` : null) },
   { key: 'behind', ...GIT, label: '↓ not pulled', text: f => (f.git && f.git.behind > 0 ? `↓${f.git.behind}` : null) },
@@ -43,6 +46,7 @@ export const ITEMS: Item[] = [
   {
     key: 'pr',
     group: 'git',
+    hue: 'pr',
     label: 'pull request',
     icon: '🔀',
     text: f => (f.pr === null ? null : [`PR #${f.pr.number}`, f.pr.review].filter(Boolean).join(' ')),
@@ -59,28 +63,41 @@ export const ITEMS: Item[] = [
   { key: 'session', ...LIMITS, label: 'session usage', text: (f, choices) => limitText(f, choices, 'session') },
   { key: 'weekly', ...LIMITS, label: 'weekly usage', text: (f, choices) => limitText(f, choices, 'weekly') },
   { key: 'spend', ...LIMITS, label: 'gateway spend', text: (f, choices) => limitText(f, choices, 'spend') },
-  { key: 'cost', group: 'agent', label: 'cost', icon: '💰', text: f => (f.cost === null ? null : dollars(f.cost)) },
+  { key: 'cost', group: 'agent', hue: 'cost', label: 'cost', icon: '💰', text: f => (f.cost === null ? null : dollars(f.cost)) },
 ]
 
+// One item's part of the line, in its color; null for the line's own.
+export type Segment = { text: string; color: string | null }
+
+// A piece of the line: one item, or a cluster's items together.
+export type Piece = Segment[]
+
+// The line as the command prints it, each item in its color.
 export function line(choices: Choices, facts: Facts): string {
-  return pieces(choices, facts).join('  ')
+  return pieces(choices, facts)
+    .map(piece => piece.map(({ text, color }) => ansi(text, color)).join(''))
+    .join('  ')
 }
 
+export const plain = (piece: Piece) => piece.map(segment => segment.text).join('')
+
 // The line's pieces in order, two spaces apart in the line: one per item, a cluster's items one piece together.
-export function pieces(choices: Choices, facts: Facts): string[] {
-  const out: string[] = []
+export function pieces(choices: Choices, facts: Facts): Piece[] {
+  const out: Piece[] = []
   let cluster: Cluster | null = null
   for (const item of ITEMS) {
     const text = choices.items.includes(item.key) ? item.text(facts, choices) : null
     if (text === null) {
       continue
     }
-    if (item.cluster !== undefined && item.cluster === cluster && out.length > 0) {
-      out[out.length - 1] += JOINERS[item.cluster](text)
+    const color = colorOf(choices, item.key, item.hue)
+    const last = out.at(-1)
+    if (item.cluster !== undefined && item.cluster === cluster && last !== undefined) {
+      last.push({ text: JOINERS[item.cluster](text), color })
       continue
     }
     const mark = choices.icons ? item.icon : item.word
-    out.push(mark ? `${mark} ${text}` : text)
+    out.push([{ text: mark ? `${mark} ${text}` : text, color }])
     cluster = item.cluster ?? null
   }
 
@@ -88,14 +105,14 @@ export function pieces(choices: Choices, facts: Facts): string[] {
 }
 
 // `+2 ~3 ?1`: files staged, modified and untracked, those that are none left out.
-function fileCounts({ staged, modified, untracked }: { staged: number; modified: number; untracked: number }): string | null {
+function fileCounts({ staged, modified, untracked }: Git): string | null {
   const parts = [`+${staged}`, `~${modified}`, `?${untracked}`].filter((_, i) => [staged, modified, untracked][i] !== 0)
 
   return parts.length === 0 ? null : parts.join(' ')
 }
 
-// Each window's kind as Claude Code names it, and its name in the line.
-const WINDOWS: Record<Window, { kind: string; name: string }> = {
+// Each plan window's kind as Claude Code names it, and its name in the line.
+const WINDOW_NAMES: Record<Window, { kind: string; name: string }> = {
   session: { kind: 'five_hour', name: '5h' },
   weekly: { kind: 'seven_day', name: '7d' },
   spend: { kind: 'spend_limit', name: 'spend' },
@@ -104,7 +121,7 @@ const WINDOWS: Record<Window, { kind: string; name: string }> = {
 // A plan window and its share used, with how long until it resets where the person asked for it; null without a
 // reading of it.
 function limitText(facts: Facts, choices: Choices, window: Window): string | null {
-  const { kind, name } = WINDOWS[window]
+  const { kind, name } = WINDOW_NAMES[window]
   const limit = facts.limits.find(one => one.kind === kind)
   if (limit === undefined) {
     return null

@@ -7,6 +7,7 @@ import { parsePullRequest, parseStatus, repoName } from './git'
 import { clockText, line } from './line'
 import { entryFor, isOurs, statusLineOf, withStatusLine } from './settings'
 import type { Shell } from './settings'
+import { nextTheme, parseColor } from './themes'
 import { pane } from './view/pane'
 
 const PANE = 'statusline-wizard'
@@ -35,6 +36,7 @@ const pending = atom({ plugin: 'statusline-wizard', key: 'pending' } as const, n
 const isInstalled = atom({ plugin: 'statusline-wizard', key: 'isInstalled' } as const, false)
 const saved = atom({ plugin: 'statusline-wizard', key: 'saved' } as const, null)
 const opened = atom({ plugin: 'statusline-wizard', key: 'opened' } as const, {})
+const fieldRevision = atom({ plugin: 'statusline-wizard', key: 'fieldRevision' } as const, 0)
 
 const TICK_MS = 5000
 const PR_MS = 60_000
@@ -48,6 +50,12 @@ let isEffortReported = false
 // The choices as $.store keeps them, or null when none were saved or they no longer read as choices.
 async function savedChoices($: EngineInterface): Promise<Choices | null> {
   return readChoices(await $.store.get('choices'))
+}
+
+// The pane's choices. They live in the session's state, which a reload keeps: those drafted by an older version are
+// read as stored ones are, so a field it did not have comes in with its default.
+async function readDraft($: EngineInterface): Promise<Choices | null> {
+  return readChoices(await read($, draft))
 }
 
 // Every item the saved line shows.
@@ -152,11 +160,13 @@ async function tick($: EngineInterface): Promise<void> {
   await publish($)
 }
 
+// Reads every fact afresh: the session's state, which a reload keeps, may hold facts of an older version's shape.
 async function setUp($: EngineInterface): Promise<void> {
+  await update($, facts, () => EMPTY)
   await readIdentity($).catch(() => undefined)
   await readUsage($).catch(() => undefined)
   await readSavedEffort($).catch(() => undefined)
-  await tick($)
+  await tick($).catch(() => undefined)
   ticking?.cancel()
   ticking = $.clock.every(TICK_MS, () => void tick($).catch(() => undefined))
 }
@@ -238,7 +248,7 @@ async function save($: EngineInterface): Promise<void> {
   if ((await read($, pending))?.action === 'save') {
     return confirm($)
   }
-  const choices = await read($, draft)
+  const choices = await readDraft($)
   const current = choices === null ? null : await currentSettings($)
   if (choices === null || current === null) {
     return
@@ -291,7 +301,7 @@ async function confirm($: EngineInterface): Promise<void> {
     if (!isOurs(current.statusLine)) {
       await $.store.set('previous', current.statusLine ?? null)
     }
-    const choices = await read($, draft)
+    const choices = await readDraft($)
     if (choices !== null) {
       await keepChoices($, choices)
     }
@@ -317,7 +327,24 @@ async function open($: EngineInterface): Promise<void> {
 // Any change disarms a waiting save or remove, so the change it showed is never stale.
 async function changeDraft($: EngineInterface, change: (was: Choices) => Choices): Promise<void> {
   await update($, pending, () => null)
-  await update($, draft, was => (was === null ? null : change(was)))
+  await update($, draft, was => (was === null ? null : change(readChoices(was) ?? FIRST_DRAFT)))
+}
+
+// A custom color as typed: a hex color sets it, an empty field goes back to the default theme's, anything else is
+// said and kept out.
+async function setColor($: EngineInterface, key: ItemKey, text: string): Promise<void> {
+  const color = parseColor(text)
+  await update($, fieldRevision, was => was + 1)
+  if (color === null && text.trim() !== '') {
+    $.ui.toast('Type a hex color, like #FF6188 or #F68; an empty field goes back to the default.')
+
+    return
+  }
+  await changeDraft($, was => {
+    const { [key]: _, ...rest } = was.colors
+
+    return { ...was, colors: color === null ? rest : { ...rest, [key]: color } }
+  })
 }
 
 async function toggleSection($: EngineInterface, key: Section): Promise<void> {
@@ -361,7 +388,7 @@ export const register: Register = on => {
   })
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e, next) => {
-    const editing = await read($, draft)
+    const editing = await readDraft($)
     if (editing === null || e.surface !== 'terminal') {
       return next(e)
     }
@@ -373,9 +400,10 @@ export const register: Register = on => {
         home: (await read($, facts)).home,
         pending: await read($, pending),
         isInstalled: await read($, isInstalled),
-        isUnsaved: !same(await read($, saved), editing),
+        isUnsaved: !same(readChoices(await read($, saved)), editing),
         settingsPath: await settingsPath($),
         opened: await read($, opened),
+        fieldRevision: await read($, fieldRevision),
         width: e.props.bodyColumns,
       },
       {
@@ -383,6 +411,8 @@ export const register: Register = on => {
         cycleWindow: window => changeDraft($, was => cycledWindow(was, window)),
         toggleIcons: () => changeDraft($, was => ({ ...was, icons: !was.icons })),
         nextInterval: () => changeDraft($, was => ({ ...was, interval: nextInterval(was.interval) })),
+        nextTheme: () => changeDraft($, was => ({ ...was, theme: nextTheme(was.theme) })),
+        setColor: (key, text) => setColor($, key, text),
         toggleSection: key => toggleSection($, key),
         save: () => save($),
         remove: () => remove($),

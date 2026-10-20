@@ -1,5 +1,6 @@
 import type { Choices, ItemKey, Window } from '../types'
 import { ITEMS } from './line'
+import { parseColor, THEME_CHOICES } from './themes'
 
 // How often Claude Code may re-run the command, in seconds.
 export const INTERVALS = [1, 2, 3, 5, 10] as const
@@ -10,6 +11,8 @@ export const FIRST_DRAFT: Choices = {
   resets: [],
   icons: false,
   interval: 2,
+  theme: 'none',
+  colors: {},
 }
 
 export const WINDOWS: Window[] = ['session', 'weekly', 'spend']
@@ -24,12 +27,21 @@ export function readChoices(stored: unknown): Choices | null {
   }
   const items = new Set(kept.items)
   const resets = new Set(Array.isArray(kept.resets) ? kept.resets : [])
+  const colors: Record<string, unknown> = typeof kept.colors === 'object' && kept.colors !== null ? kept.colors : {}
 
   return {
     items: ITEMS.filter(item => items.has(item.key)).map(item => item.key),
     resets: WINDOWS.filter(window => resets.has(window) && items.has(window)),
     icons: kept.icons === true,
     interval: INTERVALS.find(seconds => seconds === kept.interval) ?? FIRST_DRAFT.interval,
+    theme: THEME_CHOICES.find(theme => theme === kept.theme) ?? 'none',
+    colors: Object.fromEntries(
+      ITEMS.flatMap(({ key }) => {
+        const color = typeof colors[key] === 'string' ? parseColor(colors[key]) : null
+
+        return color === null ? [] : [[key, color]]
+      }),
+    ),
   }
 }
 

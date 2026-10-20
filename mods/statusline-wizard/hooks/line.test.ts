@@ -47,7 +47,16 @@ const ALL: ItemKey[] = [
   'cost',
 ]
 
-const with_ = (items: ItemKey[], icons = false, resets: Window[] = ['session', 'weekly']): Choices => ({ items, resets, icons, interval: 2 })
+const with_ = (items: ItemKey[], icons = false, resets: Window[] = ['session', 'weekly']): Choices => ({
+  items,
+  resets,
+  icons,
+  interval: 2,
+  theme: 'none',
+  colors: {},
+})
+
+const ESC = '\u001b'
 
 test('draws every item in its order, without icons', async () => {
   expect(line(with_(ALL), FACTS)).toBe(
@@ -61,6 +70,30 @@ test('draws every item with its icon, an item joined to the one before it withou
     '🕐 09:41  👤 inigo@mac  📁 ~/Code/overlord  📦 icundin/overlord  🌿 main ↑2 ↓1 ● +2 ~3 ?1  🔀 PR #26 approved  🤖 Opus 5.5 (high)  ' +
       '📊 5% · 45k / 1M  ⏳ 5h 12% (2h 13m) · 7d 8% (1d 19h)  💰 $0.17',
   )
+})
+
+test('colors each item in its theme color, its icon and joiner with it, the space between items left plain', async () => {
+  const themed: Choices = { ...with_(['folder', 'branch', 'ahead', 'model', 'effort'], true), theme: 'default' }
+  const blue = `${ESC}[38;2;106;155;204m`
+  const green = `${ESC}[38;2;22;163;74m`
+  const orange = `${ESC}[38;2;217;119;87m`
+  expect(line(themed, FACTS)).toBe(
+    `${blue}📁 ~/Code/overlord${ESC}[39m  ${green}🌿 main${ESC}[39m${green} ↑2${ESC}[39m  ${orange}🤖 Opus 5.5${ESC}[39m${orange} (high)${ESC}[39m`,
+  )
+})
+
+test('colors each kind of item its own color of the theme', async () => {
+  const themed: Choices = { ...with_(['branch', 'pr', 'context', 'session', 'cost'], false, []), theme: 'material' }
+  const hex = (color: string) => `${ESC}[38;2;${[1, 3, 5].map(at => parseInt(color.slice(at, at + 2), 16)).join(';')}m`
+  expect(line(themed, FACTS)).toBe(
+    `${hex('#C3E88D')}main${ESC}[39m  ${hex('#C792EA')}PR #26 approved${ESC}[39m  ${hex('#89DDFF')}ctx 5%${ESC}[39m  ` +
+      `${hex('#FFCB6B')}5h 12%${ESC}[39m  ${hex('#F07178')}$0.17${ESC}[39m`,
+  )
+})
+
+test('colors an item its own custom color', async () => {
+  const custom: Choices = { ...with_(['branch', 'ahead']), theme: 'custom', colors: { ahead: '#FF0000' } }
+  expect(line(custom, FACTS)).toBe(`${ESC}[38;2;22;163;74mmain${ESC}[39m${ESC}[38;2;255;0;0m ↑2${ESC}[39m`)
 })
 
 test('keeps the order of the items, not of the choice', async () => {

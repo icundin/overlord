@@ -86,8 +86,17 @@ In **Settings**, click a value to change it:
   `5h 12% (2h 13m)`.
 
   An item with nothing to show (no repository, no pull request, a count of zero) is left out of the line.
-- **Appearance**: icons on or off, and how often Claude Code redraws the line besides its own updates (every 1, 2,
-  3, 5 or 10 seconds).
+- **Appearance**: icons on or off, how often Claude Code redraws the line besides its own updates (every 1, 2, 3, 5
+  or 10 seconds), and the **theme**:
+  - **none** leaves the line uncolored, in Claude Code's own grey;
+  - **default**, **monokai**, **dracula**, **nord**, **catppuccin**, **github**, **gruvbox** and **tokyo night**, the
+    palettes context-bar has, and **material**, [Material Theme](https://material-theme.com)'s dark palette (the same
+    in Oceanic, Darker, Palenight and Deep Ocean), give each kind of item one of the palette's colors: the system
+    items its blue, the git ones its green, the pull request its purple, the model its orange, the context its cyan,
+    the plan usage its yellow, the cost its pink (each the color context-bar gives messages, MCP tools, MCP server
+    instructions, system tools, system prompt, skills and memory files);
+  - **custom** shows a field per item turned on, beside a swatch of its color: type a hex color (`#FF6188` or
+    `#F68`) and press Enter; an empty field goes back to the default theme's color.
 
 Then:
 
