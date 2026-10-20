@@ -69,9 +69,10 @@ export function cycledWindow(choices: Choices, window: Window): Choices {
 // How often Claude Code may re-run the command, as its `refreshInterval` takes it: whole seconds, one or more.
 const isInterval = (seconds: unknown): seconds is number => Number.isInteger(seconds) && (seconds as number) >= 1
 
-// A refresh interval typed into its field, or null for what Claude Code would not take.
+// A refresh interval typed into its field, its unit optional (`30`, `30s`), or null for what Claude Code would not take.
 export function parseInterval(text: string): number | null {
-  const seconds = /^\d+$/.test(text.trim()) ? Number(text.trim()) : null
+  const digits = /^(\d+)\s*s?$/.exec(text.trim())?.[1]
+  const seconds = digits === undefined ? null : Number(digits)
 
   return isInterval(seconds) ? seconds : null
 }
