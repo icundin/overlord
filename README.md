@@ -19,6 +19,7 @@ repository's marketplace, and every artifact documents itself in its own README.
 | Mod | What it does |
 |---|---|
 | [context-bar](./mods/context-bar/) | The context window as a stacked bar above the prompt, with its breakdown, plan usage and settings one click away. |
+| [statusline-wizard](./mods/statusline-wizard/) | A personal status line from the items you tick in a pane, with no script to write. |
 
 ## Installing
 

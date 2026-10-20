@@ -1,0 +1,9 @@
+{
+  "name": "statusline-wizard",
+  "version": "0.1.0",
+  "description": "A personal status line from the items you tick in a pane, with no script to write.",
+  "author": {
+    "name": "Inigo Cundin"
+  },
+  "types": "./types/index.d.ts"
+}

@@ -2,6 +2,10 @@
 
 One changelog for the collection; every entry names the artifact it concerns.
 
+## 1.11.0 — 2026-10-20
+
+- Statusline wizard: New mod. `/statusline-wizard` opens a pane to pick what the status line shows (user@host, folder, branch, commits not pushed, uncommitted changes, repository, pull request, model, effort, context, plan usage, cost), icons on or off and how often it refreshes, with a live preview. Save sets the `statusLine` entry on a second press, and Remove puts back the one it replaced. Until now a personal status line meant writing a script by hand, and no plugin can set the line itself. Each session's mod draws its own line into an env var that the saved command only prints, so there is no script and no `jq`, and the one command works on macOS, Linux and Windows (Git Bash or PowerShell).
+
 ## 1.10.3 — 2026-10-19
 
 - Context bar: The README says where the mod has been tested (macOS in Ghostty and Terminal.app, Windows through WSL in Windows Terminal) and where it hasn't (native Windows, other terminals such as herdr), with a link for reports. The mod is published for anyone, and a reader on an untested setup should know before installing rather than find out.
