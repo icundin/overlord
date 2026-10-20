@@ -93,6 +93,8 @@ declare module 'claude-code' {
       saved: Choices | null
       // Whether the settings file's `statusLine` is the wizard's, as last read.
       isInstalled: boolean
+      // Whether setUp has filled the session's state; a /clear empties it.
+      isSetUp: boolean
     }
   }
 }
