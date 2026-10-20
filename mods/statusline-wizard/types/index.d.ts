@@ -22,9 +22,25 @@ export type ItemKey =
 // A plan window the line can show: the five-hour session, the seven-day week, a gateway's spend limit.
 export type Window = 'session' | 'weekly' | 'spend'
 
+// The kinds of item a theme gives a color each.
+export type Hue = 'system' | 'git' | 'pr' | 'model' | 'context' | 'usage' | 'cost'
+
+// A named theme, from context-bar's palettes.
+export type ThemeName = 'default' | 'monokai' | 'dracula' | 'nord' | 'catppuccin' | 'github' | 'gruvbox' | 'tokyo-night' | 'material'
+
+// How the line is colored: none, a theme, or a color per item.
+export type ThemeChoice = 'none' | ThemeName | 'custom'
+
 // What the person picked: the items shown, the windows shown with how long until they reset, whether each item wears
-// its icon, and how often Claude Code re-runs the command.
-export type Choices = { items: ItemKey[]; resets: Window[]; icons: boolean; interval: number }
+// its icon, how often Claude Code re-runs the command, the theme, and the custom colors (`#RRGGBB`) by item.
+export type Choices = {
+  items: ItemKey[]
+  resets: Window[]
+  icons: boolean
+  interval: number
+  theme: ThemeChoice
+  colors: Partial<Record<ItemKey, string>>
+}
 
 // The working copy's state, from one `git status --porcelain=v2 --branch`: the commits ahead of and behind its
 // upstream, and the files staged, modified and untracked.
@@ -71,6 +87,8 @@ declare module 'claude-code' {
       pending: Pending | null
       // Which sections are open; each is open until closed.
       opened: Partial<Record<Section, boolean>>
+      // Moves on with each color typed, so its field is drawn anew.
+      fieldRevision: number
       // The choices as last saved, null before the first save.
       saved: Choices | null
       // Whether the settings file's `statusLine` is the wizard's, as last read.
