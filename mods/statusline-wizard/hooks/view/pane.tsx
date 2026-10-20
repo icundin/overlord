@@ -145,12 +145,12 @@ export function pane(ui: ElementTable<'terminal'>, view: View, act: Actions) {
           <Box key={`color-${item.key}`} columnGap={4}>
             <Text>
               {'  '}
-              <Text color={colorOf(draft, item.key, item.group) ?? UNCOLORED}>■</Text> {item.label.padEnd(labelWidth - 4)}
+              <Text color={colorOf(draft, item.key, item.hue) ?? UNCOLORED}>■</Text> {item.label.padEnd(labelWidth - 4)}
             </Text>
             <Input
               key={`input-${item.key}-${view.fieldRevision}`}
               value={draft.colors[item.key] ?? ''}
-              placeholder={THEMES.default[item.group]}
+              placeholder={THEMES.default[item.hue]}
               submitLabel="set"
               onSubmit={text => act.setColor(item.key, text)}
             />

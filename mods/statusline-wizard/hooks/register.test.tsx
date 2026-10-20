@@ -377,7 +377,7 @@ test('moves the theme on, previews it, and saves the line in its colors', async 
 })
 
 test('takes a custom color per item shown, says when it is not one, and goes back to the default when emptied', async ($, on) => {
-  const world = surround(on, { stored: { choices: { ...SAVED, items: ['branch', 'model'], theme: 'tokyo-night' } } })
+  const world = surround(on, { stored: { choices: { ...SAVED, items: ['branch', 'model'], theme: 'material' } } })
   await $.session.start(START)
   await $.command.run(typed('statusline-wizard'))
   const ui = await $.ui.mount({ plugin: 'statusline-wizard', surface: 'terminal', ...PANE })
@@ -409,7 +409,7 @@ test('draws choices drafted by an older version, which a reload keeps, with what
 })
 
 test('keeps every label in one column, a color row indented with its swatch as context-bar draws one', async ($, on) => {
-  surround(on, { stored: { choices: { ...SAVED, items: ['branch', 'ahead', 'session'], theme: 'tokyo-night' } } })
+  surround(on, { stored: { choices: { ...SAVED, items: ['branch', 'ahead', 'session'], theme: 'material' } } })
   await $.session.start(START)
   await $.command.run(typed('statusline-wizard'))
   const ui = await $.ui.mount({ plugin: 'statusline-wizard', surface: 'terminal', ...PANE })

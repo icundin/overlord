@@ -22,8 +22,11 @@ export type ItemKey =
 // A plan window the line can show: the five-hour session, the seven-day week, a gateway's spend limit.
 export type Window = 'session' | 'weekly' | 'spend'
 
+// The kinds of item a theme gives a color each.
+export type Hue = 'system' | 'git' | 'pr' | 'model' | 'context' | 'usage' | 'cost'
+
 // A named theme, from context-bar's palettes.
-export type ThemeName = 'default' | 'monokai' | 'dracula' | 'nord' | 'catppuccin' | 'github' | 'gruvbox' | 'tokyo-night'
+export type ThemeName = 'default' | 'monokai' | 'dracula' | 'nord' | 'catppuccin' | 'github' | 'gruvbox' | 'tokyo-night' | 'material'
 
 // How the line is colored: none, a theme, or a color per item.
 export type ThemeChoice = 'none' | ThemeName | 'custom'

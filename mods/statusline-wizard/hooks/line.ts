@@ -1,4 +1,4 @@
-import type { Choices, Facts, Group, ItemKey, Window } from '../types'
+import type { Choices, Facts, Group, Hue, ItemKey, Window } from '../types'
 import { ansi, colorOf } from './themes'
 
 // Items that stand together, and how one joins the one before it: the git state as a prompt shows it (`main ↑2 ●`),
@@ -13,11 +13,12 @@ const JOINERS: Record<Cluster, (text: string) => string> = {
   limits: text => ` · ${text}`,
 }
 
-// One item: the pane's section and label for it, what marks it in the line (its icon, or with icons off a word, if
-// any), and its text, or null with nothing to show.
+// One item: the pane's section and label for it, the kind of item a theme colors it as, what marks it in the line
+// (its icon, or with icons off a word, if any), and its text, or null with nothing to show.
 type Item = {
   key: ItemKey
   group: Group
+  hue: Hue
   label: string
   icon: string
   word?: string
@@ -25,17 +26,18 @@ type Item = {
   text: (facts: Facts, choices: Choices) => string | null
 }
 
-const GIT = { group: 'git', icon: '🌿', cluster: 'git' } as const
-const MODEL = { group: 'agent', icon: '🤖', cluster: 'model' } as const
-const CONTEXT = { group: 'agent', icon: '📊', word: 'ctx', cluster: 'context' } as const
-const LIMITS = { group: 'agent', icon: '⏳', cluster: 'limits' } as const
+const SYSTEM = { group: 'system', hue: 'system' } as const
+const GIT = { group: 'git', hue: 'git', icon: '🌿', cluster: 'git' } as const
+const MODEL = { group: 'agent', hue: 'model', icon: '🤖', cluster: 'model' } as const
+const CONTEXT = { group: 'agent', hue: 'context', icon: '📊', word: 'ctx', cluster: 'context' } as const
+const LIMITS = { group: 'agent', hue: 'usage', icon: '⏳', cluster: 'limits' } as const
 
 // Every item in the order the line shows them.
 export const ITEMS: Item[] = [
-  { key: 'clock', group: 'system', label: 'clock', icon: '🕐', text: f => f.time },
-  { key: 'user', group: 'system', label: 'user@host', icon: '👤', text: f => (f.user && f.host ? `${f.user}@${f.host}` : (f.user ?? f.host)) },
-  { key: 'folder', group: 'system', label: 'folder', icon: '📁', text: f => (f.cwd === null ? null : shortPath(f.cwd, f.home)) },
-  { key: 'repo', group: 'git', label: 'repository', icon: '📦', text: f => f.repo },
+  { key: 'clock', ...SYSTEM, label: 'clock', icon: '🕐', text: f => f.time },
+  { key: 'user', ...SYSTEM, label: 'user@host', icon: '👤', text: f => (f.user && f.host ? `${f.user}@${f.host}` : (f.user ?? f.host)) },
+  { key: 'folder', ...SYSTEM, label: 'folder', icon: '📁', text: f => (f.cwd === null ? null : shortPath(f.cwd, f.home)) },
+  { key: 'repo', group: 'git', hue: 'git', label: 'repository', icon: '📦', text: f => f.repo },
   { key: 'branch', ...GIT, label: 'branch', text: f => f.git?.branch ?? null },
   { key: 'ahead', ...GIT, label: '↑ not pushed', text: f => (f.git && f.git.ahead > 0 ? `↑${f.git.ahead}` : null) },
   { key: 'behind', ...GIT, label: '↓ not pulled', text: f => (f.git && f.git.behind > 0 ? `↓${f.git.behind}` : null) },
@@ -44,6 +46,7 @@ export const ITEMS: Item[] = [
   {
     key: 'pr',
     group: 'git',
+    hue: 'pr',
     label: 'pull request',
     icon: '🔀',
     text: f => (f.pr === null ? null : [`PR #${f.pr.number}`, f.pr.review].filter(Boolean).join(' ')),
@@ -60,7 +63,7 @@ export const ITEMS: Item[] = [
   { key: 'session', ...LIMITS, label: 'session usage', text: (f, choices) => limitText(f, choices, 'session') },
   { key: 'weekly', ...LIMITS, label: 'weekly usage', text: (f, choices) => limitText(f, choices, 'weekly') },
   { key: 'spend', ...LIMITS, label: 'gateway spend', text: (f, choices) => limitText(f, choices, 'spend') },
-  { key: 'cost', group: 'agent', label: 'cost', icon: '💰', text: f => (f.cost === null ? null : dollars(f.cost)) },
+  { key: 'cost', group: 'agent', hue: 'cost', label: 'cost', icon: '💰', text: f => (f.cost === null ? null : dollars(f.cost)) },
 ]
 
 // One item's part of the line, in its color; null for the line's own.
@@ -87,7 +90,7 @@ export function pieces(choices: Choices, facts: Facts): Piece[] {
     if (text === null) {
       continue
     }
-    const color = colorOf(choices, item.key, item.group)
+    const color = colorOf(choices, item.key, item.hue)
     const last = out.at(-1)
     if (item.cluster !== undefined && item.cluster === cluster && last !== undefined) {
       last.push({ text: JOINERS[item.cluster](text), color })
