@@ -52,6 +52,12 @@ async function savedChoices($: EngineInterface): Promise<Choices | null> {
   return readChoices(await $.store.get('choices'))
 }
 
+// The pane's choices. They live in the session's state, which a reload keeps: those drafted by an older version are
+// read as stored ones are, so a field it did not have comes in with its default.
+async function readDraft($: EngineInterface): Promise<Choices | null> {
+  return readChoices(await read($, draft))
+}
+
 // Every item the saved line shows.
 async function wanted($: EngineInterface): Promise<Set<ItemKey>> {
   return new Set((await savedChoices($))?.items ?? [])
@@ -240,7 +246,7 @@ async function save($: EngineInterface): Promise<void> {
   if ((await read($, pending))?.action === 'save') {
     return confirm($)
   }
-  const choices = await read($, draft)
+  const choices = await readDraft($)
   const current = choices === null ? null : await currentSettings($)
   if (choices === null || current === null) {
     return
@@ -293,7 +299,7 @@ async function confirm($: EngineInterface): Promise<void> {
     if (!isOurs(current.statusLine)) {
       await $.store.set('previous', current.statusLine ?? null)
     }
-    const choices = await read($, draft)
+    const choices = await readDraft($)
     if (choices !== null) {
       await keepChoices($, choices)
     }
@@ -319,7 +325,7 @@ async function open($: EngineInterface): Promise<void> {
 // Any change disarms a waiting save or remove, so the change it showed is never stale.
 async function changeDraft($: EngineInterface, change: (was: Choices) => Choices): Promise<void> {
   await update($, pending, () => null)
-  await update($, draft, was => (was === null ? null : change(was)))
+  await update($, draft, was => (was === null ? null : change(readChoices(was) ?? FIRST_DRAFT)))
 }
 
 // A custom color as typed: a hex color sets it, an empty field goes back to the default theme's, anything else is
@@ -380,7 +386,7 @@ export const register: Register = on => {
   })
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e, next) => {
-    const editing = await read($, draft)
+    const editing = await readDraft($)
     if (editing === null || e.surface !== 'terminal') {
       return next(e)
     }
@@ -392,7 +398,7 @@ export const register: Register = on => {
         home: (await read($, facts)).home,
         pending: await read($, pending),
         isInstalled: await read($, isInstalled),
-        isUnsaved: !same(await read($, saved), editing),
+        isUnsaved: !same(readChoices(await read($, saved)), editing),
         settingsPath: await settingsPath($),
         opened: await read($, opened),
         fieldRevision: await read($, fieldRevision),
