@@ -420,3 +420,30 @@ test('keeps every label in one column, a color row indented with its swatch as c
   expect(new Set([...labels, ...colorRows].map(text => text.length)).size).toBe(1)
   await ui.unmount()
 })
+
+test('starts every session from no facts, so those kept from an older version never draw, whatever fails to read', async ($, on) => {
+  const world = surround(on, { stored: { choices: { ...SAVED, items: ['counts', 'tokens'] } }, isUsageFailing: true })
+  // Facts from 0.1.0, which a reload keeps: no tokens, no time, git without its counts.
+  const old = {
+    ...{ user: 'me', host: 'mac', home: '/Users/me', cwd: '/Users/me', repo: null, pr: null },
+    ...{ git: { branch: 'main', ahead: 0, isDirty: true }, model: null, effort: null, context: 5, limits: [], cost: null },
+  }
+  // The session's facts cell, held here as the host holds it: a write lands only on the version it read.
+  const cell = { value: old as unknown, version: 1 }
+  on('state.get', (_, e, next) => (e.key === 'facts' ? { value: { ...cell } } : next(e)))
+  on('state.set', (_, e, next) => {
+    if (e.key !== 'facts') {
+      return next(e)
+    }
+    if (e.ifVersion !== undefined && e.ifVersion !== cell.version) {
+      return { value: { isSet: false as const, version: cell.version } }
+    }
+    cell.value = e.value
+    cell.version += 1
+
+    return { value: { isSet: true as const, version: cell.version } }
+  })
+  await $.session.start(START)
+
+  expect(world.lines.at(-1)).toBe('?1')
+})
