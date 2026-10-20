@@ -3,8 +3,13 @@ import { expect, test } from 'claude-code/testing'
 import { cycledWindow, FIRST_DRAFT, nextInterval, readChoices, toggled } from './choices'
 
 test('reads stored choices, dropping what this version does not know', async () => {
-  expect(readChoices({ items: ['cost', 'gone', 'user'], icons: true, interval: 5 })).toEqual({ items: ['user', 'cost'], resets: [], icons: true, interval: 5 })
-  expect(readChoices({ items: [], icons: 'yes', interval: 7 })).toEqual({ items: [], resets: [], icons: false, interval: FIRST_DRAFT.interval })
+  const plain = { resets: [], theme: 'none', colors: {} }
+  expect(readChoices({ items: ['cost', 'gone', 'user'], icons: true, interval: 5 })).toEqual({ items: ['user', 'cost'], icons: true, interval: 5, ...plain })
+  expect(readChoices({ items: [], icons: 'yes', interval: 7 })).toEqual({ items: [], icons: false, interval: FIRST_DRAFT.interval, ...plain })
+  // A theme this version does not know reads as none, and only colors it can read are kept.
+  const colored = readChoices({ items: ['branch'], icons: false, interval: 2, theme: 'dracula', colors: { branch: '#FF0000', repo: 'red', gone: '#00FF00' } })
+  expect([colored?.theme, colored?.colors]).toEqual(['dracula', { branch: '#FF0000' }])
+  expect(readChoices({ items: [], icons: false, interval: 2, theme: 'neon' })?.theme).toBe('none')
   // A countdown is kept only for a window shown.
   expect(readChoices({ items: ['weekly'], resets: ['session', 'weekly', 'gone'], icons: false, interval: 2 })?.resets).toEqual(['weekly'])
   expect(readChoices(undefined)).toBeNull()

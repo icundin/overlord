@@ -7,6 +7,7 @@ import { parsePullRequest, parseStatus, repoName } from './git'
 import { clockText, line } from './line'
 import { entryFor, isOurs, statusLineOf, withStatusLine } from './settings'
 import type { Shell } from './settings'
+import { nextTheme, parseColor } from './themes'
 import { pane } from './view/pane'
 
 const PANE = 'statusline-wizard'
@@ -35,6 +36,7 @@ const pending = atom({ plugin: 'statusline-wizard', key: 'pending' } as const, n
 const isInstalled = atom({ plugin: 'statusline-wizard', key: 'isInstalled' } as const, false)
 const saved = atom({ plugin: 'statusline-wizard', key: 'saved' } as const, null)
 const opened = atom({ plugin: 'statusline-wizard', key: 'opened' } as const, {})
+const fieldRevision = atom({ plugin: 'statusline-wizard', key: 'fieldRevision' } as const, 0)
 
 const TICK_MS = 5000
 const PR_MS = 60_000
@@ -320,6 +322,23 @@ async function changeDraft($: EngineInterface, change: (was: Choices) => Choices
   await update($, draft, was => (was === null ? null : change(was)))
 }
 
+// A custom color as typed: a hex color sets it, an empty field goes back to the default theme's, anything else is
+// said and kept out.
+async function setColor($: EngineInterface, key: ItemKey, text: string): Promise<void> {
+  const color = parseColor(text)
+  await update($, fieldRevision, was => was + 1)
+  if (color === null && text.trim() !== '') {
+    $.ui.toast('Type a hex color, like #FF6188 or #F68; an empty field goes back to the default.')
+
+    return
+  }
+  await changeDraft($, was => {
+    const { [key]: _, ...rest } = was.colors
+
+    return { ...was, colors: color === null ? rest : { ...rest, [key]: color } }
+  })
+}
+
 async function toggleSection($: EngineInterface, key: Section): Promise<void> {
   await update($, pending, () => null)
   await update($, opened, was => ({ ...was, [key]: !(was[key] ?? true) }))
@@ -376,6 +395,7 @@ export const register: Register = on => {
         isUnsaved: !same(await read($, saved), editing),
         settingsPath: await settingsPath($),
         opened: await read($, opened),
+        fieldRevision: await read($, fieldRevision),
         width: e.props.bodyColumns,
       },
       {
@@ -383,6 +403,8 @@ export const register: Register = on => {
         cycleWindow: window => changeDraft($, was => cycledWindow(was, window)),
         toggleIcons: () => changeDraft($, was => ({ ...was, icons: !was.icons })),
         nextInterval: () => changeDraft($, was => ({ ...was, interval: nextInterval(was.interval) })),
+        nextTheme: () => changeDraft($, was => ({ ...was, theme: nextTheme(was.theme) })),
+        setColor: (key, text) => setColor($, key, text),
         toggleSection: key => toggleSection($, key),
         save: () => save($),
         remove: () => remove($),
