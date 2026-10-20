@@ -34,6 +34,10 @@ test('moves a plan window from off to on, then with its reset, then off', async 
 })
 
 test('reads a refresh interval typed as whole seconds, one or more, as Claude Code takes it', async () => {
-  expect([parseInterval('5'), parseInterval(' 30 '), parseInterval('120'), parseInterval('1')]).toEqual([5, 30, 120, 1])
-  expect([parseInterval('0'), parseInterval('1.5'), parseInterval('2s'), parseInterval(''), parseInterval('-4')]).toEqual([null, null, null, null, null])
+  expect([parseInterval('5'), parseInterval(' 30 '), parseInterval('120'), parseInterval('1'), parseInterval('30s'), parseInterval('10 s')]).toEqual([
+    5, 30, 120, 1, 30, 10,
+  ])
+  expect([parseInterval('0'), parseInterval('1.5'), parseInterval('2m'), parseInterval(''), parseInterval('-4'), parseInterval('s')]).toEqual([
+    null, null, null, null, null, null,
+  ])
 })

@@ -4,7 +4,7 @@ One changelog for the collection; every entry names the artifact it concerns.
 
 ## 1.13.0 — 2026-10-20
 
-- Statusline wizard: The refresh interval is typed into a field, any whole number of seconds from 1, the range Claude Code's `refreshInterval` takes. A click moved it through 1, 2, 3, 5 and 10 seconds, which was slower to set and left out every other value.
+- Statusline wizard: The refresh interval is typed into a field, **refresh (s)**, as `30` or `30s`: any whole number of seconds from 1, the range Claude Code's `refreshInterval` takes. A click moved it through 1, 2, 3, 5 and 10 seconds, which was slower to set and left out every other value.
 
 ## 1.12.0 — 2026-10-20
 

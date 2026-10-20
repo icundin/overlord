@@ -85,7 +85,7 @@ export function pane(ui: ElementTable<'terminal'>, view: View, act: Actions) {
   // One column of labels for every row, as context-bar's settings card: a color row's indent and swatch take four
   // cells ahead of its label.
   const labelWidth = Math.max(
-    ...['refresh', 'theme', ...ITEMS.map(item => item.label)].map(label => label.length),
+    ...['refresh (s)', 'theme', ...ITEMS.map(item => item.label)].map(label => label.length),
     ...(isCustom ? ITEMS.filter(item => draft.items.includes(item.key)).map(item => item.label.length + 4) : []),
   )
 
@@ -190,7 +190,7 @@ export function pane(ui: ElementTable<'terminal'>, view: View, act: Actions) {
           )}
           {section('appearance', 'Appearance', [
             row('icons', 'icons', draft.icons ? 'on ›' : 'off ›', () => act.toggleIcons()),
-            field('interval', 'refresh', String(draft.interval), 'seconds', text => act.setRefresh(text)),
+            field('interval', 'refresh (s)', String(draft.interval), 'seconds', text => act.setRefresh(text)),
             row('theme', 'theme', `${THEME_LABELS[draft.theme] ?? draft.theme} ›`, () => act.nextTheme()),
             ...colorRows,
           ])}
