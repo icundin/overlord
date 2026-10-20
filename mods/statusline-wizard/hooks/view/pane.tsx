@@ -2,7 +2,7 @@ import type { ElementTable, RenderChildren } from 'claude-code'
 
 import type { Choices, Group, ItemKey, Pending, Section, Window } from '../../types'
 import { isWindow } from '../choices'
-import { ITEMS, pieces, plain, shortPath } from '../line'
+import { ITEMS, pieces, plain } from '../line'
 import type { Piece } from '../line'
 import { SAMPLE } from '../sample'
 import { colorOf, THEMES } from '../themes'
@@ -10,12 +10,10 @@ import { colorOf, THEMES } from '../themes'
 // Everything the pane draws, read by the render hook.
 export type View = {
   draft: Choices
-  home: string | null
   pending: Pending | null
   isInstalled: boolean
   // The pane holds choices not saved yet.
   isUnsaved: boolean
-  settingsPath: string
   opened: Partial<Record<Section, boolean>>
   // Moves on with each color typed, so a field shows the color kept rather than what was typed.
   fieldRevision: number
@@ -163,7 +161,7 @@ export function pane(ui: ElementTable<'terminal'>, view: View, act: Actions) {
   // What the armed action will do, said once in words.
   const warning =
     pending?.action === 'save'
-      ? `Press again to set this as your status line in ${shortPath(view.settingsPath, view.home)}.`
+      ? 'Press again to set this as your status line in your user settings.'
       : pending?.action === 'remove'
         ? 'Press again to put back the status line you had before.'
         : null

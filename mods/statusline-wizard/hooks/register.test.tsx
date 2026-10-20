@@ -147,7 +147,7 @@ test('opens the pane, previews the choices, and saves after showing the change',
   await ui.press({ key: 'save' })
   expect(world.files.get(SETTINGS)).toBe('{\n  "model": "opus"\n}\n')
   expect(await ui.find({ key: 'save', text: / confirm save / })).toBeDefined()
-  expect(await ui.find({ type: 'Text', text: 'Press again to set this as your status line in ~/.claude/settings.json.' })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: 'Press again to set this as your status line in your user settings.' })).toBeDefined()
   await ui.press({ key: 'save' })
   await ui.unmount()
 

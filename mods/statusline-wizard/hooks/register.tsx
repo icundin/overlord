@@ -416,11 +416,9 @@ export const register: Register = on => {
       $.ui.resolve(e),
       {
         draft: editing,
-        home: (await read($, facts)).home,
         pending: await read($, pending),
         isInstalled: await read($, isInstalled),
         isUnsaved: !same(readChoices(await read($, saved)), editing),
-        settingsPath: await settingsPath($),
         opened: await read($, opened),
         fieldRevision: await read($, fieldRevision),
         width: e.props.bodyColumns,
