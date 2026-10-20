@@ -45,7 +45,6 @@ const GROUPS: { key: Group; title: string }[] = [
   { key: 'agent', title: 'Agent' },
 ]
 
-
 // A pictograph takes two cells, everything else one.
 const cells = (char: string) => (/\p{Extended_Pictographic}/u.test(char) ? 2 : 1)
 
