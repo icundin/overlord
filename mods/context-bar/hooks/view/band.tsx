@@ -112,7 +112,7 @@ export function band(ui: ElementTable<'terminal'>, view: View, act: Actions) {
           <Text dimColor>
             {detail}{' '}
           </Text>
-          <Text bold color="inverseText" backgroundColor={levelColor(current.percentage)}>
+          <Text bold color="inverseText" backgroundColor={levelColor(current.percentage, view.settings.contextWarnPercent)}>
             {` ${current.percentage}% `}
           </Text>
         </Text>

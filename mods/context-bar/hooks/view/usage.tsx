@@ -134,7 +134,7 @@ export function usageCard(kit: Kit) {
               limit.kind,
               labels[i] ?? '',
               limit.percentUsed,
-              levelColor(limit.percentUsed),
+              levelColor(limit.percentUsed, view.settings.limitWarnPercent),
               detail(limitDetails(limit)),
             ),
           ),

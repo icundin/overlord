@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 
-import { ago, amount, compact, dollars, duration, limitLabel, modelAlias, modelChoices, modelLabel, resetsIn, share, signed } from './format'
+import { ago, amount, compact, dollars, duration, levelColor, limitLabel, modelAlias, modelChoices, modelLabel, resetsIn, share, signed } from './format'
 
 test('shortens the model id to family and version', async () => {
   const ids = {
@@ -16,6 +16,12 @@ test('shortens the model id to family and version', async () => {
     expect(modelLabel(id)).toBe(label)
   }
   expect(modelLabel('us.anthropic.custom')).toBe('us.anthropic.custom')
+})
+
+test('turns a percentage red from its warning threshold on, green below it or with the warning off', async () => {
+  expect(levelColor(51, 80)).toBe('success')
+  expect(levelColor(80, 80)).toBe('error')
+  expect(levelColor(95, 0)).toBe('success')
 })
 
 test('names the /model alias the session runs on', async () => {

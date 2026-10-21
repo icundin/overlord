@@ -90,8 +90,9 @@ export function limitLabel(kind: string): string {
   return LIMIT_LABELS[kind] ?? kind.replace(/_/g, ' ')
 }
 
-export function levelColor(percent: number): string {
-  return percent >= 80 ? 'error' : percent >= 50 ? 'warning' : 'success'
+// Red from the warning threshold on, as the warning line itself; a threshold of 0 is off.
+export function levelColor(percent: number, threshold: number): string {
+  return threshold > 0 && percent >= threshold ? 'error' : 'success'
 }
 
 // `claude-opus-5-5` reads `Opus 5.5`; an id of another shape is shown as given.
