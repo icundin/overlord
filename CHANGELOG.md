@@ -2,6 +2,10 @@
 
 One changelog for the collection; every entry names the artifact it concerns.
 
+## 1.13.3 — 2026-10-21
+
+- Context bar: The context percentage turns red once it passes the context warning's threshold and is green below it, and each plan limit's meter does the same with the plan limit's threshold. Both were colored on a fixed scale (yellow from 50%, red from 80%) that ignored the settings, so with the warning raised to 80 the percentage still turned yellow at 50 and looked like a warning the bar wasn't giving.
+
 ## 1.13.2 — 2026-10-20
 
 - Statusline wizard: A red **confirm save** or **confirm remove** goes back to normal after five seconds without the second press, as context-bar's buttons do. It stayed armed until another click, so a press made long after could still write the settings.

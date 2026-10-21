@@ -84,7 +84,8 @@ move it on, or type into a field and press Enter, which confirms what it saved. 
 the card, puts every setting back.
 
 A crossed warning shows as a yellow line under the bar for as long as it applies, worked out from the current
-figures each time the band draws; in the context warning, `/compact` itself is clickable.
+figures each time the band draws; in the context warning, `/compact` itself is clickable. The same thresholds color
+the context percentage and the plan limits' meters: red once past, green below or with the warning off.
 
 Compacting, starting a new session and resetting the settings ask first: the first click turns the button red,
 the second runs it, and the question lapses after five seconds.
